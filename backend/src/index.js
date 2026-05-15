@@ -27,6 +27,16 @@ const PORT = process.env.PORT || 5000;
   initScheduler();
   initSocket(server);
 
+  // Test DB Connection
+  const db = require('./config/db');
+  try {
+    await db.raw('SELECT 1');
+    console.log('Database connected successfully (MySQL)');
+  } catch (err) {
+    console.error('Database connection failed:', err.message);
+    // In production, we might not want to exit, but it helps identify 503 causes
+  }
+
   // Setup Bull Board if using Redis
   if (isUsingRedis()) {
     const serverAdapter = new ExpressAdapter();
