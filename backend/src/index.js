@@ -99,7 +99,7 @@ if (fs.existsSync(frontendPath)) {
   console.warn('Frontend dist folder not found at:', frontendPath);
 }
 
-app.get('*', (req, res) => {
+app.get('(.*)', (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     return res.status(404).json({ success: false, message: 'API Route Not Found' });
   }
