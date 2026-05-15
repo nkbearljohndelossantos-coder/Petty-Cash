@@ -72,13 +72,21 @@ app.use('/api/backup', require('./routes/backup'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/email-automation', require('./routes/emailAutomation'));
 
-// Base routes
-app.get('/', (req, res) => {
-  res.send('NKB Petty Cash API is running...');
-});
-
+// Health check route
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
+});
+
+// Serve Frontend in Production
+// This assumes the frontend/dist folder is built and placed correctly relative to the backend
+const frontendPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+app.get('*', (req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ success: false, message: 'API Route Not Found' });
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handling middleware
