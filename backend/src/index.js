@@ -1,4 +1,27 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+const path = require('path');
+const fs = require('fs');
+const envPath = path.join(__dirname, '../.env');
+
+require('dotenv').config({ path: envPath });
+
+// --- DEBUG START ---
+console.log('--- ENV DEBUG ---');
+console.log('Current Working Directory:', process.cwd());
+console.log('Target .env path:', envPath);
+console.log('.env file exists:', fs.existsSync(envPath));
+
+const envKeys = Object.keys(process.env).filter(k => k.startsWith('DB_') || k.startsWith('JWT_') || k === 'PORT');
+console.log('Loaded Keys:', envKeys.join(', ') || 'NONE');
+if (envKeys.length > 0) {
+    envKeys.forEach(key => {
+        const val = process.env[key];
+        const masked = val ? (val.length > 3 ? val.substring(0, 3) + '***' : '***') : 'EMPTY';
+        console.log(`${key}: ${masked}`);
+    });
+}
+console.log('--- DEBUG END ---');
+// --- DEBUG END ---
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
