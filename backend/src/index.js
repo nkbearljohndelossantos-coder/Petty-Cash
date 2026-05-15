@@ -25,7 +25,6 @@ console.log('--- DEBUG END ---');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const path = require('path');
 const http = require('http');
 
 // Services
@@ -111,7 +110,6 @@ app.get('/health', (req, res) => {
 });
 
 // Serve Frontend in Production
-const fs = require('fs');
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 const indexPath = path.join(frontendPath, 'index.html');
 
