@@ -39,7 +39,7 @@ const sendEmail = async ({ templateName, recipient, data, attachments = [] }) =>
       body: compiledBody,
       status: 'pending',
       attachments: attachments.length > 0 ? JSON.stringify(attachments) : null
-    }).returning('id');
+    });
 
     try {
       // 3. Send Email

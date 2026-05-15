@@ -12,7 +12,8 @@ exports.getCategories = async (req, res) => {
 exports.createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
-    const [category] = await db('categories').insert({ name, description }).returning('*');
+    const [id] = await db('categories').insert({ name, description });
+    const category = await db('categories').where({ id }).first();
     res.status(201).json({ success: true, data: category });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

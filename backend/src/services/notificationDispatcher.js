@@ -25,7 +25,7 @@ const dispatchNotification = async (userId, payload) => {
         type: type || 'info',
         link,
         is_read: false
-      }).returning('id');
+      });
 
       // Send real-time update via Socket.IO
       sendToUser(userId, 'new_notification', {

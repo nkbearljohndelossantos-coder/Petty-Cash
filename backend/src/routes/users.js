@@ -23,14 +23,15 @@ router.post('/', async (req, res) => {
   try {
     const { username, password, full_name, email, role, department_id } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const [user] = await db('users').insert({
+    const [id] = await db('users').insert({
       username,
       password: hashedPassword,
       full_name,
       email,
       role,
       department_id
-    }).returning('*');
+    });
+    const user = await db('users').where({ id }).first();
     res.status(201).json({ success: true, data: user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

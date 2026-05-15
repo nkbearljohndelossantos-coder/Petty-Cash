@@ -31,14 +31,14 @@ exports.getExpenses = async (req, res) => {
 
     // Filters
     if (search) {
-      query = query.where('expenses.remarks', 'ilike', `%${search}%`)
-        .orWhere('expenses.requested_by', 'ilike', `%${search}%`);
+      query = query.where('expenses.remarks', 'like', `%${search}%`)
+        .orWhere('expenses.requested_by', 'like', `%${search}%`);
     }
 
     if (category) query = query.where('expenses.category_id', category);
     if (department) query = query.where('expenses.department_id', department);
     if (status) query = query.where('expenses.status', status);
-    if (requestedBy) query = query.where('expenses.requested_by', 'ilike', `%${requestedBy}%`);
+    if (requestedBy) query = query.where('expenses.requested_by', 'like', `%${requestedBy}%`);
     
     if (startDate && endDate) {
       query = query.whereBetween('expenses.date', [startDate, endDate]);
@@ -93,7 +93,7 @@ exports.createExpense = async (req, res) => {
   try {
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
 
-    const [expense] = await db('expenses').insert({
+    const [expenseId] = await db('expenses').insert({
       date,
       category_id,
       remarks,
@@ -104,7 +104,9 @@ exports.createExpense = async (req, res) => {
       unit: unit || 'Piece',
       status: status || 'Pending',
       created_by: req.user.id
-    }).returning('*');
+    });
+
+    const expense = await db('expenses').where({ id: expenseId }).first();
 
     // Handle attachments if any (multer will handle files)
     if (req.files && req.files.length > 0) {
@@ -147,7 +149,7 @@ exports.updateExpense = async (req, res) => {
     const { id } = req.params;
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
 
-    const [updatedExpense] = await db('expenses')
+    await db('expenses')
       .where({ id })
       .update({
         date,
@@ -160,8 +162,9 @@ exports.updateExpense = async (req, res) => {
         unit,
         status,
         updated_at: db.fn.now()
-      })
-      .returning('*');
+      });
+
+    const updatedExpense = await db('expenses').where({ id }).first();
 
     if (!updatedExpense) {
       return res.status(404).json({ success: false, message: 'Expense not found' });
@@ -210,13 +213,14 @@ exports.updateStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const [updatedExpense] = await db('expenses')
+    await db('expenses')
       .where({ id })
       .update({
         status,
         updated_at: db.fn.now()
-      })
-      .returning('*');
+      });
+
+    const updatedExpense = await db('expenses').where({ id }).first();
 
     if (!updatedExpense) {
       return res.status(404).json({ success: false, message: 'Expense not found' });

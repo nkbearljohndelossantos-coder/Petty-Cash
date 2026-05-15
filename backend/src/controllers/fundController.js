@@ -16,13 +16,15 @@ exports.getFunds = async (req, res) => {
 exports.addFund = async (req, res) => {
   try {
     const { amount, reference_no, remarks, date } = req.body;
-    const [fund] = await db('funds').insert({
+    const [id] = await db('funds').insert({
       amount,
       reference_no,
       remarks,
       date: date || db.fn.now(),
       added_by: req.user.id
-    }).returning('*');
+    });
+
+    const fund = await db('funds').where({ id }).first();
 
     await db('activity_logs').insert({
       user_id: req.user.id,
