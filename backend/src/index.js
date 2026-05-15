@@ -88,15 +88,27 @@ app.get('/health', (req, res) => {
 });
 
 // Serve Frontend in Production
-// This assumes the frontend/dist folder is built and placed correctly relative to the backend
+const fs = require('fs');
 const frontendPath = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendPath));
+const indexPath = path.join(frontendPath, 'index.html');
+
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+  console.log('Serving frontend from:', frontendPath);
+} else {
+  console.warn('Frontend dist folder not found at:', frontendPath);
+}
 
 app.get('*', (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     return res.status(404).json({ success: false, message: 'API Route Not Found' });
   }
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.send('NKB Petty Cash API is running (Frontend not built yet)...');
+  }
 });
 
 // Error handling middleware
