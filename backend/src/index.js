@@ -117,7 +117,7 @@ app.get('/health', (req, res) => {
 });
 
 // Serve Frontend in Production
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+const frontendPath = path.join(__dirname, '../dist');
 const indexPath = path.join(frontendPath, 'index.html');
 
 if (fs.existsSync(frontendPath)) {
