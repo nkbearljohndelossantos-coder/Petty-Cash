@@ -10,6 +10,13 @@ console.log('Current Working Directory:', process.cwd());
 console.log('Target .env path:', envPath);
 console.log('.env file exists:', fs.existsSync(envPath));
 
+try {
+    const files = fs.readdirSync(process.cwd());
+    console.log('Files in directory:', files.join(', '));
+} catch (err) {
+    console.log('Error reading directory:', err.message);
+}
+
 const envKeys = Object.keys(process.env).filter(k => k.startsWith('DB_') || k.startsWith('JWT_') || k === 'PORT');
 console.log('Loaded Keys:', envKeys.join(', ') || 'NONE');
 if (envKeys.length > 0) {
