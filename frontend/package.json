@@ -42,8 +42,7 @@
   },
   "overrides": {
     "uuid": "^11.0.0",
-    "glob": "latest",
-    "rimraf": "^6.0.0",
-    "lodash.isequal": "^4.5.0"
+    "glob": "^13.0.0",
+    "rimraf": "^6.0.0"
   }
 }

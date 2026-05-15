@@ -40,8 +40,9 @@
   },
   "overrides": {
     "uuid": "^11.0.0",
-    "glob": "latest",
+    "glob": "^13.0.0",
     "rimraf": "^6.0.0",
-    "lodash.isequal": "^4.5.0"
+    "unzipper": "^0.12.3",
+    "fast-csv": "^5.0.7"
   }
 }
