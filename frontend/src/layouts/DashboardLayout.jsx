@@ -1,0 +1,278 @@
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Receipt, 
+  PieChart, 
+  FileText, 
+  Tag, 
+  Users, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  X,
+  Bell,
+  Search,
+  ChevronRight,
+  User,
+  Calendar,
+  Wallet,
+  History,
+  Database
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import api from '../services/api';
+
+const SidebarItem = ({ icon: Icon, label, to, active, collapsed }) => (
+  <Link to={to} className="relative group flex items-center">
+    {active && <div className="sidebar-glow" />}
+    <div className={`sidebar-erp-link w-full ${active ? 'sidebar-erp-link-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}>
+      <Icon size={20} className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
+      {!collapsed && <span className="text-[15px]">{label}</span>}
+      {!collapsed && active && <ChevronRight size={14} className="ml-auto opacity-50" />}
+    </div>
+    
+    <div className="sidebar-tooltip">
+      {label}
+      {/* Tooltip Arrow */}
+      <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+    </div>
+  </Link>
+);
+
+import NotificationCenter from '../components/NotificationCenter';
+
+const DashboardLayout = () => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const res = await api.get('/funds/balance');
+        setBalance(res.data.balance);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchBalance();
+  }, [location.pathname]); // Refresh on navigation
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const navItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
+    { icon: Receipt, label: 'Expenses', to: '/expenses' },
+    { icon: Wallet, label: 'Funds', to: '/funds' },
+    { icon: PieChart, label: 'Analytics', to: '/analytics' },
+    { icon: FileText, label: 'Reports', to: '/reports' },
+    { icon: Tag, label: 'Categories', to: '/categories' },
+    { icon: Bell, label: 'Email Automation', to: '/email-automation', roles: ['Super Admin', 'Accounting'] },
+    { icon: History, label: 'Audit Logs', to: '/logs', roles: ['Super Admin'] },
+    { icon: Database, label: 'Maintenance', to: '/maintenance', roles: ['Super Admin'] },
+    { icon: Settings, label: 'Settings', to: '/settings', roles: ['Super Admin'] },
+  ];
+
+  const filteredNavItems = navItems.filter(item => 
+    !item.roles || item.roles.includes(user?.role)
+  );
+
+  return (
+    <div className="flex h-screen w-full bg-white">
+      {/* Sidebar - Desktop (The only non-white part) */}
+      <motion.aside 
+        initial={false}
+        animate={{ width: collapsed ? 88 : 280 }}
+        className="hidden lg:flex flex-col bg-[#0f172a] text-white overflow-visible z-30 shadow-2xl relative"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none opacity-50" />
+
+        <div className="p-7 flex items-center justify-between relative z-10">
+          {!collapsed && (
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3"
+            >
+              <div className="w-9 h-9 bg-erp-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                <LayoutDashboard size={20} fill="currentColor" />
+              </div>
+              <div>
+                <h1 className="font-extrabold text-lg tracking-tight leading-none text-white">NKB Manufacturing</h1>
+                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-[0.2em] font-bold">Petty Cash System</p>
+              </div>
+            </motion.div>
+          )}
+          <button 
+            onClick={() => setCollapsed(!collapsed)} 
+            className={`p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors relative group ${collapsed ? 'mx-auto' : ''}`}
+          >
+            <Menu size={20} className="opacity-50" />
+            <div className="sidebar-tooltip">
+              {collapsed ? 'Expand Menu' : 'Collapse Menu'}
+              <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+            </div>
+          </button>
+        </div>
+
+        <div className="px-4 py-2 relative z-10">
+          <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-4 ${collapsed ? 'text-center opacity-0' : ''}`}>Main Menu</p>
+          <nav className="space-y-1.5">
+            {filteredNavItems.map((item) => (
+              <SidebarItem 
+                key={item.to} 
+                {...item} 
+                active={location.pathname === item.to} 
+                collapsed={collapsed}
+              />
+            ))}
+          </nav>
+        </div>
+
+        <div className="mt-auto p-4 relative z-10 border-t border-white/5">
+          {!collapsed && (
+            <div className="bg-white/5 rounded-2xl p-4 mb-4 border border-white/5">
+              <p className="text-xs text-slate-400 mb-2 font-medium">Petty Cash Fund</p>
+              <h3 className="text-xl font-bold text-emerald-400">₱{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Real-time Balance</p>
+            </div>
+          )}
+          <button 
+            onClick={handleLogout}
+            className={`w-full relative group flex items-center gap-3 px-4 py-3.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all duration-300 ${collapsed ? 'justify-center px-0' : ''}`}
+          >
+            <LogOut size={20} />
+            {!collapsed && <span className="font-semibold text-[15px]">Sign Out</span>}
+            
+            <div className="sidebar-tooltip">
+              Sign Out
+              <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+            </div>
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-white">
+        {/* Navbar */}
+        <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-100 z-20">
+          <div className="flex items-center gap-6">
+            <button className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-500" onClick={() => setMobileMenuOpen(true)}>
+              <Menu size={22} />
+            </button>
+
+            <div className="hidden lg:flex items-center gap-3">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {navItems.find(i => i.to === location.pathname)?.label || 'Overview'}
+              </h2>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-2 w-80 focus-within:ring-2 focus-within:ring-erp-blue/20 transition-all">
+              <Search size={18} className="text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search resources..." 
+                className="bg-transparent border-none focus:ring-0 text-sm text-slate-900 w-full placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors">
+              <Calendar size={16} />
+              <span className="text-xs font-bold">{format(new Date(), 'MMMM d, yyyy')}</span>
+            </div>
+
+            <NotificationCenter />
+
+            <div className="h-8 w-px bg-slate-100 mx-2"></div>
+
+            <div 
+              className="flex items-center gap-3 pl-2 group cursor-pointer"
+              onClick={() => navigate('/profile')}
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-black text-slate-900 leading-none tracking-tight">{user?.full_name}</p>
+                <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-widest">{user?.role}</p>
+              </div>
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-erp-blue to-blue-400 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+                <User size={22} fill="currentColor" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-8 relative scroll-smooth bg-white">
+          <div className="max-w-[1600px] mx-auto">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-md"
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-80 bg-[#0f172a] z-50 lg:hidden flex flex-col shadow-2xl"
+            >
+              <div className="p-8 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-erp-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                    <LayoutDashboard size={20} fill="currentColor" />
+                  </div>
+                  <span className="font-extrabold text-xl tracking-tight text-white">NKB Manufacturing</span>
+                </div>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              <nav className="flex-1 px-4 space-y-1.5">
+                {filteredNavItems.map((item) => (
+                  <SidebarItem 
+                    key={item.to} 
+                    {...item} 
+                    active={location.pathname === item.to} 
+                    collapsed={false}
+                  />
+                ))}
+              </nav>
+              <div className="p-6 border-t border-white/5">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-4 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all font-semibold"
+                >
+                  <LogOut size={20} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default DashboardLayout;

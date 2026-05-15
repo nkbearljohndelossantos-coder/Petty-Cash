@@ -1,0 +1,43 @@
+# Dependency directories
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+backend/dist/
+dist/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+backend/logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Project specifics
+nkb_pettycash_webapp.zip
+search_results.txt
+search_results_*.txt
+test_api.js
+diag_db.js
+check_db.js
+direct_check.js
+inspect_db.js
+reset_db.js
+deep_search.js
