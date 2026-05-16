@@ -13,6 +13,9 @@ export default defineConfig({
             if (id.includes('lucide-react')) return 'icons';
             if (id.includes('recharts') || id.includes('d3')) return 'charts';
             if (id.includes('framer-motion')) return 'animations';
+            if (id.includes('axios') || id.includes('date-fns')) return 'utils';
+            if (id.includes('react-dom')) return 'react-dom';
+            if (id.includes('react')) return 'react-core';
             return 'vendor';
           }
         },
