@@ -13,12 +13,16 @@ export default defineConfig({
             if (id.includes('lucide-react')) return 'icons';
             if (id.includes('recharts')) return 'charts-re';
             if (id.includes('d3')) return 'charts-d3';
+            if (id.includes('jspdf')) return 'pdf-lib';
+            if (id.includes('html2canvas')) return 'canvas-lib';
             if (id.includes('framer-motion')) return 'animations';
+            if (id.includes('react-router')) return 'router';
             if (id.includes('axios')) return 'axios';
             if (id.includes('date-fns')) return 'date-utils';
+            if (id.includes('socket.io')) return 'socket-io';
             if (id.includes('react-dom')) return 'react-dom';
             if (id.includes('react')) return 'react-core';
-            return 'vendor-bundle';
+            return 'vendor-base';
           }
         },
       },
