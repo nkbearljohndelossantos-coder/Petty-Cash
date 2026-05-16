@@ -69,6 +69,13 @@ const PORT = process.env.PORT || 5000;
           if (['users', 'expenses', 'categories', 'departments', 'activity_logs'].includes(tableName)) {
             const initialSchema = require('./db/migrations/20260512000000_initial_schema');
             await initialSchema.up(db);
+            
+            // Secondary repair for expenses columns
+            if (tableName === 'expenses') {
+              const quantitySchema = require('./db/migrations/20260512080000_add_quantity_unit_to_expenses');
+              await quantitySchema.up(db);
+            }
+            
             console.log(`Repair: [${tableName}] and related core tables reconstruction successful.`);
           } else if (tableName === 'funds') {
             const fundsSchema = require('./db/migrations/20260512075907_create_funds_table');
@@ -82,6 +89,14 @@ const PORT = process.env.PORT || 5000;
         } catch (repairErr) {
           console.error(`Repair FAILED for table "${tableName}":`, repairErr.message);
           // Continue to next table even if one fails
+        }
+      } else if (tableName === 'expenses') {
+        // Deep repair for existing expenses table
+        const hasQuantity = await db.schema.hasColumn('expenses', 'quantity');
+        if (!hasQuantity) {
+          console.log('REPAIR: "expenses" table is missing "quantity" column. Patching...');
+          const quantitySchema = require('./db/migrations/20260512080000_add_quantity_unit_to_expenses');
+          await quantitySchema.up(db);
         }
       }
     }
