@@ -7,32 +7,22 @@ export default defineConfig({
   base: '/',
   build: {
     rollupOptions: {
-      external: [
-        'react',
-        'react-dom',
-        'react-router-dom',
-        'recharts',
-        'lucide-react',
-        'jspdf',
-        'html2canvas',
-        'd3',
-        'framer-motion'
-      ],
       output: {
-        globals: {
-          'react': 'React',
-          'react-dom': 'ReactDOM',
-          'react-router-dom': 'ReactRouterDOM',
-          'recharts': 'Recharts',
-          'lucide-react': 'lucide',
-          'jspdf': 'jspdf',
-          'html2canvas': 'html2canvas',
-          'd3': 'd3',
-          'framer-motion': 'Motion'
-        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            return 'vendor-bundle';
+            if (id.includes('react-dom')) return 'v-rd';
+            if (id.includes('react-router')) return 'v-rr';
+            if (id.includes('recharts')) return 'v-re';
+            if (id.includes('jspdf')) return 'v-jp';
+            if (id.includes('html2canvas')) return 'v-hc';
+            if (id.includes('lucide')) return 'v-lc';
+            if (id.includes('framer-motion')) return 'v-fm';
+            if (id.includes('axios')) return 'v-ax';
+            if (id.includes('date-fns')) return 'v-df';
+            if (id.includes('socket.io')) return 'v-si';
+            if (id.includes('d3')) return 'v-d3';
+            if (id.includes('react')) return 'v-rc';
+            return 'v-others';
           }
         },
       },
