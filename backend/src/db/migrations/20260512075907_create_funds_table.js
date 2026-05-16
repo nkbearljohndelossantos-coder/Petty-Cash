@@ -25,7 +25,12 @@ exports.up = async function(knex) {
       await knex.schema.table('funds', t => t.string('remarks'));
     }
     if (!(await knex.schema.hasColumn('funds', 'added_by'))) {
-      await knex.schema.table('funds', t => t.integer('added_by').unsigned().references('id').inTable('users'));
+      await knex.schema.table('funds', t => t.integer('added_by').unsigned());
+      try {
+        await knex.schema.table('funds', t => t.foreign('added_by').references('id').inTable('users'));
+      } catch (err) {
+        console.warn('Warning: Could not create foreign key for added_by in funds table. Continuing...');
+      }
     }
     if (!(await knex.schema.hasColumn('funds', 'created_at'))) {
       await knex.schema.table('funds', t => t.timestamps(true, true));
