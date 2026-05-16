@@ -23,7 +23,12 @@ const initQueueManager = async () => {
     });
 
     redisConnection.on('error', (err) => {
-      console.error('Redis Error:', err.message);
+      if (!useRedis) {
+        // Only log as warn if we already know we're using fallback
+        console.warn('Redis Fallback Notice:', err.message);
+      } else {
+        console.error('Redis Error:', err.message);
+      }
       useRedis = false;
     });
 
