@@ -36,6 +36,11 @@ const PORT = process.env.PORT || 5000;
   try {
     await db.raw('SELECT 1');
     console.log('Database connected successfully (MySQL)');
+    
+    // Automatically run migrations on startup (Ensures production DB matches code)
+    console.log('Checking for database migrations...');
+    await db.migrate.latest();
+    console.log('Database schema is up to date.');
   } catch (err) {
     console.error('Database connection failed:', err.message);
     // In production, we might not want to exit, but it helps identify 503 causes
