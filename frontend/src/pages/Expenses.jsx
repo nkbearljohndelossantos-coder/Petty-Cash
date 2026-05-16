@@ -126,27 +126,31 @@ const Expenses = () => {
   };
   
   const handleView = async (id) => {
+    console.log('Viewing expense ID:', id);
     try {
       const res = await api.get(`/expenses/${id}`);
+      console.log('View Data:', res.data);
       setSelectedExpense(res.data);
       setShowViewModal(true);
     } catch (err) {
+      console.error(err);
       alert('Failed to fetch details');
     }
   };
 
-  const handleEdit = async (expense) => {
+  const handleEdit = (expense) => {
+    console.log('Editing expense:', expense);
     setSelectedExpense(expense);
     setFormData({
       date: format(new Date(expense.date), 'yyyy-MM-dd'),
-      category_id: expense.category_id,
-      remarks: expense.remarks,
-      requested_by: expense.requested_by,
-      department_id: expense.department_id,
-      amount: expense.amount,
-      quantity: expense.quantity,
-      unit: expense.unit,
-      status: expense.status
+      category_id: expense.category_id || '',
+      remarks: expense.remarks || '',
+      requested_by: expense.requested_by || '',
+      department_id: expense.department_id || '',
+      amount: expense.amount || '',
+      quantity: expense.quantity || 1,
+      unit: expense.unit || 'Piece',
+      status: expense.status || 'Pending'
     });
     setShowEditModal(true);
   };
@@ -159,6 +163,7 @@ const Expenses = () => {
       setShowEditModal(false);
       fetchData();
     } catch (err) {
+      console.error(err);
       alert(err.message);
     } finally {
       setIsSubmitting(false);
@@ -366,7 +371,7 @@ const Expenses = () => {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 transition-opacity">
                         {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Accounting') && expense.status === 'Pending' && (
                           <>
                             <button 
@@ -600,7 +605,7 @@ const Expenses = () => {
       {/* View Modal */}
       <AnimatePresence>
         {showViewModal && selectedExpense && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowViewModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -647,7 +652,7 @@ const Expenses = () => {
       {/* Edit Modal (Reusing Add Modal Structure) */}
       <AnimatePresence>
         {showEditModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEditModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
                <div className="p-8 border-b border-slate-100 flex items-center justify-between">
