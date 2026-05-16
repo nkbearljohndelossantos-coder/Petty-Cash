@@ -78,7 +78,7 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      const res = await api.post('/settings/reset-db');
+      const res = await api.post('/settings/clear-transactions');
       alert(res.message || 'Database has been wiped. Redirecting to login...');
       logout();
       window.location.href = '/login';

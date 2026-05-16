@@ -28,7 +28,7 @@ router.put('/', protect, authorize('Super Admin'), async (req, res) => {
   }
 });
 
-router.post('/reset-db', protect, authorize('Super Admin'), async (req, res) => {
+router.post('/clear-transactions', protect, authorize('Super Admin'), async (req, res) => {
   try {
     // Disable foreign key checks to allow truncation
     await db.raw('SET FOREIGN_KEY_CHECKS = 0');
