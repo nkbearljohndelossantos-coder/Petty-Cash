@@ -30,27 +30,28 @@ router.put('/', protect, authorize('Super Admin'), async (req, res) => {
 
 router.post('/reset-db', protect, authorize('Super Admin'), async (req, res) => {
   try {
-    // Drop all tables in reverse order of dependencies
-    // This allows a complete fresh start
-    await db.schema.dropTableIfExists('notifications');
-    await db.schema.dropTableIfExists('activity_logs');
-    await db.schema.dropTableIfExists('expense_attachments');
-    await db.schema.dropTableIfExists('expenses');
-    await db.schema.dropTableIfExists('funds');
-    await db.schema.dropTableIfExists('users');
-    await db.schema.dropTableIfExists('categories');
-    await db.schema.dropTableIfExists('departments');
-    await db.schema.dropTableIfExists('settings');
-    await db.schema.dropTableIfExists('knex_migrations_lock');
-    await db.schema.dropTableIfExists('knex_migrations');
+    // Disable foreign key checks to allow truncation
+    await db.raw('SET FOREIGN_KEY_CHECKS = 0');
 
-    res.json({ success: true, message: 'Database has been wiped. The server will now restart and recreate the initial schema.' });
+    // Clear transaction and log tables
+    await db('notifications').truncate();
+    await db('activity_logs').truncate();
+    await db('expense_attachments').truncate();
+    await db('expenses').truncate();
+    await db('funds').truncate();
     
-    // Give time for response to be sent, then exit to trigger restart
-    setTimeout(() => {
-      process.exit(0);
-    }, 1500);
+    // Optional: Also clear categories and departments if you want a TRULY fresh start
+    // But keeping them for now as per "Data lang" usually meaning transactions
+    // await db('categories').truncate();
+    // await db('departments').truncate();
+
+    // Re-enable foreign key checks
+    await db.raw('SET FOREIGN_KEY_CHECKS = 1');
+
+    res.json({ success: true, message: 'Transaction data has been cleared successfully. User accounts and system settings were preserved.' });
   } catch (err) {
+    // Ensure foreign key checks are re-enabled even on error
+    await db.raw('SET FOREIGN_KEY_CHECKS = 1');
     res.status(500).json({ success: false, message: err.message });
   }
 });

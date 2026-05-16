@@ -72,7 +72,7 @@ const Settings = () => {
   };
 
   const handleResetDB = async () => {
-    if (!window.confirm('CRITICAL SYSTEM RESET: This will permanently DELETE ALL DATA (Expenses, Users, Departments, etc.) and reset the database schema. You will be logged out immediately. Proceed with extreme caution?')) {
+    if (!window.confirm('SYSTEM DATA RESET: This will permanently DELETE ALL TRANSACTION DATA (Expenses, Funds, Activity Logs, and Attachments). User accounts, departments, and categories will be PRESERVED. Proceed?')) {
       return;
     }
 
@@ -341,16 +341,16 @@ const Settings = () => {
                                  <RefreshCcw size={28} />
                               </div>
                               <div className="flex-1">
-                                 <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Master System Reset</h4>
+                                 <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Transaction Data Wipe</h4>
                                  <p className="text-sm text-slate-600 font-medium mt-1">
-                                    Permanently delete all system records and recreate the database schema from scratch. This action is irreversible.
+                                    Permanently delete all transaction records (Expenses, Funds, Logs, Notifications). User accounts and departments will be preserved.
                                  </p>
                                  <button 
                                     onClick={handleResetDB}
                                     disabled={loading}
                                     className="mt-6 px-10 py-4 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50"
                                  >
-                                    {loading ? 'Executing Reset...' : 'Execute Full Database Wipe'}
+                                    {loading ? 'Clearing Data...' : 'Clear All Transaction Records'}
                                  </button>
                               </div>
                            </div>
