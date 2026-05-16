@@ -59,17 +59,17 @@ const PORT = process.env.PORT || 5000;
 
     // 1.5 Schema Repair Bootstrapper: Check for missing tables regardless of migration status
     console.log('--- SCHEMA REPAIR ENGINE: INITIALIZING EXISTENCE CHECK ---');
-    const coreTables = ['users', 'expenses', 'funds', 'notifications'];
+    const coreTables = ['users', 'categories', 'departments', 'expenses', 'funds', 'activity_logs', 'notifications'];
     for (const tableName of coreTables) {
       const exists = await db.schema.hasTable(tableName);
       console.log(`Checking Table "${tableName}": ${exists ? 'EXISTS' : 'MISSING'}`);
       if (!exists) {
         console.log(`CRITICAL REPAIR: Table "${tableName}" is physically missing. Reconstructing...`);
         try {
-          if (tableName === 'users' || tableName === 'expenses') {
+          if (['users', 'expenses', 'categories', 'departments', 'activity_logs'].includes(tableName)) {
             const initialSchema = require('./db/migrations/20260512000000_initial_schema');
             await initialSchema.up(db);
-            console.log('Repair: Initial schema reconstruction successful.');
+            console.log(`Repair: [${tableName}] and related core tables reconstruction successful.`);
           } else if (tableName === 'funds') {
             const fundsSchema = require('./db/migrations/20260512075907_create_funds_table');
             await fundsSchema.up(db);
