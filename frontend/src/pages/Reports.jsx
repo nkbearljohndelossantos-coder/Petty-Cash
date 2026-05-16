@@ -10,8 +10,6 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const Reports = () => {
   const reportRef = React.useRef(null);
@@ -86,6 +84,9 @@ const Reports = () => {
     if (!reportRef.current) return;
     setLoading(true);
     try {
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: jsPDF } = await import('jspdf');
+
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,

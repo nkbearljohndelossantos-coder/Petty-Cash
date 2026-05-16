@@ -1,8 +1,10 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { format } from 'date-fns';
 
-export const exportExpensesToPDF = (expenses, filters) => {
+export const exportExpensesToPDF = async (expenses, filters) => {
+  // Dynamic imports to save bundle size
+  const { default: jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
+  const { format } = await import('date-fns');
+
   const doc = new jsPDF();
   
   // Header
