@@ -53,23 +53,26 @@ exports.addFund = async (req, res) => {
 
 exports.getBalance = async (req, res) => {
   try {
-    const totalIn = await db('funds').sum('amount as total').first();
-    const totalOut = await db('expenses')
+    const totalInResult = await db('funds').sum('amount as total').first();
+    const totalOutResult = await db('expenses')
       .whereIn('status', ['Approved', 'Liquidated'])
       .sum('amount as total')
       .first();
 
-    const balance = (parseFloat(totalIn.total) || 0) - (parseFloat(totalOut.total) || 0);
+    const totalIn = parseFloat(totalInResult?.total) || 0;
+    const totalOut = parseFloat(totalOutResult?.total) || 0;
+    const balance = totalIn - totalOut;
 
     res.json({ 
       success: true, 
       data: {
         balance,
-        totalIn: parseFloat(totalIn.total) || 0,
-        totalOut: parseFloat(totalOut.total) || 0
+        totalIn,
+        totalOut
       }
     });
   } catch (err) {
+    console.error('getBalance Error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };

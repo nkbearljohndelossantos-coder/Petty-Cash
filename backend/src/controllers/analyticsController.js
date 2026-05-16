@@ -5,12 +5,18 @@ exports.getDashboardStats = async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
     const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
-    const [totalExpenses] = await db('expenses').sum('amount as total').whereNot('status', 'Rejected');
-    const [dailyExpenses] = await db('expenses').sum('amount as total').where('date', today).whereNot('status', 'Rejected');
-    const [monthlyExpenses] = await db('expenses').sum('amount as total').where('date', '>=', firstDayOfMonth).whereNot('status', 'Rejected');
-    const [pendingApproval] = await db('expenses').count('id as total').where('status', 'Pending');
-    const [pendingLiquidation] = await db('expenses').count('id as total').where('status', 'Approved');
+    const [totalExpensesResult] = await db('expenses').sum('amount as total').whereNot('status', 'Rejected').catch(() => [{}]);
+    const [dailyExpensesResult] = await db('expenses').sum('amount as total').where('date', today).whereNot('status', 'Rejected').catch(() => [{}]);
+    const [monthlyExpensesResult] = await db('expenses').sum('amount as total').where('date', '>=', firstDayOfMonth).whereNot('status', 'Rejected').catch(() => [{}]);
+    const [pendingApprovalResult] = await db('expenses').count('id as total').where('status', 'Pending').catch(() => [{}]);
+    const [pendingLiquidationResult] = await db('expenses').count('id as total').where('status', 'Approved').catch(() => [{}]);
     
+    const totalExpenses = parseFloat(totalExpensesResult?.total) || 0;
+    const dailyExpenses = parseFloat(dailyExpensesResult?.total) || 0;
+    const monthlyExpenses = parseFloat(monthlyExpensesResult?.total) || 0;
+    const pendingApproval = parseInt(pendingApprovalResult?.total) || 0;
+    const pendingLiquidation = parseInt(pendingLiquidationResult?.total) || 0;
+
     // Top category
     const topCategory = await db('expenses')
       .join('categories', 'expenses.category_id', 'categories.id')
@@ -18,14 +24,14 @@ exports.getDashboardStats = async (req, res) => {
       .sum('amount as total')
       .groupBy('categories.name')
       .orderBy('total', 'desc')
-      .first();
+      .first().catch(() => null);
 
     const recentExpenses = await db('expenses')
-      .join('categories', 'expenses.category_id', 'categories.id')
-      .join('departments', 'expenses.department_id', 'departments.id')
+      .leftJoin('categories', 'expenses.category_id', 'categories.id')
+      .leftJoin('departments', 'expenses.department_id', 'departments.id')
       .select('expenses.*', 'categories.name as category_name', 'departments.name as department_name')
       .orderBy('expenses.created_at', 'desc')
-      .limit(5);
+      .limit(5).catch(() => []);
 
     const departmentBreakdown = await db('expenses')
       .join('departments', 'expenses.department_id', 'departments.id')
@@ -34,26 +40,28 @@ exports.getDashboardStats = async (req, res) => {
       .whereNot('status', 'Rejected')
       .groupBy('departments.name')
       .orderBy('total', 'desc')
-      .limit(3);
+      .limit(3).catch(() => []);
 
-    const [totalFunds] = await db('funds').sum('amount as total');
-    const availableBalance = (parseFloat(totalFunds.total) || 0) - (parseFloat(totalExpenses.total) || 0);
+    const [totalFundsResult] = await db('funds').sum('amount as total').catch(() => [{}]);
+    const totalFunds = parseFloat(totalFundsResult?.total) || 0;
+    const availableBalance = totalFunds - totalExpenses;
 
     res.json({
       success: true,
       data: {
-        totalExpenses: parseFloat(totalExpenses.total || 0),
-        dailyExpenses: parseFloat(dailyExpenses.total || 0),
-        monthlyExpenses: parseFloat(monthlyExpenses.total || 0),
+        totalExpenses,
+        dailyExpenses,
+        monthlyExpenses,
         availableBalance,
-        pendingApproval: parseInt(pendingApproval.total || 0),
-        pendingLiquidation: parseInt(pendingLiquidation.total || 0),
+        pendingApproval,
+        pendingLiquidation,
         topCategory: topCategory ? topCategory.name : 'N/A',
         recentExpenses,
-        departmentBreakdown: departmentBreakdown.map(d => ({ ...d, total: parseFloat(d.total) }))
+        departmentBreakdown: departmentBreakdown.map(d => ({ ...d, total: parseFloat(d.total || 0) }))
       }
     });
   } catch (err) {
+    console.error('getDashboardStats Error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };
