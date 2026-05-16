@@ -1,6 +1,6 @@
 exports.up = function(knex) {
   return knex.schema
-    .createTable('email_templates', (table) => {
+    .createTableIfNotExists('email_templates', (table) => {
       table.increments('id').primary();
       table.string('name').notNullable().unique();
       table.string('subject').notNullable();
@@ -9,7 +9,7 @@ exports.up = function(knex) {
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     })
-    .createTable('email_logs', (table) => {
+    .createTableIfNotExists('email_logs', (table) => {
       table.increments('id').primary();
       table.string('recipient').notNullable();
       table.string('subject').notNullable();
@@ -21,7 +21,7 @@ exports.up = function(knex) {
       table.timestamp('sent_at');
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('scheduled_emails', (table) => {
+    .createTableIfNotExists('scheduled_emails', (table) => {
       table.increments('id').primary();
       table.integer('template_id').unsigned().references('id').inTable('email_templates').onDelete('CASCADE');
       table.string('recipient').notNullable();
@@ -32,7 +32,7 @@ exports.up = function(knex) {
       table.timestamp('last_run');
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('notification_rules', (table) => {
+    .createTableIfNotExists('notification_rules', (table) => {
       table.increments('id').primary();
       table.string('event_type').notNullable(); // expense_submitted, low_fund, etc.
       table.boolean('email_enabled').defaultTo(true);
@@ -41,7 +41,7 @@ exports.up = function(knex) {
       table.jsonb('config'); // e.g., { threshold: 5000 }
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('notifications', (table) => {
+    .createTableIfNotExists('notifications', (table) => {
       table.increments('id').primary();
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE');
       table.string('title').notNullable();
@@ -51,14 +51,14 @@ exports.up = function(knex) {
       table.string('link'); // URL to redirect
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('notification_preferences', (table) => {
+    .createTableIfNotExists('notification_preferences', (table) => {
       table.increments('id').primary();
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE').unique();
       table.boolean('email_enabled').defaultTo(true);
       table.boolean('in_app_enabled').defaultTo(true);
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     })
-    .createTable('queue_fallback_jobs', (table) => {
+    .createTableIfNotExists('queue_fallback_jobs', (table) => {
       table.increments('id').primary();
       table.string('queue_name').notNullable();
       table.string('job_name').notNullable();

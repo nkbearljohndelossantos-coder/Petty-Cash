@@ -1,5 +1,5 @@
 exports.up = function(knex) {
-  return knex.schema.createTable('funds', table => {
+  return knex.schema.createTableIfNotExists('funds', table => {
     table.increments('id').primary();
     table.timestamp('date').defaultTo(knex.fn.now());
     table.decimal('amount', 15, 2).notNullable();

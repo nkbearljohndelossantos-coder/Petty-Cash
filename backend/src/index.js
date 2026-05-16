@@ -44,6 +44,10 @@ const PORT = process.env.PORT || 5000;
     console.log('Database connected successfully (MySQL)');
     
     console.log('Checking for database migrations...');
+    // Random delay to avoid race conditions between multiple instances (Hostinger zombie processes)
+    const delay = Math.floor(Math.random() * 2000);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
     await db.migrate.forceFreeMigrationsLock(); 
     const [batchNo, log] = await db.migrate.latest();
     if (log.length > 0) {
