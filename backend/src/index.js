@@ -54,7 +54,29 @@ const PORT = process.env.PORT || 5000;
       console.log(`Success: Run ${log.length} migrations (Batch ${batchNo})`);
       console.log('Migrations:', log.join(', '));
     } else {
-      console.log('Database schema is already up to date.');
+      console.log('Database schema is already up to date according to migration history.');
+    }
+
+    // 1.5 Schema Repair Bootstrapper: Check for missing tables regardless of migration status
+    const coreTables = ['users', 'expenses', 'funds', 'notifications'];
+    for (const tableName of coreTables) {
+      const exists = await db.schema.hasTable(tableName);
+      if (!exists) {
+        console.log(`CRITICAL: Table "${tableName}" is physically missing from DB. Reconstructing...`);
+        if (tableName === 'users' || tableName === 'expenses') {
+          const initialSchema = require('./db/migrations/20260512000000_initial_schema');
+          await initialSchema.up(db);
+          console.log('Initial schema reconstruction successful.');
+        } else if (tableName === 'funds') {
+          const fundsSchema = require('./db/migrations/20260512075907_create_funds_table');
+          await fundsSchema.up(db);
+          console.log('Funds table reconstruction successful.');
+        } else if (tableName === 'notifications') {
+          const notifSchema = require('./db/migrations/20260515064955_add_notifications_and_email_system');
+          await notifSchema.up(db);
+          console.log('Notifications system reconstruction successful.');
+        }
+      }
     }
   } catch (err) {
     console.error('CRITICAL: Database initialization failed!');
