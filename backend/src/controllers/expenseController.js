@@ -95,10 +95,10 @@ exports.createExpense = async (req, res) => {
 
     const [expenseId] = await db('expenses').insert({
       date,
-      category_id,
+      category_id: category_id || null,
       remarks,
       requested_by,
-      department_id,
+      department_id: department_id || null,
       amount,
       quantity: quantity || 1,
       unit: unit || 'Piece',
@@ -153,10 +153,10 @@ exports.updateExpense = async (req, res) => {
       .where({ id })
       .update({
         date,
-        category_id,
+        category_id: category_id || null,
         remarks,
         requested_by,
-        department_id,
+        department_id: department_id || null,
         amount,
         quantity,
         unit,

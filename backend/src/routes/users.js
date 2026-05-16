@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
       full_name,
       email,
       role,
-      department_id
+      department_id: department_id || null
     });
     const user = await db('users').where({ id }).first();
     res.status(201).json({ success: true, data: user });
