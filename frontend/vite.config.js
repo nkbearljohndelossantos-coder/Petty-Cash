@@ -10,19 +10,17 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('lucide-react')) return 'icons';
-            if (id.includes('recharts')) return 'charts-re';
-            if (id.includes('d3')) return 'charts-d3';
-            if (id.includes('jspdf')) return 'pdf-lib';
-            if (id.includes('html2canvas')) return 'canvas-lib';
-            if (id.includes('framer-motion')) return 'animations';
-            if (id.includes('react-router')) return 'router';
-            if (id.includes('axios')) return 'axios';
-            if (id.includes('date-fns')) return 'date-utils';
-            if (id.includes('socket.io')) return 'socket-io';
-            if (id.includes('react-dom')) return 'react-dom';
-            if (id.includes('react')) return 'react-core';
-            return 'vendor-base';
+            const parts = id.toString().split('node_modules/');
+            if (parts.length > 1) {
+              const pkgName = parts[1].split('/')[0].toString().replace('@', '');
+              // If it's a very large library, split it even more if possible (though usually they are just one file)
+              if (pkgName === 'jspdf' || pkgName === 'recharts' || pkgName === 'html2canvas') {
+                // Try to create more unique chunks for these specific large libs
+                return `lib-${pkgName}`;
+              }
+              return `pkg-${pkgName}`;
+            }
+            return 'vendor-others';
           }
         },
       },
