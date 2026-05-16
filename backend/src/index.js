@@ -44,6 +44,7 @@ const PORT = process.env.PORT || 5000;
     console.log('Database connected successfully (MySQL)');
     
     console.log('Checking for database migrations...');
+    await db.migrate.unlock(); 
     const [batchNo, log] = await db.migrate.latest();
     if (log.length > 0) {
       console.log(`Success: Run ${log.length} migrations (Batch ${batchNo})`);

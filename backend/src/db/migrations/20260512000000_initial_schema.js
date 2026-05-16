@@ -1,17 +1,17 @@
 exports.up = function(knex) {
   return knex.schema
-    .createTable('departments', (table) => {
+    .createTableIfNotExists('departments', (table) => {
       table.increments('id').primary();
       table.string('name').notNullable().unique();
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('categories', (table) => {
+    .createTableIfNotExists('categories', (table) => {
       table.increments('id').primary();
       table.string('name').notNullable().unique();
       table.string('description');
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('users', (table) => {
+    .createTableIfNotExists('users', (table) => {
       table.increments('id').primary();
       table.string('username').notNullable().unique();
       table.string('password').notNullable();
@@ -23,7 +23,7 @@ exports.up = function(knex) {
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     })
-    .createTable('expenses', (table) => {
+    .createTableIfNotExists('expenses', (table) => {
       table.increments('id').primary();
       table.date('date').notNullable();
       table.integer('category_id').unsigned().references('id').inTable('categories').onDelete('RESTRICT');
@@ -36,7 +36,7 @@ exports.up = function(knex) {
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     })
-    .createTable('expense_attachments', (table) => {
+    .createTableIfNotExists('expense_attachments', (table) => {
       table.increments('id').primary();
       table.integer('expense_id').unsigned().references('id').inTable('expenses').onDelete('CASCADE');
       table.string('file_path').notNullable();
@@ -44,7 +44,7 @@ exports.up = function(knex) {
       table.string('file_type');
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('activity_logs', (table) => {
+    .createTableIfNotExists('activity_logs', (table) => {
       table.increments('id').primary();
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('SET NULL');
       table.string('action').notNullable();
@@ -52,7 +52,7 @@ exports.up = function(knex) {
       table.string('ip_address');
       table.timestamp('created_at').defaultTo(knex.fn.now());
     })
-    .createTable('settings', (table) => {
+    .createTableIfNotExists('settings', (table) => {
       table.increments('id').primary();
       table.string('key').notNullable().unique();
       table.text('value');
