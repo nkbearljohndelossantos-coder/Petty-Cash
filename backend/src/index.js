@@ -58,26 +58,29 @@ const PORT = process.env.PORT || 5000;
     }
 
     // 1.5 Schema Repair Bootstrapper: Check for missing tables regardless of migration status
+    console.log('--- SCHEMA REPAIR ENGINE: INITIALIZING EXISTENCE CHECK ---');
     const coreTables = ['users', 'expenses', 'funds', 'notifications'];
     for (const tableName of coreTables) {
       const exists = await db.schema.hasTable(tableName);
+      console.log(`Checking Table "${tableName}": ${exists ? 'EXISTS' : 'MISSING'}`);
       if (!exists) {
-        console.log(`CRITICAL: Table "${tableName}" is physically missing from DB. Reconstructing...`);
+        console.log(`CRITICAL REPAIR: Table "${tableName}" is physically missing. Reconstructing...`);
         if (tableName === 'users' || tableName === 'expenses') {
           const initialSchema = require('./db/migrations/20260512000000_initial_schema');
           await initialSchema.up(db);
-          console.log('Initial schema reconstruction successful.');
+          console.log('Repair: Initial schema reconstructed.');
         } else if (tableName === 'funds') {
           const fundsSchema = require('./db/migrations/20260512075907_create_funds_table');
           await fundsSchema.up(db);
-          console.log('Funds table reconstruction successful.');
+          console.log('Repair: Funds table reconstructed.');
         } else if (tableName === 'notifications') {
           const notifSchema = require('./db/migrations/20260515064955_add_notifications_and_email_system');
           await notifSchema.up(db);
-          console.log('Notifications system reconstruction successful.');
+          console.log('Repair: Notifications system reconstructed.');
         }
       }
     }
+    console.log('--- SCHEMA REPAIR ENGINE: CHECK COMPLETE ---');
   } catch (err) {
     console.error('CRITICAL: Database initialization failed!');
     console.error('Error Name:', err.name);
