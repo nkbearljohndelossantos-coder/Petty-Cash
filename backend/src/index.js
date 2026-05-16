@@ -30,16 +30,32 @@ const PORT = process.env.PORT || 5000;
   
   // 1. Run Migrations First (Crucial for schema consistency)
   try {
+    console.log('--- DIAGNOSTIC LOGS ---');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('DB_HOST:', process.env.DB_HOST);
+    console.log('DB_NAME:', process.env.DB_NAME);
+    
+    const migrationsPath = path.join(__dirname, 'db/migrations');
+    console.log('Migrations Path:', migrationsPath);
+    console.log('Migrations Folder Exists:', fs.existsSync(migrationsPath));
+    
     console.log('Database connecting...');
     await db.raw('SELECT 1');
     console.log('Database connected successfully (MySQL)');
     
     console.log('Checking for database migrations...');
-    await db.migrate.latest();
-    console.log('Database schema is up to date.');
+    const [batchNo, log] = await db.migrate.latest();
+    if (log.length > 0) {
+      console.log(`Success: Run ${log.length} migrations (Batch ${batchNo})`);
+      console.log('Migrations:', log.join(', '));
+    } else {
+      console.log('Database schema is already up to date.');
+    }
   } catch (err) {
-    console.error('CRITICAL: Database initialization failed:', err.message);
-    // Continue anyway, but expect failures in services
+    console.error('CRITICAL: Database initialization failed!');
+    console.error('Error Name:', err.name);
+    console.error('Error Message:', err.message);
+    console.error('Error Stack:', err.stack);
   }
 
   // 2. Initialize other services
