@@ -7,6 +7,12 @@ let queues = {};
 let useRedis = false;
 
 const initQueueManager = async () => {
+  if (process.env.REDIS_ENABLED === 'false') {
+    console.log('Redis is disabled by configuration. Using Database Queue.');
+    useRedis = false;
+    return;
+  }
+
   try {
     redisConnection = new IORedis({
       host: process.env.REDIS_HOST || '127.0.0.1',
