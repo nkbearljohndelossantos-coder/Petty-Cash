@@ -7,29 +7,32 @@ export default defineConfig({
   base: '/',
   build: {
     rollupOptions: {
+      external: [
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'recharts',
+        'lucide-react',
+        'jspdf',
+        'html2canvas',
+        'd3',
+        'framer-motion'
+      ],
       output: {
+        globals: {
+          'react': 'React',
+          'react-dom': 'ReactDOM',
+          'react-router-dom': 'ReactRouterDOM',
+          'recharts': 'Recharts',
+          'lucide-react': 'lucide',
+          'jspdf': 'jspdf',
+          'html2canvas': 'html2canvas',
+          'd3': 'd3',
+          'framer-motion': 'Motion'
+        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            // Group 1: React Core
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'vendor-react';
-            }
-            // Group 2: UI & Charts
-            if (id.includes('recharts') || id.includes('lucide-react') || id.includes('d3')) {
-              return 'vendor-ui';
-            }
-            // Group 3: Export & PDF
-            if (id.includes('jspdf')) {
-              return 'vendor-jspdf';
-            }
-            if (id.includes('html2canvas') || id.includes('canvg') || id.includes('dompurify')) {
-              return 'vendor-canvas';
-            }
-            // Group 4: Utils & Rest
-            if (id.includes('axios') || id.includes('date-fns') || id.includes('framer-motion') || id.includes('socket.io')) {
-              return 'vendor-utils';
-            }
-            return 'vendor-others';
+            return 'vendor-bundle';
           }
         },
       },
