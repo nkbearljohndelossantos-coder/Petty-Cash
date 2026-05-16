@@ -6,6 +6,13 @@ exports.up = async function(knex) {
       table.string('name').notNullable().unique();
       table.timestamp('created_at').defaultTo(knex.fn.now());
     });
+  } else {
+    if (!(await knex.schema.hasColumn('departments', 'name'))) {
+      await knex.schema.table('departments', t => t.string('name').notNullable().unique());
+    }
+    if (!(await knex.schema.hasColumn('departments', 'created_at'))) {
+      await knex.schema.table('departments', t => t.timestamp('created_at').defaultTo(knex.fn.now()));
+    }
   }
 
   // Categories
@@ -16,6 +23,16 @@ exports.up = async function(knex) {
       table.string('description');
       table.timestamp('created_at').defaultTo(knex.fn.now());
     });
+  } else {
+    if (!(await knex.schema.hasColumn('categories', 'name'))) {
+      await knex.schema.table('categories', t => t.string('name').notNullable().unique());
+    }
+    if (!(await knex.schema.hasColumn('categories', 'description'))) {
+      await knex.schema.table('categories', t => t.string('description'));
+    }
+    if (!(await knex.schema.hasColumn('categories', 'created_at'))) {
+      await knex.schema.table('categories', t => t.timestamp('created_at').defaultTo(knex.fn.now()));
+    }
   }
 
   // Users
@@ -32,6 +49,35 @@ exports.up = async function(knex) {
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     });
+  } else {
+    // Repair users table
+    if (!(await knex.schema.hasColumn('users', 'username'))) {
+      await knex.schema.table('users', t => t.string('username').notNullable().unique());
+    }
+    if (!(await knex.schema.hasColumn('users', 'password'))) {
+      await knex.schema.table('users', t => t.string('password').notNullable());
+    }
+    if (!(await knex.schema.hasColumn('users', 'full_name'))) {
+      await knex.schema.table('users', t => t.string('full_name').notNullable());
+    }
+    if (!(await knex.schema.hasColumn('users', 'email'))) {
+      await knex.schema.table('users', t => t.string('email').unique());
+    }
+    if (!(await knex.schema.hasColumn('users', 'role'))) {
+      await knex.schema.table('users', t => t.enum('role', ['Super Admin', 'Accounting', 'Cashier', 'Manager', 'Viewer']).defaultTo('Viewer'));
+    }
+    if (!(await knex.schema.hasColumn('users', 'department_id'))) {
+      await knex.schema.table('users', t => t.integer('department_id').unsigned().references('id').inTable('departments').onDelete('SET NULL'));
+    }
+    if (!(await knex.schema.hasColumn('users', 'status'))) {
+      await knex.schema.table('users', t => t.boolean('status').defaultTo(true));
+    }
+    if (!(await knex.schema.hasColumn('users', 'created_at'))) {
+      await knex.schema.table('users', t => t.timestamp('created_at').defaultTo(knex.fn.now()));
+    }
+    if (!(await knex.schema.hasColumn('users', 'updated_at'))) {
+      await knex.schema.table('users', t => t.timestamp('updated_at').defaultTo(knex.fn.now()));
+    }
   }
 
   // Expenses
@@ -49,6 +95,20 @@ exports.up = async function(knex) {
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.timestamp('updated_at').defaultTo(knex.fn.now());
     });
+  } else {
+    // Basic repair for expenses
+    if (!(await knex.schema.hasColumn('expenses', 'date'))) {
+      await knex.schema.table('expenses', t => t.date('date').notNullable());
+    }
+    if (!(await knex.schema.hasColumn('expenses', 'category_id'))) {
+      await knex.schema.table('expenses', t => t.integer('category_id').unsigned().references('id').inTable('categories').onDelete('RESTRICT'));
+    }
+    if (!(await knex.schema.hasColumn('expenses', 'amount'))) {
+      await knex.schema.table('expenses', t => t.decimal('amount', 15, 2).notNullable().defaultTo(0));
+    }
+    if (!(await knex.schema.hasColumn('expenses', 'status'))) {
+      await knex.schema.table('expenses', t => t.enum('status', ['Pending', 'Approved', 'Rejected', 'Liquidated']).defaultTo('Pending'));
+    }
   }
 
   // Expense Attachments
