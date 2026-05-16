@@ -38,4 +38,42 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const { username, password, full_name, email, role, department_id, status } = req.body;
+    const updateData = {
+      username,
+      full_name,
+      email,
+      role,
+      department_id: department_id || null,
+      status: status !== undefined ? status : true,
+      updated_at: db.fn.now()
+    };
+
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    await db('users').where({ id: req.params.id }).update(updateData);
+    const user = await db('users').where({ id: req.params.id }).first();
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    // Prevent deleting self
+    if (req.params.id == req.user.id) {
+      return res.status(400).json({ success: false, message: 'Cannot delete your own account' });
+    }
+    await db('users').where({ id: req.params.id }).del();
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

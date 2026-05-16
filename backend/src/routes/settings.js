@@ -28,4 +28,31 @@ router.put('/', protect, authorize('Super Admin'), async (req, res) => {
   }
 });
 
+router.post('/reset-db', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    // Drop all tables in reverse order of dependencies
+    // This allows a complete fresh start
+    await db.schema.dropTableIfExists('notifications');
+    await db.schema.dropTableIfExists('activity_logs');
+    await db.schema.dropTableIfExists('expense_attachments');
+    await db.schema.dropTableIfExists('expenses');
+    await db.schema.dropTableIfExists('funds');
+    await db.schema.dropTableIfExists('users');
+    await db.schema.dropTableIfExists('categories');
+    await db.schema.dropTableIfExists('departments');
+    await db.schema.dropTableIfExists('settings');
+    await db.schema.dropTableIfExists('knex_migrations_lock');
+    await db.schema.dropTableIfExists('knex_migrations');
+
+    res.json({ success: true, message: 'Database has been wiped. The server will now restart and recreate the initial schema.' });
+    
+    // Give time for response to be sent, then exit to trigger restart
+    setTimeout(() => {
+      process.exit(0);
+    }, 1500);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

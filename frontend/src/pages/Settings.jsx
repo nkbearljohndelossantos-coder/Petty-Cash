@@ -8,10 +8,13 @@ import {
   CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 import Users from './Users';
 
 const Settings = () => {
+  const { user, logout } = useAuth();
+  const isSuperAdmin = user?.role === 'Super Admin';
   const [activeTab, setActiveTab] = useState('General');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -63,6 +66,25 @@ const Settings = () => {
     } catch (err) {
       console.error(err);
       alert('Failed to save settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetDB = async () => {
+    if (!window.confirm('CRITICAL SYSTEM RESET: This will permanently DELETE ALL DATA (Expenses, Users, Departments, etc.) and reset the database schema. You will be logged out immediately. Proceed with extreme caution?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.post('/settings/reset-db');
+      alert(res.message || 'Database has been wiped. Redirecting to login...');
+      logout();
+      window.location.href = '/login';
+    } catch (err) {
+      console.error(err);
+      alert('System reset failed: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -299,7 +321,7 @@ const Settings = () => {
                )}
 
                {activeTab === 'System' && (
-                  <div className="space-y-8 text-slate-400">
+                  <div className="space-y-8">
                      <div className="flex flex-col items-center justify-center py-10 text-center">
                         <div className="w-20 h-20 bg-white border border-slate-100 shadow-sm rounded-[2.5rem] flex items-center justify-center mb-6">
                            <Database size={40} className="text-slate-200" />
@@ -311,6 +333,29 @@ const Settings = () => {
                            <span className="text-xs font-black uppercase tracking-widest">Database Optimization Active</span>
                         </div>
                      </div>
+
+                     {isSuperAdmin && (
+                        <div className="p-8 bg-rose-50 rounded-[2.5rem] border border-rose-100 mt-10">
+                           <div className="flex items-start gap-6">
+                              <div className="w-14 h-14 bg-rose-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-rose-600/20 shrink-0">
+                                 <RefreshCcw size={28} />
+                              </div>
+                              <div className="flex-1">
+                                 <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase">Master System Reset</h4>
+                                 <p className="text-sm text-slate-600 font-medium mt-1">
+                                    Permanently delete all system records and recreate the database schema from scratch. This action is irreversible.
+                                 </p>
+                                 <button 
+                                    onClick={handleResetDB}
+                                    disabled={loading}
+                                    className="mt-6 px-10 py-4 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50"
+                                 >
+                                    {loading ? 'Executing Reset...' : 'Execute Full Database Wipe'}
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     )}
                   </div>
                )}
             </motion.div>
