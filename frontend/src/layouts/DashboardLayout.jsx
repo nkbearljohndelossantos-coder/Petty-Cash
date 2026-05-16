@@ -29,9 +29,9 @@ const SidebarItem = ({ icon: Icon, label, to, active, collapsed }) => (
   <Link to={to} className="relative group flex items-center">
     {active && <div className="sidebar-glow" />}
     <div className={`sidebar-erp-link w-full ${active ? 'sidebar-erp-link-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}>
-      <Icon size={20} className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
-      {!collapsed && <span className="text-[15px]">{label}</span>}
-      {!collapsed && active && <ChevronRight size={14} className="ml-auto opacity-50" />}
+      <Icon size={18} className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
+      {!collapsed && <span className="text-sm">{label}</span>}
+      {!collapsed && active && <ChevronRight size={12} className="ml-auto opacity-50" />}
     </div>
     
     <div className="sidebar-tooltip">
@@ -91,24 +91,24 @@ const DashboardLayout = () => {
       {/* Sidebar - Desktop (The only non-white part) */}
       <motion.aside 
         initial={false}
-        animate={{ width: collapsed ? 88 : 280 }}
+        animate={{ width: collapsed ? 64 : 200 }}
         className="hidden lg:flex flex-col bg-[#0f172a] text-white overflow-visible z-30 shadow-2xl relative"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none opacity-50" />
 
-        <div className="p-7 flex items-center justify-between relative z-10">
+        <div className="p-5 flex items-center justify-between relative z-10">
           {!collapsed && (
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
             >
-              <div className="w-9 h-9 bg-erp-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                <LayoutDashboard size={20} fill="currentColor" />
+              <div className="w-8 h-8 bg-erp-blue rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                <LayoutDashboard size={18} fill="currentColor" />
               </div>
               <div>
-                <h1 className="font-extrabold text-lg tracking-tight leading-none text-white">NKB Manufacturing</h1>
-                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-[0.2em] font-bold">Petty Cash System</p>
+                <h1 className="font-extrabold text-base tracking-tight leading-none text-white">NKB Manufacturing</h1>
+                <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-[0.2em] font-bold">Petty Cash System</p>
               </div>
             </motion.div>
           )}
@@ -164,14 +164,14 @@ const DashboardLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-white">
         {/* Navbar */}
-        <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-slate-100 z-20">
+        <header className="h-14 flex items-center justify-between px-6 bg-white border-b border-slate-100 z-20">
           <div className="flex items-center gap-6">
             <button className="lg:hidden p-2.5 bg-slate-50 rounded-xl text-slate-500" onClick={() => setMobileMenuOpen(true)}>
               <Menu size={22} />
             </button>
 
             <div className="hidden lg:flex items-center gap-3">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">
                 {navItems.find(i => i.to === location.pathname)?.label || 'Overview'}
               </h2>
             </div>
@@ -201,19 +201,19 @@ const DashboardLayout = () => {
               onClick={() => navigate('/profile')}
             >
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-black text-slate-900 leading-none tracking-tight">{user?.full_name}</p>
-                <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-widest">{user?.role}</p>
+                <p className="text-xs font-black text-slate-900 leading-none tracking-tight">{user?.full_name}</p>
+                <p className="text-[9px] text-slate-500 mt-1 font-bold uppercase tracking-widest">{user?.role}</p>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-erp-blue to-blue-400 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
-                <User size={22} fill="currentColor" />
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-erp-blue to-blue-400 flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+                <User size={18} fill="currentColor" />
               </div>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-8 relative scroll-smooth bg-white">
-          <div className="max-w-[1600px] mx-auto">
+        <main className="flex-1 overflow-y-auto p-5 relative scroll-smooth bg-white">
+          <div className="max-w-[1366px] mx-auto">
             <Outlet />
           </div>
         </main>

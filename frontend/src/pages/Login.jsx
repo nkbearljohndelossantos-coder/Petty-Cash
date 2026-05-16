@@ -41,22 +41,22 @@ const Login = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-[480px] relative z-10"
+        className="w-full max-w-[340px] relative z-10"
       >
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <motion.div 
             initial={{ y: -20 }}
             animate={{ y: 0 }}
-            className="w-24 h-24 bg-white border border-slate-100 rounded-[2.5rem] flex items-center justify-center text-erp-blue text-3xl font-black mx-auto mb-6 shadow-xl"
+            className="w-16 h-16 bg-white border border-slate-100 rounded-[1.5rem] flex items-center justify-center text-erp-blue text-xl font-black mx-auto mb-4 shadow-xl"
           >
             NKB
           </motion.div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2">Enterprise Access</h1>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">Petty Cash Management Intelligence</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tighter mb-1.5">Enterprise Access</h1>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[8px]">Petty Cash Management Intelligence</p>
         </div>
 
-        <div className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <motion.div 
                 initial={{ x: 20, opacity: 0 }}
@@ -77,7 +77,7 @@ const Login = () => {
                   type="text"
                   required
                   autoComplete="username"
-                  className="w-full pl-14 pr-6 py-5 bg-white border border-slate-200 rounded-[1.5rem] outline-none focus:ring-4 focus:ring-erp-blue/10 focus:border-erp-blue/50 transition-all font-bold text-slate-900 placeholder:text-slate-300"
+                  className="w-full pl-14 pr-6 py-3.5 bg-white border border-slate-200 rounded-[1rem] outline-none focus:ring-4 focus:ring-erp-blue/10 focus:border-erp-blue/50 transition-all font-bold text-slate-900 placeholder:text-slate-300"
                   placeholder="Employee Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -95,7 +95,7 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
-                  className="w-full pl-14 pr-14 py-5 bg-white border border-slate-200 rounded-[1.5rem] outline-none focus:ring-4 focus:ring-erp-blue/10 focus:border-erp-blue/50 transition-all font-black text-slate-900 placeholder:text-slate-300 tracking-[0.3em]"
+                  className="w-full pl-14 pr-14 py-3.5 bg-white border border-slate-200 rounded-[1rem] outline-none focus:ring-4 focus:ring-erp-blue/10 focus:border-erp-blue/50 transition-all font-black text-slate-900 placeholder:text-slate-300 tracking-[0.3em]"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -113,7 +113,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[1.5rem] text-sm font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-xl active:scale-[0.98] disabled:opacity-50"
+              className="w-full py-3.5 bg-slate-900 hover:bg-black text-white rounded-[1rem] text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-xl active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? <Loader2 size={22} className="animate-spin" /> : (
                 <>
@@ -124,18 +124,18 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
-             <div className="flex items-center gap-6">
+          <div className="mt-8 pt-5 border-t border-slate-100 flex flex-col items-center gap-4">
+             <div className="flex items-center gap-5">
                 <div className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
-                   <Globe size={14} />
-                   <span className="text-[10px] font-bold uppercase tracking-widest">Global Portal</span>
+                   <Globe size={12} />
+                   <span className="text-[9px] font-bold uppercase tracking-widest">Global Portal</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
-                   <ShieldCheck size={14} />
-                   <span className="text-[10px] font-bold uppercase tracking-widest">Compliance</span>
+                   <ShieldCheck size={12} />
+                   <span className="text-[9px] font-bold uppercase tracking-widest">Compliance</span>
                 </div>
              </div>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em] text-center leading-relaxed">
+            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-[0.2em] text-center leading-relaxed">
               Proprietary System of NKB Manufacturing. <br/> 
               Unauthorized entry is strictly prohibited and legally monitored.
             </p>

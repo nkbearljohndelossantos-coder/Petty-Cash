@@ -47,12 +47,12 @@ const StatCard = ({ title, value, icon: Icon, trend, trendLabel, color, delay })
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
-    className="erp-card erp-card-hover p-6 group bg-white border border-slate-200 shadow-sm"
+    className="erp-card erp-card-hover p-5 group bg-white border border-slate-200 shadow-sm"
   >
     <div className="flex items-start justify-between">
       <div className="space-y-3">
         <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-[0.15em]">{title}</p>
-        <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
           {typeof value === 'number' ? `₱${value.toLocaleString()}` : value}
         </h3>
         <div className="flex items-center gap-2">
@@ -65,8 +65,8 @@ const StatCard = ({ title, value, icon: Icon, trend, trendLabel, color, delay })
           <span className="text-[11px] font-semibold text-slate-500">{trendLabel || 'vs last month'}</span>
         </div>
       </div>
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg bg-white border border-slate-100 text-slate-900`}>
-        <Icon size={26} strokeWidth={2.5} className={`text-erp-blue`} />
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg bg-white border border-slate-100 text-slate-900`}>
+        <Icon size={22} strokeWidth={2.5} className={`text-erp-blue`} />
       </div>
     </div>
   </motion.div>
@@ -179,8 +179,8 @@ const Dashboard = () => {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Executive Dashboard</h1>
-          <p className="text-slate-500 font-medium mt-1">Real-time expense monitoring and financial analytics.</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Executive Dashboard</h1>
+          <p className="text-slate-500 font-medium mt-0.5 text-sm">Real-time expense monitoring and financial analytics.</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/reports')} className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
@@ -231,9 +231,9 @@ const Dashboard = () => {
           ref={trendRef}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="lg:col-span-2 erp-card p-8 bg-white border border-slate-200 shadow-sm"
+          className="lg:col-span-2 erp-card p-6 bg-white border border-slate-200 shadow-sm"
         >
-          <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div>
                 <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Expenses Trend</h3>
@@ -285,7 +285,7 @@ const Dashboard = () => {
           ref={allocationRef}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="erp-card p-8 bg-white border border-slate-200 shadow-sm flex flex-col"
+          className="erp-card p-6 bg-white border border-slate-200 shadow-sm flex flex-col"
         >
           <div className="mb-8 flex items-center justify-between">
             <div>
@@ -346,12 +346,12 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="lg:col-span-3 erp-card bg-white border border-slate-200 shadow-sm"
         >
-          <div className="p-8 flex items-center justify-between border-b border-slate-100">
+          <div className="p-6 flex items-center justify-between border-b border-slate-100">
             <div>
-              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Latest Voucher Feed</h3>
-              <p className="text-xs text-slate-400 font-medium mt-1">Real-time stream of manufacturing expenditures</p>
+              <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Latest Voucher Feed</h3>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">Real-time stream of manufacturing expenditures</p>
             </div>
-            <button onClick={() => navigate('/expenses')} className="text-erp-blue hover:text-blue-700 text-xs font-black uppercase tracking-widest px-4 py-2 bg-white border border-slate-200 rounded-xl transition-all">Full Ledger</button>
+            <button onClick={() => navigate('/expenses')} className="text-erp-blue hover:text-blue-700 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-white border border-slate-200 rounded-lg transition-all">Full Ledger</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-separate border-spacing-0">
@@ -406,10 +406,10 @@ const Dashboard = () => {
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="erp-card p-8 bg-white border border-slate-200 shadow-sm flex flex-col"
+          className="erp-card p-6 bg-white border border-slate-200 shadow-sm flex flex-col"
         >
-          <div className="mb-8 text-center">
-            <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Quick Actions</h3>
+          <div className="mb-6 text-center">
+            <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Quick Actions</h3>
           </div>
           <div className="space-y-3">
              <button onClick={() => navigate('/expenses')} className="w-full px-6 py-4 bg-erp-blue text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg shadow-blue-600/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
