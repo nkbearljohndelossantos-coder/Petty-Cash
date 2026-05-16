@@ -4,7 +4,7 @@ A professional, production-ready expense monitoring system built for NKB Manufac
 
 ## Tech Stack
 - **Frontend**: React.js, Vite, TailwindCSS, Lucide Icons, Recharts, Framer Motion.
-- **Backend**: Node.js, Express.js, Knex.js, PostgreSQL.
+- **Backend**: Node.js, Express.js, Knex.js, MySQL.
 - **Auth**: JWT (JSON Web Tokens) with Role-Based Access Control (RBAC).
 
 ## Features
