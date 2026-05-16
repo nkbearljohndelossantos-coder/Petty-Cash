@@ -57,6 +57,10 @@ const Expenses = () => {
     status: 'Pending'
   });
   const [files, setFiles] = useState([]);
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -121,6 +125,46 @@ const Expenses = () => {
     }
   };
   
+  const handleView = async (id) => {
+    try {
+      const res = await api.get(`/expenses/${id}`);
+      setSelectedExpense(res.data);
+      setShowViewModal(true);
+    } catch (err) {
+      alert('Failed to fetch details');
+    }
+  };
+
+  const handleEdit = async (expense) => {
+    setSelectedExpense(expense);
+    setFormData({
+      date: format(new Date(expense.date), 'yyyy-MM-dd'),
+      category_id: expense.category_id,
+      remarks: expense.remarks,
+      requested_by: expense.requested_by,
+      department_id: expense.department_id,
+      amount: expense.amount,
+      quantity: expense.quantity,
+      unit: expense.unit,
+      status: expense.status
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateExpense = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.put(`/expenses/${selectedExpense.id}`, formData);
+      setShowEditModal(false);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleStatusUpdate = async (id, status) => {
     try {
       await api.patch(`/expenses/${id}/status`, { status });
@@ -350,10 +394,18 @@ const Expenses = () => {
                             <History size={18} />
                           </button>
                         )}
-                        <button className="p-2.5 hover:bg-erp-blue hover:text-white rounded-xl text-slate-400 transition-all shadow-sm bg-white border border-slate-200" title="View Details">
+                        <button 
+                          onClick={() => handleView(expense.id)}
+                          className="p-2.5 hover:bg-erp-blue hover:text-white rounded-xl text-slate-400 transition-all shadow-sm bg-white border border-slate-200" 
+                          title="View Details"
+                        >
                           <Eye size={18} />
                         </button>
-                        <button className="p-2.5 hover:bg-erp-blue hover:text-white rounded-xl text-slate-400 transition-all shadow-sm bg-white border border-slate-200" title="Edit Record">
+                        <button 
+                          onClick={() => handleEdit(expense)}
+                          className="p-2.5 hover:bg-erp-blue hover:text-white rounded-xl text-slate-400 transition-all shadow-sm bg-white border border-slate-200" 
+                          title="Edit Record"
+                        >
                           <Edit size={18} />
                         </button>
                       </div>
@@ -541,6 +593,100 @@ const Expenses = () => {
                   <button type="submit" className="px-8 py-4 bg-erp-blue text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg shadow-blue-600/30 hover:scale-[1.02] transition-all flex-1">Commit Voucher</button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* View Modal */}
+      <AnimatePresence>
+        {showViewModal && selectedExpense && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowViewModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+               <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Voucher Details</h2>
+                  <button onClick={() => setShowViewModal(false)} className="p-2 hover:bg-white rounded-xl transition-colors"><X size={20} /></button>
+               </div>
+               <div className="p-8 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Requester</p>
+                        <p className="text-lg font-bold text-slate-900">{selectedExpense.requested_by}</p>
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</p>
+                        <p className="text-lg font-black text-erp-blue">₱{parseFloat(selectedExpense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                     </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Remarks / Justification</p>
+                     <p className="text-sm font-medium text-slate-700 leading-relaxed">{selectedExpense.remarks || 'No remarks.'}</p>
+                  </div>
+                  {selectedExpense.attachments && selectedExpense.attachments.length > 0 && (
+                    <div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Attachments ({selectedExpense.attachments.length})</p>
+                       <div className="grid grid-cols-2 gap-3">
+                          {selectedExpense.attachments.map((file, i) => (
+                             <a key={i} href={`${import.meta.env.VITE_API_URL || ''}/${file.file_path.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:border-erp-blue transition-colors group">
+                                <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-erp-blue"><FileText size={16} /></div>
+                                <span className="text-[10px] font-bold text-slate-600 truncate">{file.file_name}</span>
+                             </a>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+               </div>
+               <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end">
+                  <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest">Close Preview</button>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Modal (Reusing Add Modal Structure) */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEditModal(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                  <h2 className="text-xl font-black text-slate-900">Edit Expense Record</h2>
+                  <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-colors"><X size={20} /></button>
+               </div>
+               <form onSubmit={handleUpdateExpense} className="p-8 space-y-6">
+                  {/* Reuse fields from Add Modal but mapped to handleUpdateExpense */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Voucher Date</label>
+                      <input type="date" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Category</label>
+                      <select className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold" value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} required>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Requester</label>
+                      <input type="text" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold" value={formData.requested_by} onChange={(e) => setFormData({ ...formData, requested_by: e.target.value })} required />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount</label>
+                      <input type="number" step="0.01" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-erp-blue" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Remarks</label>
+                    <textarea className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-medium h-24" value={formData.remarks} onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
+                  </div>
+                  <div className="flex gap-4 pt-4">
+                    <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest">Cancel</button>
+                    <button type="submit" disabled={isSubmitting} className="flex-1 px-8 py-4 bg-erp-blue text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/30">
+                      {isSubmitting ? 'Updating...' : 'Save Changes'}
+                    </button>
+                  </div>
+               </form>
             </motion.div>
           </div>
         )}

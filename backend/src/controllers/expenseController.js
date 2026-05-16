@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const { logActivity } = require('../utils/logService');
 const { dispatchNotification } = require('../services/notificationDispatcher');
+const { broadcast } = require('../services/socketService');
 
 exports.getExpenses = async (req, res) => {
   const { 
@@ -138,6 +139,11 @@ exports.createExpense = async (req, res) => {
       });
     }
 
+    // Broadcast real-time balance update if it affects funds (Direct Approval)
+    if (status === 'Approved') {
+      broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount });
+    }
+
     res.status(201).json({ success: true, data: expense });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -177,6 +183,9 @@ exports.updateExpense = async (req, res) => {
       ip_address: req.ip
     });
 
+    // Always broadcast on update just in case amount or status changed
+    broadcast('balance_updated', { type: 'EXPENSE_UPDATED' });
+
     res.json({ success: true, data: updatedExpense });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -201,6 +210,9 @@ exports.deleteExpense = async (req, res) => {
       details: `Deleted expense with ID ${id}`,
       ip_address: req.ip
     });
+
+    // Broadcast since balance might have been restored if it was approved
+    broadcast('balance_updated', { type: 'EXPENSE_DELETED' });
 
     res.json({ success: true, message: 'Expense deleted successfully' });
   } catch (err) {
@@ -242,6 +254,11 @@ exports.updateStatus = async (req, res) => {
         link: `/expenses?id=${id}`,
         templateName: 'expense_status_update'
       });
+    }
+
+    // Broadcast real-time balance update if status affects balance
+    if (['Approved', 'Rejected', 'Liquidated'].includes(status)) {
+      broadcast('balance_updated', { type: 'STATUS_UPDATED', status });
     }
 
     res.json({ success: true, data: updatedExpense });

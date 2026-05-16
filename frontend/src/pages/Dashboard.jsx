@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
+import { useSocket } from '../context/SocketContext';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -74,6 +75,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendLabel, color, delay })
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { socket } = useSocket();
   const [stats, setStats] = useState(null);
   const [trends, setTrends] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -85,7 +87,18 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+
+    if (socket) {
+      socket.on('balance_updated', (data) => {
+        console.log('Real-time balance update received:', data);
+        fetchData();
+      });
+
+      return () => {
+        socket.off('balance_updated');
+      };
+    }
+  }, [socket]);
 
   const downloadChart = async (ref, filename) => {
     if (!ref.current) return;

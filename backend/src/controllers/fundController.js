@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { dispatchNotification } = require('../services/notificationDispatcher');
+const { broadcast } = require('../services/socketService');
 
 exports.getFunds = async (req, res) => {
   try {
@@ -44,6 +45,9 @@ exports.addFund = async (req, res) => {
         templateName: 'fund_replenished'
       });
     }
+
+    // Broadcast real-time balance update
+    broadcast('balance_updated', { type: 'FUND_ADDED', amount });
 
     res.status(201).json({ success: true, data: fund });
   } catch (err) {
