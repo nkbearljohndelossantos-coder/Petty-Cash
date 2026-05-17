@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Check, Trash2, ExternalLink, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, Check, Trash2, ExternalLink, Info, AlertTriangle, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { useSocket } from '../context/SocketContext';
@@ -54,7 +54,14 @@ const NotificationCenter = () => {
     }
   };
 
-  const getTypeStyles = (type) => {
+  const getTypeStyles = (type, priority) => {
+    if (priority === 'critical') {
+      return { icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50' };
+    }
+    if (priority === 'important') {
+      return { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-50' };
+    }
+
     switch (type) {
       case 'success': return { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50' };
       case 'warning': return { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-50' };
@@ -115,7 +122,7 @@ const NotificationCenter = () => {
               ) : (
                 <div className="divide-y divide-slate-50">
                   {notifications.map((notification) => {
-                    const { icon: Icon, color, bg } = getTypeStyles(notification.type);
+                    const { icon: Icon, color, bg } = getTypeStyles(notification.type, notification.priority);
                     return (
                       <div 
                         key={notification.id}
