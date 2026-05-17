@@ -5,6 +5,14 @@ const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect);
 
+// Prevent caching of notification responses
+router.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // User Inbox Endpoints
 router.get('/', notifCenterController.getNotifications);
 router.put('/:id/read', notifCenterController.markAsRead);

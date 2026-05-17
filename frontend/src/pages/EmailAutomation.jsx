@@ -76,7 +76,7 @@ const NotificationCenterPage = () => {
 
     const handleNewNotif = () => {
       console.log('Real-time notification update received in page');
-      fetchData();
+      fetchData(true); // Silent background reload
     };
 
     window.addEventListener('new_notification', handleNewNotif);
@@ -85,8 +85,8 @@ const NotificationCenterPage = () => {
     };
   }, [activeTab]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       if (activeTab === 'inbox') {
         const data = await api.get('/notifications?status=active');

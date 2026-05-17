@@ -140,7 +140,8 @@ export const SocketProvider = ({ children }) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
       const res = await fetch(`${apiUrl}/api/notifications`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       const data = await res.json();
       if (data && data.notifications) {
