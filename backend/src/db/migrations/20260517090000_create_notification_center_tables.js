@@ -13,26 +13,35 @@ exports.up = async function(knex) {
   }
 
   // 2. Add high-level columns to the existing notifications table if they don't exist
+  // Resolve HAS/HAS-NOT column checks properly using await outside alterTable
+  const hasPriority = await knex.schema.hasColumn('notifications', 'priority');
+  const hasSenderId = await knex.schema.hasColumn('notifications', 'sender_id');
+  const hasAttachmentUrl = await knex.schema.hasColumn('notifications', 'attachment_url');
+  const hasTaskLink = await knex.schema.hasColumn('notifications', 'task_link');
+  const hasAcknowledged = await knex.schema.hasColumn('notifications', 'acknowledged');
+  const hasArchived = await knex.schema.hasColumn('notifications', 'archived');
+  const hasCategory = await knex.schema.hasColumn('notifications', 'category');
+
   await knex.schema.alterTable('notifications', (table) => {
-    if (!knex.schema.hasColumn('notifications', 'priority')) {
+    if (!hasPriority) {
       table.string('priority', 20).defaultTo('normal'); // normal, important, critical
     }
-    if (!knex.schema.hasColumn('notifications', 'sender_id')) {
+    if (!hasSenderId) {
       table.integer('sender_id').unsigned().references('id').inTable('users').onDelete('SET NULL');
     }
-    if (!knex.schema.hasColumn('notifications', 'attachment_url')) {
+    if (!hasAttachmentUrl) {
       table.string('attachment_url', 500).nullable();
     }
-    if (!knex.schema.hasColumn('notifications', 'task_link')) {
+    if (!hasTaskLink) {
       table.string('task_link', 255).nullable();
     }
-    if (!knex.schema.hasColumn('notifications', 'acknowledged')) {
+    if (!hasAcknowledged) {
       table.boolean('acknowledged').defaultTo(false);
     }
-    if (!knex.schema.hasColumn('notifications', 'archived')) {
+    if (!hasArchived) {
       table.boolean('archived').defaultTo(false);
     }
-    if (!knex.schema.hasColumn('notifications', 'category')) {
+    if (!hasCategory) {
       table.string('category', 50).defaultTo('general'); // general, approval, finance, alert
     }
   });

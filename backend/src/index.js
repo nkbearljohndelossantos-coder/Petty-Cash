@@ -102,6 +102,14 @@ const PORT = process.env.PORT || 5000;
           const quantitySchema = require('./db/migrations/20260512080000_add_quantity_unit_to_expenses');
           await quantitySchema.up(db);
         }
+      } else if (tableName === 'notifications') {
+        // Deep repair for existing notifications table (checking columns that might have failed to create)
+        const hasArchived = await db.schema.hasColumn('notifications', 'archived');
+        if (!hasArchived) {
+          console.log('REPAIR: "notifications" table is missing new enterprise columns. Patching...');
+          const notifCenterSchema = require('./db/migrations/20260517090000_create_notification_center_tables');
+          await notifCenterSchema.up(db);
+        }
       }
     }
     console.log('--- SCHEMA REPAIR ENGINE: CHECK COMPLETE ---');
