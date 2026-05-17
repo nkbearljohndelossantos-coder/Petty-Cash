@@ -35,6 +35,7 @@ const initScheduler = () => {
           // Add job to notify
           console.log(`Low fund alert for fund ${fund.name} sent to ${admin.username}`);
         }
+      }
     }
   });
 
