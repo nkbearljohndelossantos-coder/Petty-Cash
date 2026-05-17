@@ -186,6 +186,17 @@ const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {collapsed && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 shadow-sm"
+              >
+                <span className="text-[10px] uppercase font-black tracking-wider text-emerald-800">Petty Cash:</span>
+                <span className="text-sm font-black text-emerald-600">₱{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </motion.div>
+            )}
+
             <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors">
               <Calendar size={16} />
               <span className="text-xs font-bold">{format(new Date(), 'MMMM d, yyyy')}</span>
