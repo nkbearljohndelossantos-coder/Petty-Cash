@@ -73,6 +73,16 @@ const NotificationCenterPage = () => {
 
   useEffect(() => {
     fetchData();
+
+    const handleNewNotif = () => {
+      console.log('Real-time notification update received in page');
+      fetchData();
+    };
+
+    window.addEventListener('new_notification', handleNewNotif);
+    return () => {
+      window.removeEventListener('new_notification', handleNewNotif);
+    };
   }, [activeTab]);
 
   const fetchData = async () => {

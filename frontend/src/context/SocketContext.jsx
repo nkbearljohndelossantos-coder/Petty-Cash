@@ -134,12 +134,12 @@ export const SocketProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeCritical, setActiveCritical] = useState(null);
 
-  // 1. Fetch unread notifications on boot/login to check for historic unread critical alerts
+  // 1. Fetch recent notifications on boot/login to check for historic unread critical alerts
   const fetchUnreadNotifications = async () => {
     if (!token) return;
     try {
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-      const res = await fetch(`${apiUrl}/api/notifications?status=unread`, {
+      const res = await fetch(`${apiUrl}/api/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -168,6 +168,9 @@ export const SocketProvider = ({ children }) => {
                   body: notification.message
                 });
               }
+
+              // Dispatch custom window event so pages (like EmailAutomation.jsx) update live instantly!
+              window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
             });
           }
           return data.notifications;
@@ -176,13 +179,13 @@ export const SocketProvider = ({ children }) => {
         setUnreadCount(data.unreadCount || 0);
         
         // Find if there's any unread critical notification that hasn't been acknowledged
-        const criticalNotif = data.notifications.find(n => n.priority === 'critical' && !n.acknowledged);
+        const criticalNotif = data.notifications.find(n => n.priority === 'critical' && (!n.is_read || !n.acknowledged));
         if (criticalNotif) {
           setActiveCritical(criticalNotif);
         }
       }
     } catch (err) {
-      console.error('[SocketProvider] Failed fetching unread notifications:', err);
+      console.error('[SocketProvider] Failed fetching notifications:', err);
     }
   };
 
@@ -237,6 +240,10 @@ export const SocketProvider = ({ children }) => {
               body: notification.message
             });
           }
+
+          // Dispatch custom window event so pages (like EmailAutomation.jsx) update live instantly!
+          window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
+
           return [notification, ...prev];
         });
         setUnreadCount(prev => prev + 1);
