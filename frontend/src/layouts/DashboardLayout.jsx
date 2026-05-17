@@ -102,15 +102,9 @@ const DashboardLayout = () => {
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3"
+              className="flex items-center"
             >
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white shadow-lg shadow-blue-600/30 p-1">
-                <img src={logo} alt="Logo" className="w-full h-full object-contain" />
-              </div>
-              <div>
-                <h1 className="font-extrabold text-base tracking-tight leading-none text-white">NKB Manufacturing</h1>
-                <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-[0.2em] font-bold">Petty Cash System</p>
-              </div>
+              <img src={logo} alt="NKB Petty Cash Logo" className="h-10 w-auto object-contain" />
             </motion.div>
           )}
           <button 
@@ -239,12 +233,7 @@ const DashboardLayout = () => {
               className="fixed top-0 left-0 bottom-0 w-80 bg-[#0f172a] z-50 lg:hidden flex flex-col shadow-2xl"
             >
               <div className="p-8 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-lg shadow-blue-600/30 p-1">
-                    <img src={logo} alt="Logo" className="w-full h-full object-contain" />
-                  </div>
-                  <span className="font-extrabold text-xl tracking-tight text-white">NKB Manufacturing</span>
-                </div>
+                <img src={logo} alt="NKB Petty Cash Logo" className="h-10 w-auto object-contain" />
                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
                   <X size={24} />
                 </button>
