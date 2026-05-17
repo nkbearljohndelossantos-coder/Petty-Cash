@@ -13,13 +13,12 @@ import { formatDistanceToNow } from 'date-fns';
 
 const NotificationCenterPage = () => {
   const { user } = useAuth();
-  const { refreshNotifications } = useSocket();
+  const { refreshNotifications, unreadCount, setUnreadCount } = useSocket();
   const isAdmin = ['Super Admin', 'Accounting'].includes(user?.role);
   
   const [activeTab, setActiveTab] = useState('inbox');
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   
   // Admin Lists
   const [templates, setTemplates] = useState([]);
