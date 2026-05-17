@@ -22,6 +22,7 @@ import {
   Database
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import api from '../services/api';
@@ -51,6 +52,7 @@ const DashboardLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [balance, setBalance] = useState(0);
   const { user, logout } = useAuth();
+  const { activeCritical, acknowledgeCritical } = useSocket();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -78,7 +80,7 @@ const DashboardLayout = () => {
     { icon: PieChart, label: 'Analytics', to: '/analytics' },
     { icon: FileText, label: 'Reports', to: '/reports' },
     { icon: Tag, label: 'Categories', to: '/categories' },
-    { icon: Bell, label: 'Email Automation', to: '/email-automation', roles: ['Super Admin', 'Accounting'] },
+    { icon: Bell, label: 'Notification Center', to: '/email-automation', roles: ['Super Admin', 'Accounting'] },
     { icon: History, label: 'Audit Logs', to: '/logs', roles: ['Super Admin'] },
     { icon: Database, label: 'Maintenance', to: '/maintenance', roles: ['Super Admin'] },
     { icon: Settings, label: 'Settings', to: '/settings', roles: ['Super Admin'] },
@@ -274,6 +276,53 @@ const DashboardLayout = () => {
               </div>
             </motion.aside>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* GLOBAL CRITICAL ALARM MODAL */}
+      <AnimatePresence>
+        {activeCritical && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-rose-950/80 backdrop-blur-md animate-pulse duration-[3000ms]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, rotateX: 15 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.9, rotateX: 15 }}
+              className="bg-slate-900 border border-rose-500/50 rounded-[2.5rem] shadow-[0_0_50px_rgba(239,68,68,0.4)] w-full max-w-lg p-10 text-center relative overflow-hidden"
+            >
+              {/* Pulsing red background glow */}
+              <div className="absolute -inset-10 bg-rose-600/10 rounded-full blur-3xl animate-ping opacity-50" />
+              
+              <div className="relative z-10 space-y-8">
+                <div className="mx-auto w-24 h-24 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center border border-rose-500/30 animate-bounce">
+                  <Bell size={48} className="animate-spin duration-1000" />
+                </div>
+                
+                <div>
+                  <span className="px-4 py-1.5 bg-rose-500/20 text-rose-400 rounded-full text-xs font-black uppercase tracking-[0.2em] border border-rose-500/30">
+                    CRITICAL ALARM WARNING
+                  </span>
+                  <h2 className="text-3xl font-black text-white tracking-tight mt-6 leading-tight">
+                    {activeCritical.title}
+                  </h2>
+                  <p className="text-rose-200/70 text-sm mt-4 font-medium leading-relaxed bg-rose-950/30 p-6 rounded-2xl border border-rose-900/40 shadow-inner">
+                    {activeCritical.message}
+                  </p>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => acknowledgeCritical(activeCritical.id)}
+                    className="w-full py-5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black uppercase tracking-[0.15em] text-xs transition-all shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:shadow-[0_0_40px_rgba(239,68,68,0.6)] active:scale-95 border border-rose-400/30 flex items-center justify-center gap-3"
+                  >
+                    Acknowledge Alert & Mute Alarm
+                  </button>
+                  <p className="text-[10px] text-slate-500 mt-4 font-semibold uppercase tracking-widest">
+                    This warning requires manual acknowledgment to mute.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

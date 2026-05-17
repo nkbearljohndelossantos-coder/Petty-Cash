@@ -7,7 +7,7 @@ import api from '../services/api';
 
 const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { notifications, setNotifications, unreadCount, setUnreadCount } = useSocket();
+  const { notifications, setNotifications, unreadCount, setUnreadCount, activeCritical } = useSocket();
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -68,11 +68,13 @@ const NotificationCenter = () => {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-3 rounded-2xl relative transition-all border border-transparent hover:border-slate-100 ${isOpen ? 'bg-slate-50 text-erp-blue' : 'text-slate-400 hover:bg-slate-50'}`}
+        className={`p-3 rounded-2xl relative transition-all border border-transparent hover:border-slate-100 ${
+          isOpen ? 'bg-slate-50 text-erp-blue' : 'text-slate-400 hover:bg-slate-50'
+        } ${activeCritical ? 'animate-bounce border-rose-300 bg-rose-50/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] text-rose-500' : ''}`}
       >
-        <Bell size={20} />
+        <Bell size={20} className={activeCritical ? 'animate-pulse text-rose-600' : ''} />
         {unreadCount > 0 && (
-          <span className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white border-2 border-white">
+          <span className={`absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white border-2 border-white ${activeCritical ? 'bg-rose-600 animate-pulse' : 'bg-rose-500'}`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}

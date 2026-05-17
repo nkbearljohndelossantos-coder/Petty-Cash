@@ -59,7 +59,7 @@ const PORT = process.env.PORT || 5000;
 
     // 1.5 Schema Repair Bootstrapper: Check for missing tables regardless of migration status
     console.log('--- SCHEMA REPAIR ENGINE: INITIALIZING EXISTENCE CHECK ---');
-    const coreTables = ['users', 'categories', 'departments', 'expenses', 'funds', 'activity_logs', 'notifications'];
+    const coreTables = ['users', 'categories', 'departments', 'expenses', 'funds', 'activity_logs', 'notifications', 'notification_templates', 'notification_schedule', 'notification_recipients', 'notification_reads'];
     for (const tableName of coreTables) {
       const exists = await db.schema.hasTable(tableName);
       console.log(`Checking Table "${tableName}": ${exists ? 'EXISTS' : 'MISSING'}`);
@@ -85,6 +85,10 @@ const PORT = process.env.PORT || 5000;
             const notifSchema = require('./db/migrations/20260515064955_add_notifications_and_email_system');
             await notifSchema.up(db);
             console.log('Repair: Notifications system reconstruction successful.');
+          } else if (['notification_templates', 'notification_schedule', 'notification_recipients', 'notification_reads'].includes(tableName)) {
+            const notifCenterSchema = require('./db/migrations/20260517090000_create_notification_center_tables');
+            await notifCenterSchema.up(db);
+            console.log(`Repair: [${tableName}] and related Notification Center tables reconstruction successful.`);
           }
         } catch (repairErr) {
           console.error(`Repair FAILED for table "${tableName}":`, repairErr.message);
