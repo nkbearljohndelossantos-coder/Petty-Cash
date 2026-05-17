@@ -98,27 +98,27 @@ const DashboardLayout = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none opacity-50" />
 
-        <div className="p-5 pb-4 flex flex-col gap-3 relative z-10 border-b border-slate-800/55">
-          <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-end'} w-full`}>
-            <button 
-              onClick={() => setCollapsed(!collapsed)} 
-              className="p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors relative group"
-            >
-              <Menu size={20} className="opacity-75" />
-              <div className="sidebar-tooltip">
-                {collapsed ? 'Expand Menu' : 'Collapse Menu'}
-                <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
-              </div>
-            </button>
-          </div>
+        <div className="p-4 pb-4 flex flex-col items-center justify-center relative z-10 border-b border-slate-800/55">
+          {/* Fries Menu Button - Absolute Positioned */}
+          <button 
+            onClick={() => setCollapsed(!collapsed)} 
+            className={`absolute top-3 ${collapsed ? 'left-1/2 -translate-x-1/2' : 'right-3'} p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors z-20`}
+            title={collapsed ? "Expand Menu" : "Collapse Menu"}
+          >
+            <Menu size={20} className="opacity-75" />
+            <div className="sidebar-tooltip">
+              {collapsed ? 'Expand Menu' : 'Collapse Menu'}
+              <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+            </div>
+          </button>
           
           {!collapsed && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full flex items-center justify-center px-1"
+              className="w-full flex items-center justify-center px-1 pt-4"
             >
-              <img src={logo} alt="NKB Petty Cash Logo" className="h-32 w-auto object-contain" />
+              <img src={logo} alt="NKB Petty Cash Logo" className="h-36 w-auto object-contain" />
             </motion.div>
           )}
         </div>
@@ -237,7 +237,7 @@ const DashboardLayout = () => {
               className="fixed top-0 left-0 bottom-0 w-80 bg-[#0f172a] z-50 lg:hidden flex flex-col shadow-2xl"
             >
               <div className="p-8 flex items-center justify-between">
-                <img src={logo} alt="NKB Petty Cash Logo" className="h-32 w-auto object-contain" />
+                <img src={logo} alt="NKB Petty Cash Logo" className="h-36 w-auto object-contain" />
                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
                   <X size={24} />
                 </button>
