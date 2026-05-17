@@ -162,8 +162,9 @@ export const SocketProvider = ({ children }) => {
     if (user && token) {
       fetchUnreadNotifications();
 
-      const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+      const newSocket = io(import.meta.env.VITE_API_URL || window.location.origin, {
         auth: { token },
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,

@@ -27,7 +27,7 @@ const initSocket = (server) => {
   });
 
   io.on('connection', (socket) => {
-    const userId = socket.userId;
+    const userId = String(socket.userId);
     
     if (!userSockets.has(userId)) {
       userSockets.set(userId, new Set());
@@ -37,9 +37,11 @@ const initSocket = (server) => {
     console.log(`User ${userId} connected via socket ${socket.id}`);
 
     socket.on('disconnect', () => {
-      userSockets.get(userId).delete(socket.id);
-      if (userSockets.get(userId).size === 0) {
-        userSockets.delete(userId);
+      if (userSockets.has(userId)) {
+        userSockets.get(userId).delete(socket.id);
+        if (userSockets.get(userId).size === 0) {
+          userSockets.delete(userId);
+        }
       }
       console.log(`User ${userId} disconnected from socket ${socket.id}`);
     });
@@ -49,8 +51,9 @@ const initSocket = (server) => {
 };
 
 const sendToUser = (userId, event, data) => {
-  if (io && userSockets.has(userId)) {
-    userSockets.get(userId).forEach(socketId => {
+  const userIdStr = String(userId);
+  if (io && userSockets.has(userIdStr)) {
+    userSockets.get(userIdStr).forEach(socketId => {
       io.to(socketId).emit(event, data);
     });
     return true;
