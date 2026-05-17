@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, User, Eye, EyeOff, Loader2, ShieldCheck, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import logo from '../assets/logo.png';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -47,9 +48,9 @@ const Login = () => {
           <motion.div 
             initial={{ y: -20 }}
             animate={{ y: 0 }}
-            className="w-16 h-16 bg-white border border-slate-100 rounded-[1.5rem] flex items-center justify-center text-erp-blue text-xl font-black mx-auto mb-4 shadow-xl"
+            className="w-16 h-16 bg-white border border-slate-100 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 shadow-xl overflow-hidden p-2"
           >
-            NKB
+            <img src={logo} alt="NKB Logo" className="w-full h-full object-contain" />
           </motion.div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tighter mb-1.5">Enterprise Access</h1>
           <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[8px]">Petty Cash Management Intelligence</p>

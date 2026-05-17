@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import api from '../services/api';
+import logo from '../assets/logo.png';
 
 const SidebarItem = ({ icon: Icon, label, to, active, collapsed }) => (
   <Link to={to} className="relative group flex items-center">
@@ -103,8 +104,8 @@ const DashboardLayout = () => {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-3"
             >
-              <div className="w-8 h-8 bg-erp-blue rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                <LayoutDashboard size={18} fill="currentColor" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white shadow-lg shadow-blue-600/30 p-1">
+                <img src={logo} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="font-extrabold text-base tracking-tight leading-none text-white">NKB Manufacturing</h1>
@@ -239,8 +240,8 @@ const DashboardLayout = () => {
             >
               <div className="p-8 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-erp-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                    <LayoutDashboard size={20} fill="currentColor" />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden bg-white shadow-lg shadow-blue-600/30 p-1">
+                    <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                   </div>
                   <span className="font-extrabold text-xl tracking-tight text-white">NKB Manufacturing</span>
                 </div>
