@@ -193,6 +193,10 @@ app.get(/.*/, (req, res) => {
   }
   
   if (fs.existsSync(indexPath)) {
+    // Explicitly prevent index.html from ever being cached by proxy layers or browsers
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(indexPath);
   } else {
     res.send('NKB Petty Cash API is running (Frontend not built yet)...');
