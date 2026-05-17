@@ -65,6 +65,16 @@ const Expenses = () => {
   useEffect(() => {
     fetchData();
     fetchMetadata();
+
+    const handleBalanceUpdate = () => {
+      console.log('Real-time balance update received in Ledger');
+      fetchData();
+    };
+
+    window.addEventListener('balance_updated', handleBalanceUpdate);
+    return () => {
+      window.removeEventListener('balance_updated', handleBalanceUpdate);
+    };
   }, [filters]);
 
   const fetchData = async () => {

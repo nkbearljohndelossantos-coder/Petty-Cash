@@ -138,13 +138,41 @@ export const SocketProvider = ({ children }) => {
   const fetchUnreadNotifications = async () => {
     if (!token) return;
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
       const res = await fetch(`${apiUrl}/api/notifications?status=unread`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (data && data.notifications) {
-        setNotifications(data.notifications);
+        // Compare with current state to discover newly arrived notifications!
+        setNotifications(prev => {
+          const prevIds = new Set(prev.map(n => n.id));
+          const newNotifications = data.notifications.filter(n => !prevIds.has(n.id));
+          
+          if (newNotifications.length > 0) {
+            console.log('[Polling Fallback] Detected new notifications:', newNotifications);
+            
+            // Dispatch priority, sound alerts, and critical modals on new arrivals
+            newNotifications.forEach(notification => {
+              if (notification.priority === 'critical') {
+                setActiveCritical(notification);
+              } else if (notification.priority === 'important') {
+                playImportantSound();
+              } else {
+                playNormalSound();
+              }
+              
+              // Browser push alert
+              if (Notification.permission === 'granted') {
+                new Notification(notification.title, {
+                  body: notification.message
+                });
+              }
+            });
+          }
+          return data.notifications;
+        });
+
         setUnreadCount(data.unreadCount || 0);
         
         // Find if there's any unread critical notification that hasn't been acknowledged
@@ -158,10 +186,24 @@ export const SocketProvider = ({ children }) => {
     }
   };
 
+  // 1.5 Fallback Periodic Polling Loop: Runs every 7 seconds to keep dashboard, notifications, and ledger real-time
+  useEffect(() => {
+    if (!user || !token) return;
+
+    // Run immediately on mount
+    fetchUnreadNotifications();
+    window.dispatchEvent(new Event('balance_updated'));
+
+    const interval = setInterval(() => {
+      fetchUnreadNotifications();
+      window.dispatchEvent(new Event('balance_updated'));
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [user, token]);
+
   useEffect(() => {
     if (user && token) {
-      fetchUnreadNotifications();
-
       const newSocket = io(import.meta.env.VITE_API_URL || window.location.origin, {
         auth: { token },
         transports: ['polling', 'websocket'],
@@ -177,29 +219,31 @@ export const SocketProvider = ({ children }) => {
       });
 
       newSocket.on('new_notification', (notification) => {
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Sound dispatch and priority logic
-        if (notification.priority === 'critical') {
-          setActiveCritical(notification);
-        } else if (notification.priority === 'important') {
-          playImportantSound();
-        } else {
-          playNormalSound();
-        }
+        setNotifications(prev => {
+          if (prev.some(n => n.id === notification.id)) return prev;
+          
+          // Sound dispatch and priority logic
+          if (notification.priority === 'critical') {
+            setActiveCritical(notification);
+          } else if (notification.priority === 'important') {
+            playImportantSound();
+          } else {
+            playNormalSound();
+          }
 
-        // Browser push alert
-        if (Notification.permission === 'granted') {
-          new Notification(notification.title, {
-            body: notification.message
-          });
-        }
+          // Browser push alert
+          if (Notification.permission === 'granted') {
+            new Notification(notification.title, {
+              body: notification.message
+            });
+          }
+          return [notification, ...prev];
+        });
+        setUnreadCount(prev => prev + 1);
       });
 
       // Listen for global balance updates to refresh UI live
       newSocket.on('balance_updated', () => {
-        // Emit general event in browser or context if needed
         window.dispatchEvent(new Event('balance_updated'));
       });
 

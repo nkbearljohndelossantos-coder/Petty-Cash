@@ -88,16 +88,26 @@ const Dashboard = () => {
   useEffect(() => {
     fetchData();
 
+    const handleBalanceUpdate = () => {
+      console.log('Real-time balance update received via window event');
+      fetchData();
+    };
+
+    window.addEventListener('balance_updated', handleBalanceUpdate);
+
     if (socket) {
       socket.on('balance_updated', (data) => {
         console.log('Real-time balance update received:', data);
         fetchData();
       });
-
-      return () => {
-        socket.off('balance_updated');
-      };
     }
+
+    return () => {
+      window.removeEventListener('balance_updated', handleBalanceUpdate);
+      if (socket) {
+        socket.off('balance_updated');
+      }
+    };
   }, [socket]);
 
   const downloadChart = async (ref, filename) => {
