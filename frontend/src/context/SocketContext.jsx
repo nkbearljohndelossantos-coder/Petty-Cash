@@ -250,6 +250,43 @@ export const SocketProvider = ({ children }) => {
         setUnreadCount(prev => prev + 1);
       });
 
+      // Support custom receiveNotification event to match example
+      newSocket.on('receiveNotification', (data) => {
+        console.log('[Socket.IO] Received receiveNotification custom user event:', data);
+        
+        // Map to a normalized notification object
+        const notification = {
+          id: Date.now() + Math.random(),
+          title: data.postTitle || 'New Post Notification',
+          message: `Post Created By: ${data.postCreatedBy || 'Admin'}`,
+          type: 'info',
+          priority: 'normal',
+          category: 'general',
+          acknowledged: false,
+          archived: false,
+          created_at: new Date()
+        };
+
+        setNotifications(prev => {
+          if (prev.some(n => n.message === notification.message)) return prev;
+          
+          playNormalSound();
+
+          // Browser push alert
+          if (Notification.permission === 'granted') {
+            new Notification(notification.title, {
+              body: notification.message
+            });
+          }
+
+          // Dispatch custom window event so pages (like EmailAutomation.jsx) update live instantly!
+          window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
+
+          return [notification, ...prev];
+        });
+        setUnreadCount(prev => prev + 1);
+      });
+
       // Listen for global balance updates to refresh UI live
       newSocket.on('balance_updated', () => {
         window.dispatchEvent(new Event('balance_updated'));
