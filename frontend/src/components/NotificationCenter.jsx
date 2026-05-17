@@ -7,7 +7,7 @@ import api from '../services/api';
 
 const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { notifications, setNotifications, unreadCount, setUnreadCount, activeCritical } = useSocket();
+  const { notifications, setNotifications, unreadCount, setUnreadCount, activeCritical, refreshNotifications } = useSocket();
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -74,7 +74,13 @@ const NotificationCenter = () => {
   return (
     <div className="relative" ref={dropdownRef}>
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const nextOpen = !isOpen;
+          setIsOpen(nextOpen);
+          if (nextOpen) {
+            refreshNotifications();
+          }
+        }}
         className={`p-3 rounded-2xl relative transition-all border border-transparent hover:border-slate-100 ${
           isOpen ? 'bg-slate-50 text-erp-blue' : 'text-slate-400 hover:bg-slate-50'
         } ${activeCritical ? 'animate-bounce border-rose-300 bg-rose-50/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] text-rose-500' : ''}`}

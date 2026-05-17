@@ -88,6 +88,9 @@ const NotificationCenterPage = () => {
   const fetchData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
+      // Sync global bell dropdown context
+      refreshNotifications();
+
       if (activeTab === 'inbox') {
         const data = await api.get('/notifications?status=active');
         if (data) {
