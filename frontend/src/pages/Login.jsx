@@ -50,7 +50,7 @@ const Login = () => {
             animate={{ y: 0 }}
             className="flex items-center justify-center mx-auto mb-4 w-full"
           >
-            <img src={logo} alt="NKB Petty Cash Logo" className="h-36 w-auto object-contain" />
+            <img src={logo} alt="NKB Petty Cash Logo" className="w-full h-auto max-h-36 object-contain px-2" />
           </motion.div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tighter mb-1.5">Enterprise Access</h1>
           <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[8px]">Petty Cash Management Intelligence</p>
