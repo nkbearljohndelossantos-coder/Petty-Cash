@@ -145,6 +145,7 @@ const NotificationCenterPage = () => {
 
   const handleAcknowledge = async (id) => {
     try {
+      localStorage.setItem('nkb_mute_alarm', id.toString() + '_' + Date.now());
       await api.put(`/notifications/${id}/acknowledge`);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, acknowledged: true, is_read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));

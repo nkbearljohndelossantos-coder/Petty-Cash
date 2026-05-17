@@ -183,6 +183,8 @@ export const SocketProvider = ({ children }) => {
         const criticalNotif = data.notifications.find(n => n.priority === 'critical' && (!n.is_read || !n.acknowledged));
         if (criticalNotif) {
           setActiveCritical(criticalNotif);
+        } else {
+          setActiveCritical(null);
         }
       }
     } catch (err) {
@@ -303,6 +305,19 @@ export const SocketProvider = ({ children }) => {
     }
   }, [user, token]);
 
+  // Multi-tab audio engine synchronization: instantly mute if alarm acknowledged in another tab
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'nkb_mute_alarm') {
+        console.log('[Multi-Tab Audio Engine] Detected alarm mute from another tab:', e.newValue);
+        setActiveCritical(null);
+        stopSounds();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // 2. Continuous looping alarm trigger effect for CRITICAL warnings
   useEffect(() => {
     let alarmInterval = null;
@@ -336,6 +351,9 @@ export const SocketProvider = ({ children }) => {
   const acknowledgeCritical = async (id) => {
     if (!token) return;
     try {
+      // Write to localStorage for instant cross-tab mute
+      localStorage.setItem('nkb_mute_alarm', id.toString() + '_' + Date.now());
+      
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
       await fetch(`${apiUrl}/api/notifications/${id}/acknowledge`, {
         method: 'PUT',
