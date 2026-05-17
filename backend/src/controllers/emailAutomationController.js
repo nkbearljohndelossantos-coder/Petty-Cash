@@ -19,7 +19,7 @@ const createTemplate = async (req, res) => {
       body,
       type,
       updated_at: new Date()
-    }).returning('id');
+    });
     res.json({ id, name });
   } catch (err) {
     res.status(500).json({ error: err.message });

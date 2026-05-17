@@ -177,7 +177,7 @@ const broadcastNotification = async (req, res) => {
         archived: false,
         category: category || 'general',
         created_at: new Date()
-      }).returning('id');
+      });
 
       await knex('notification_reads').insert({
         notification_id: notifId,
@@ -267,7 +267,7 @@ const createSchedule = async (req, res) => {
       frequency: frequency || 'once',
       status: 'active',
       created_at: new Date()
-    }).returning('id');
+    });
 
     res.json({ id, success: true });
   } catch (err) {
@@ -307,7 +307,7 @@ const createTemplate = async (req, res) => {
       body,
       type: type || 'info',
       updated_at: new Date()
-    }).returning('id');
+    });
     
     res.json({ id, name, success: true });
   } catch (err) {

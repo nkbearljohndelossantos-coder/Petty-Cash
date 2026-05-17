@@ -90,7 +90,7 @@ const initScheduler = () => {
               is_read: false,
               category: 'alert',
               created_at: new Date()
-            }).returning('id');
+            });
 
             // Insert tracking read state
             await knex('notification_reads').insert({
