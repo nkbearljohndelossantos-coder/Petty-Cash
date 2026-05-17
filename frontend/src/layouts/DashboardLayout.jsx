@@ -98,34 +98,30 @@ const DashboardLayout = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none opacity-50" />
 
-        <div className="p-5 pb-2 flex items-center justify-center relative z-10 h-20">
-          {collapsed ? (
-            <motion.div 
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden"
+        <div className="p-5 pb-4 flex flex-col gap-3 relative z-10 border-b border-slate-800/55">
+          <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-end'} w-full`}>
+            <button 
+              onClick={() => setCollapsed(!collapsed)} 
+              className="p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors relative group"
             >
-              <img src={logo} alt="NKB Petty Cash Logo" className="w-full h-full object-contain" />
-            </motion.div>
-          ) : (
+              <Menu size={20} className="opacity-75" />
+              <div className="sidebar-tooltip">
+                {collapsed ? 'Expand Menu' : 'Collapse Menu'}
+                <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+              </div>
+            </button>
+          </div>
+          
+          {!collapsed && (
             <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
               className="w-full flex items-center justify-center px-1"
             >
               <img src={logo} alt="NKB Petty Cash Logo" className="w-full h-auto max-h-16 object-contain" />
             </motion.div>
           )}
         </div>
-
-        {/* Floating Sidebar Toggle Button */}
-        <button 
-          onClick={() => setCollapsed(!collapsed)} 
-          className="absolute -right-3 top-7 w-6 h-6 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg border border-slate-700 z-50 transition-all hover:scale-110"
-          title={collapsed ? "Expand Menu" : "Collapse Menu"}
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
 
         <div className="px-4 py-2 relative z-10">
           <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-4 ${collapsed ? 'text-center opacity-0' : ''}`}>Main Menu</p>
