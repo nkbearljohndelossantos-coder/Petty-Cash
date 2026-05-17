@@ -118,7 +118,7 @@ const DashboardLayout = () => {
               animate={{ opacity: 1, y: 0 }}
               className="w-full flex items-center justify-center px-1"
             >
-              <img src={logo} alt="NKB Petty Cash Logo" className="w-full h-auto max-h-16 object-contain" />
+              <img src={logo} alt="NKB Petty Cash Logo" className="h-32 w-auto object-contain" />
             </motion.div>
           )}
         </div>
@@ -237,7 +237,7 @@ const DashboardLayout = () => {
               className="fixed top-0 left-0 bottom-0 w-80 bg-[#0f172a] z-50 lg:hidden flex flex-col shadow-2xl"
             >
               <div className="p-8 flex items-center justify-between">
-                <img src={logo} alt="NKB Petty Cash Logo" className="w-full max-w-[200px] h-auto max-h-16 object-contain" />
+                <img src={logo} alt="NKB Petty Cash Logo" className="h-32 w-auto object-contain" />
                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
                   <X size={24} />
                 </button>
