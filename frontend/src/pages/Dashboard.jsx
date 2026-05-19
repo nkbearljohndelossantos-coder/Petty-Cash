@@ -43,7 +43,7 @@ import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
-const StatCard = ({ title, value, icon: Icon, trend, trendLabel, color, delay }) => (
+const StatCard = ({ title, value, icon: Icon, trend, trendLabel, color, delay, isCurrency = true }) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -54,7 +54,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendLabel, color, delay })
       <div className="space-y-3">
         <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-[0.15em]">{title}</p>
         <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          {typeof value === 'number' ? `₱${value.toLocaleString()}` : value}
+          {typeof value === 'number' ? (isCurrency ? `₱${value.toLocaleString()}` : value.toLocaleString()) : value}
         </h3>
         <div className="flex items-center gap-2">
           {trend !== undefined && (
@@ -220,6 +220,7 @@ const Dashboard = () => {
           value={stats?.totalExpenses} 
           icon={DollarSign} 
           trend={12.5} 
+          trendLabel="vs last month"
           color="blue"
           delay={0}
         />
@@ -236,6 +237,8 @@ const Dashboard = () => {
           title="Pending Approval" 
           value={stats?.pendingApproval || 0} 
           icon={Clock} 
+          isCurrency={false}
+          trendLabel="vouchers pending action"
           color="amber"
           delay={0.2}
         />
@@ -243,6 +246,7 @@ const Dashboard = () => {
           title="Available Fund" 
           value={stats?.availableBalance} 
           icon={Wallet} 
+          trendLabel="current system balance"
           color="emerald"
           delay={0.3}
         />

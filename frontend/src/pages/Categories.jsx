@@ -115,7 +115,7 @@ const Categories = () => {
                </div>
                <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
                   <History size={12} />
-                  Updated 2d ago
+                  Created {new Date(cat.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                </div>
             </div>
           </motion.div>
