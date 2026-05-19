@@ -159,9 +159,21 @@ const Users = ({ isEmbedded = false }) => {
                         </div>
                      </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                     <button onClick={() => handleEdit(user)} className="p-2 text-slate-400 hover:text-erp-blue hover:bg-slate-50 rounded-xl transition-all"><Edit size={16} /></button>
-                     <button onClick={() => handleDelete(user.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-slate-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                  <div className="flex gap-2 relative z-10">
+                     <button 
+                       onClick={() => handleEdit(user)} 
+                       className="w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:text-erp-blue hover:bg-blue-50 border border-slate-100 flex items-center justify-center transition-all shadow-sm"
+                       title="Edit User"
+                     >
+                       <Edit size={14} />
+                     </button>
+                     <button 
+                       onClick={() => handleDelete(user.id)} 
+                       className="w-9 h-9 rounded-xl bg-slate-50 text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-100 flex items-center justify-center transition-all shadow-sm"
+                       title="Delete User"
+                     >
+                       <Trash2 size={14} />
+                     </button>
                   </div>
                </div>
 
