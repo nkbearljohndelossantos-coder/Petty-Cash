@@ -22,6 +22,21 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { username, password, full_name, email, role, department_id } = req.body;
+    
+    // Check if username already exists
+    const existingUser = await db('users').where({ username }).first();
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Username is already taken by another account.' });
+    }
+
+    // Check if email already exists
+    if (email) {
+      const existingEmail = await db('users').where({ email }).first();
+      if (existingEmail) {
+        return res.status(400).json({ success: false, message: 'Email address is already registered to another account.' });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const [id] = await db('users').insert({
       username,
@@ -41,6 +56,22 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { username, password, full_name, email, role, department_id, status } = req.body;
+    const { id } = req.params;
+
+    // Check if username already exists for other users
+    const existingUser = await db('users').where({ username }).whereNot({ id }).first();
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Username is already taken by another account.' });
+    }
+
+    // Check if email already exists for other users
+    if (email) {
+      const existingEmail = await db('users').where({ email }).whereNot({ id }).first();
+      if (existingEmail) {
+        return res.status(400).json({ success: false, message: 'Email address is already registered to another account.' });
+      }
+    }
+
     const updateData = {
       username,
       full_name,
@@ -55,8 +86,8 @@ router.put('/:id', async (req, res) => {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
-    await db('users').where({ id: req.params.id }).update(updateData);
-    const user = await db('users').where({ id: req.params.id }).first();
+    await db('users').where({ id }).update(updateData);
+    const user = await db('users').where({ id }).first();
     res.json({ success: true, data: user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
