@@ -22,7 +22,7 @@ const EmailAutomation = lazy(() => import('./pages/EmailAutomation'));
 const QueueMonitor = lazy(() => import('./pages/QueueMonitor'));
 
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
   
   if (loading) return (
@@ -32,6 +32,10 @@ const ProtectedRoute = ({ children }) => {
   );
   
   if (!user) return <Navigate to="/login" />;
+  
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" />;
+  }
   
   return children;
 };
@@ -60,16 +64,44 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="expenses" element={<Expenses />} />
                   <Route path="analytics" element={<Analytics />} />
-                  <Route path="funds" element={<Funds />} />
+                  <Route path="funds" element={
+                    <ProtectedRoute allowedRoles={['Super Admin']}>
+                      <Funds />
+                    </ProtectedRoute>
+                  } />
                   <Route path="reports" element={<Reports />} />
                   <Route path="categories" element={<Categories />} />
-                  <Route path="users" element={<Users />} />
-                  <Route path="email-automation" element={<EmailAutomation />} />
-                  <Route path="queue-monitor" element={<QueueMonitor />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="logs" element={<Logs />} />
+                  <Route path="users" element={
+                    <ProtectedRoute allowedRoles={['Super Admin']}>
+                      <Users />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="email-automation" element={
+                    <ProtectedRoute allowedRoles={['Super Admin', 'Accounting']}>
+                      <EmailAutomation />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="queue-monitor" element={
+                    <ProtectedRoute allowedRoles={['Super Admin']}>
+                      <QueueMonitor />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="settings" element={
+                    <ProtectedRoute allowedRoles={['Super Admin']}>
+                      <Settings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="logs" element={
+                    <ProtectedRoute allowedRoles={['Super Admin']}>
+                      <Logs />
+                    </ProtectedRoute>
+                  } />
                   <Route path="profile" element={<Profile />} />
-                  <Route path="maintenance" element={<BackupRestore />} />
+                  <Route path="maintenance" element={
+                    <ProtectedRoute allowedRoles={['Super Admin']}>
+                      <BackupRestore />
+                    </ProtectedRoute>
+                  } />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" />} />

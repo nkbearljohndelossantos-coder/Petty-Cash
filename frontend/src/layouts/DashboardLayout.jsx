@@ -76,7 +76,7 @@ const DashboardLayout = () => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
     { icon: Receipt, label: 'Expenses', to: '/expenses' },
-    { icon: Wallet, label: 'Funds', to: '/funds' },
+    { icon: Wallet, label: 'Funds', to: '/funds', roles: ['Super Admin'] },
     { icon: PieChart, label: 'Analytics', to: '/analytics' },
     { icon: FileText, label: 'Reports', to: '/reports' },
     { icon: Tag, label: 'Categories', to: '/categories' },
