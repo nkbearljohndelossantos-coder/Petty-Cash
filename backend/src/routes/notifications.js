@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const notifCenterController = require('../controllers/notificationCenterController');
+const notifController = require('../controllers/notificationController');
 const { protect, authorize } = require('../middleware/auth');
 
 router.use(protect);
@@ -19,6 +20,10 @@ router.put('/:id/read', notifCenterController.markAsRead);
 router.put('/read-all', notifCenterController.markAllAsRead);
 router.put('/:id/acknowledge', notifCenterController.acknowledgeNotification);
 router.put('/:id/archive', notifCenterController.archiveNotification);
+
+// User Notification Preference Endpoints
+router.get('/preferences', notifController.getPreferences);
+router.put('/preferences', notifController.updatePreferences);
 
 // Administrative Endpoints
 router.post('/broadcast', authorize('Super Admin', 'Accounting'), notifCenterController.broadcastNotification);
