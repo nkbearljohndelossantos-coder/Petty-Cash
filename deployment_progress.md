@@ -48,6 +48,7 @@ Lahat ng tables na ito ay matagumpay na na-create:
 - **Pathing:** In-update ang `index.js` para gamitin ang `path.join(__dirname, '../dist')` para tama ang pag-serve ng frontend files.
 - **JWT Expiry:** Nagdagdag ng fallback `24h` sa `authController.js` para iwas `500 error` sa login.
 - **MySQL Access:** Pinalitan ang `localhost` ng `127.0.0.1` para maiwasan ang IPv6 access denied issues.
+- **ERR_HTTP2_PROTOCOL_ERROR Resolution:** Tinanggal ang manual custom chunking (`manualChunks` config) sa `vite.config.js` para gamitin ang standard na granular automatic code-splitting ng Vite/Rollup. Ito ay umiiwas sa ModSecurity/WAF security restrictions at buffer size thresholds sa Hostinger server na nagreresulta sa TCP connection drops sa pag-serve ng malalaking files.
 
 ## 5. Next Steps & Launch Check
 - **Browser Error:** `ERR_QUIC_PROTOCOL_ERROR` (Chrome issue) - Resolved by ensuring standard HTTP fallback, but can disable Chrome QUIC or set SSL properly on Hostinger panel if it occurs.

@@ -61,6 +61,11 @@ This document serves as a permanent memory log of all accomplishments, structura
     - [dashboard_polished_1779188186188.png](file:///C:/Users/Nkb%20Manuf/.gemini/antigravity/brain/9247cffd-3858-49d1-8af7-f5cc2b168731/dashboard_polished_1779188186188.png)
     - [categories_polished_1779188197409.png](file:///C:/Users/Nkb%20Manuf/.gemini/antigravity/brain/9247cffd-3858-49d1-8af7-f5cc2b168731/categories_polished_1779188197409.png)
 
+
+### 5. ⚡ Resolved Hostinger `net::ERR_HTTP2_PROTOCOL_ERROR`
+- **Root Cause:** The custom `manualChunks` configuration in `vite.config.js` lumped all miscellaneous dependencies into massive JS files (e.g., `v-others-C3aWE0WR.js` at ~273KB). Hostinger's ModSecurity / Web Application Firewall (WAF) rules or server buffer parameters automatically reset TCP streams for large compiled assets, resulting in a browser `net::ERR_HTTP2_PROTOCOL_ERROR`.
+- **Solution:** Removed the custom Rollup `manualChunks` config from `vite.config.js` to let Vite's optimized standard bundler handle code-splitting automatically. This successfully breaks large assets into smaller, extremely safe 10-30KB chunks.
+
 ---
 
 ## 🔮 Future Reference Guidelines
