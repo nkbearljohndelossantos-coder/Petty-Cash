@@ -17,6 +17,15 @@ exports.seed = async function(knex) {
     { name: 'Logistics' },
     { name: 'HR' },
     { name: 'Maintenance' },
+    { name: 'Quality Control' },
+    { name: 'Warehouse' },
+    { name: 'Purchasing' },
+    { name: 'Administration' },
+    { name: 'R&D' },
+    { name: 'Sales' },
+    { name: 'IT' },
+    { name: 'Engineering' },
+    { name: 'Audit' },
   ]).returning('id');
 
   // Inserts categories
@@ -58,5 +67,6 @@ exports.seed = async function(knex) {
     { key: 'company_name', value: 'NKB Manufacturing' },
     { key: 'currency', value: 'PHP' },
     { key: 'theme', value: 'light' },
+    { key: 'expense_units', value: JSON.stringify(['Box', 'Ream', 'Piece', 'Kilogram', 'Drums', 'Container', 'Gallon', 'Bag', 'Pouches', 'Bottle']) },
   ]);
 };

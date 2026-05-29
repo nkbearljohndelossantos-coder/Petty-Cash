@@ -20,7 +20,13 @@ router.put('/', protect, authorize('Super Admin'), async (req, res) => {
   try {
     const updates = req.body;
     for (const [key, value] of Object.entries(updates)) {
-      await db('settings').where({ key }).update({ value, updated_at: db.fn.now() });
+      const existing = await db('settings').where({ key }).first();
+      const stored = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      if (existing) {
+        await db('settings').where({ key }).update({ value: stored, updated_at: db.fn.now() });
+      } else {
+        await db('settings').insert({ key, value: stored });
+      }
     }
     res.json({ success: true, message: 'Settings updated' });
   } catch (err) {

@@ -78,7 +78,7 @@ const NotificationCenter = () => {
           const nextOpen = !isOpen;
           setIsOpen(nextOpen);
           if (nextOpen) {
-            refreshNotifications();
+            refreshNotifications({ playSounds: false });
           }
         }}
         className={`p-3 rounded-2xl relative transition-all border border-transparent hover:border-slate-100 ${

@@ -31,7 +31,9 @@ const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [units, setUnits] = useState(['Box', 'Ream', 'Piece', 'Kilogram', 'Drums', 'Container', 'Gallon', 'Bag', 'Pouches', 'Bottle']);
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [filters, setFilters] = useState({
     page: 1,
@@ -63,12 +65,12 @@ const Expenses = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchData();
     fetchMetadata();
+  }, []);
 
+  useEffect(() => {
     const handleBalanceUpdate = () => {
-      console.log('Real-time balance update received in Ledger');
-      fetchData();
+      fetchData(true);
     };
 
     window.addEventListener('balance_updated', handleBalanceUpdate);
@@ -77,30 +79,47 @@ const Expenses = () => {
     };
   }, [filters]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters(prev => (prev.search === searchInput ? prev : { ...prev, search: searchInput, page: 1 }));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchData();
+  }, [filters]);
+
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await api.get('/expenses', { params: filters });
-      // If interceptor returns response.data, then res is { data: [], pagination: {} }
       setExpenses(res.data || res || []);
       setPagination(res.pagination || { total: 0, page: 1, limit: 10 });
     } catch (err) {
       console.error('Fetch Expenses Error:', err);
-      setExpenses([]);
+      if (!silent) setExpenses([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   const fetchMetadata = async () => {
     try {
-      const [catRes, deptRes] = await Promise.all([
+      const [catRes, deptRes, settingsRes] = await Promise.all([
         api.get('/categories'),
-        api.get('/departments')
+        api.get('/departments'),
+        api.get('/settings')
       ]);
-      // Safety checks for both formats (direct array or { data: [] })
       setCategories(catRes.data || catRes || []);
       setDepartments(deptRes.data || deptRes || []);
+      const settings = settingsRes.data || settingsRes || {};
+      if (settings.expense_units) {
+        try {
+          const parsed = JSON.parse(settings.expense_units);
+          if (Array.isArray(parsed) && parsed.length) setUnits(parsed);
+        } catch (_) { /* keep defaults */ }
+      }
     } catch (err) {
       console.error('Fetch Metadata Error:', err);
     }
@@ -258,8 +277,8 @@ const Expenses = () => {
               type="text" 
               placeholder="Search PCV, remarks..." 
               className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-erp-blue/20 outline-none transition-all text-sm font-medium text-slate-900"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
           <div className="flex gap-4">
@@ -301,7 +320,7 @@ const Expenses = () => {
                />
             </div>
             <button 
-              onClick={() => setFilters({ ...filters, page: 1, search: '', category: '', status: '', startDate: '', endDate: '' })}
+              onClick={() => { setSearchInput(''); setFilters({ ...filters, page: 1, search: '', category: '', status: '', startDate: '', endDate: '' }); }}
               className="p-3 text-slate-400 hover:text-erp-blue hover:bg-erp-blue/5 rounded-2xl transition-all"
               title="Reset Filters"
             >
@@ -562,7 +581,7 @@ const Expenses = () => {
                       value={formData.unit}
                       onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     >
-                      {['Box', 'Ream', 'Piece', 'Kilogram', 'Drums', 'Container', 'Gallon', 'Bag', 'Pouches', 'Bottle'].map(u => (
+                      {units.map(u => (
                         <option key={u} value={u}>{u}</option>
                       ))}
                     </select>

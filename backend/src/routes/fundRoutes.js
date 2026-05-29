@@ -7,6 +7,7 @@ router.use(protect);
 
 router.get('/', authorize('Super Admin'), fundController.getFunds);
 router.post('/', authorize('Super Admin'), fundController.addFund);
+router.delete('/:id', authorize('Super Admin'), fundController.deleteFund);
 router.get('/balance', fundController.getBalance);
 
 module.exports = router;

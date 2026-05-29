@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { 
-  Plus, Search, Wallet, ArrowDownCircle, 
-  History, Calendar, FileText, CheckCircle
+  Plus, Wallet, History, CheckCircle, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -48,6 +47,17 @@ const Funds = () => {
       fetchData();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this fund replenishment entry? This will reduce your total cash inflow.')) return;
+    try {
+      await api.delete(`/funds/${id}`);
+      fetchData();
+      window.dispatchEvent(new Event('balance_updated'));
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
     }
   };
 
@@ -107,11 +117,12 @@ const Funds = () => {
                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Remarks</th>
                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Amount</th>
                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Added By</th>
+                     <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-20"></th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                     <tr><td colSpan="5" className="px-8 py-20 text-center text-slate-400">Loading fund logs...</td></tr>
+                     <tr><td colSpan="6" className="px-8 py-20 text-center text-slate-400">Loading fund logs...</td></tr>
                   ) : funds.map((f) => (
                      <tr key={f.id} className="hover:bg-slate-50 transition-all">
                         <td className="px-8 py-6 text-sm font-bold text-slate-600">{format(new Date(f.date), 'MMM dd, yyyy')}</td>
@@ -120,6 +131,16 @@ const Funds = () => {
                         <td className="px-8 py-6 text-right font-black text-emerald-600">₱{parseFloat(f.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                         <td className="px-8 py-6 text-center">
                            <span className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-black text-slate-500 uppercase">{f.adder_name}</span>
+                        </td>
+                        <td className="px-8 py-6 text-center">
+                           <button
+                             type="button"
+                             onClick={() => handleDelete(f.id)}
+                             className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                             title="Delete entry"
+                           >
+                             <Trash2 size={16} />
+                           </button>
                         </td>
                      </tr>
                   ))}

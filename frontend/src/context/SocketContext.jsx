@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
@@ -134,8 +134,32 @@ export const SocketProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeCritical, setActiveCritical] = useState(null);
 
+  const seenNotificationIdsRef = useRef(new Set());
+
+  const handleNewNotifications = (newNotifications) => {
+    if (!newNotifications.length) return;
+
+    newNotifications.forEach(notification => {
+      if (notification.priority === 'critical') {
+        setActiveCritical(notification);
+      } else if (notification.priority === 'important') {
+        playImportantSound();
+      } else {
+        playNormalSound();
+      }
+
+      if (Notification.permission === 'granted') {
+        new Notification(notification.title, {
+          body: notification.message
+        });
+      }
+
+      window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
+    });
+  };
+
   // 1. Fetch recent notifications on boot/login to check for historic unread critical alerts
-  const fetchUnreadNotifications = async () => {
+  const fetchUnreadNotifications = async ({ playSounds = false } = {}) => {
     if (!token) return;
     try {
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
@@ -145,65 +169,39 @@ export const SocketProvider = ({ children }) => {
       });
       const data = await res.json();
       if (data && data.notifications) {
-        // Compare with current state to discover newly arrived notifications!
-        setNotifications(prev => {
-          const prevIds = new Set(prev.map(n => n.id));
-          const newNotifications = data.notifications.filter(n => !prevIds.has(n.id));
-          
-          if (newNotifications.length > 0) {
-            console.log('[Polling Fallback] Detected new notifications:', newNotifications);
-            
-            // Dispatch priority, sound alerts, and critical modals on new arrivals
-            newNotifications.forEach(notification => {
-              if (notification.priority === 'critical') {
-                setActiveCritical(notification);
-              } else if (notification.priority === 'important') {
-                playImportantSound();
-              } else {
-                playNormalSound();
-              }
-              
-              // Browser push alert
-              if (Notification.permission === 'granted') {
-                new Notification(notification.title, {
-                  body: notification.message
-                });
-              }
+        const newNotifications = data.notifications.filter(
+          n => !seenNotificationIdsRef.current.has(String(n.id))
+        );
 
-              // Dispatch custom window event so pages (like EmailAutomation.jsx) update live instantly!
-              window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
-            });
-          }
-          return data.notifications;
+        data.notifications.forEach(n => {
+          seenNotificationIdsRef.current.add(String(n.id));
         });
 
+        if (playSounds && newNotifications.length > 0) {
+          handleNewNotifications(newNotifications);
+        }
+
+        setNotifications(data.notifications);
         setUnreadCount(data.unreadCount || 0);
         
-        // Find if there's any unread critical notification that hasn't been acknowledged
         const criticalNotif = data.notifications.find(n => n.priority === 'critical' && (!n.is_read || !n.acknowledged));
-        if (criticalNotif) {
-          setActiveCritical(criticalNotif);
-        } else {
-          setActiveCritical(null);
-        }
+        setActiveCritical(criticalNotif || null);
       }
     } catch (err) {
       console.error('[SocketProvider] Failed fetching notifications:', err);
     }
   };
 
-  // 1.5 Fallback Periodic Polling Loop: Runs every 7 seconds to keep dashboard, notifications, and ledger real-time
+  // 1.5 Fallback polling: notifications only (balance updates come from socket events)
   useEffect(() => {
     if (!user || !token) return;
 
-    // Run immediately on mount
-    fetchUnreadNotifications();
-    window.dispatchEvent(new Event('balance_updated'));
+    seenNotificationIdsRef.current = new Set();
+    fetchUnreadNotifications({ playSounds: false });
 
     const interval = setInterval(() => {
-      fetchUnreadNotifications();
-      window.dispatchEvent(new Event('balance_updated'));
-    }, 7000);
+      fetchUnreadNotifications({ playSounds: true });
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [user, token]);
@@ -225,31 +223,16 @@ export const SocketProvider = ({ children }) => {
       });
 
       newSocket.on('new_notification', (notification) => {
+        const idKey = String(notification.id);
+        if (seenNotificationIdsRef.current.has(idKey)) return;
+        seenNotificationIdsRef.current.add(idKey);
+
         setNotifications(prev => {
-          if (prev.some(n => n.id === notification.id)) return prev;
-          
-          // Sound dispatch and priority logic
-          if (notification.priority === 'critical') {
-            setActiveCritical(notification);
-          } else if (notification.priority === 'important') {
-            playImportantSound();
-          } else {
-            playNormalSound();
-          }
-
-          // Browser push alert
-          if (Notification.permission === 'granted') {
-            new Notification(notification.title, {
-              body: notification.message
-            });
-          }
-
-          // Dispatch custom window event so pages (like EmailAutomation.jsx) update live instantly!
-          window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
-
+          if (prev.some(n => String(n.id) === idKey)) return prev;
           return [notification, ...prev];
         });
         setUnreadCount(prev => prev + 1);
+        handleNewNotifications([notification]);
       });
 
       // Support custom receiveNotification event to match example
@@ -269,24 +252,21 @@ export const SocketProvider = ({ children }) => {
           created_at: new Date()
         };
 
+        const idKey = String(notification.id);
+        if (seenNotificationIdsRef.current.has(idKey)) return;
+        seenNotificationIdsRef.current.add(idKey);
+
         setNotifications(prev => {
-          if (prev.some(n => n.message === notification.message)) return prev;
-          
-          playNormalSound();
-
-          // Browser push alert
-          if (Notification.permission === 'granted') {
-            new Notification(notification.title, {
-              body: notification.message
-            });
-          }
-
-          // Dispatch custom window event so pages (like EmailAutomation.jsx) update live instantly!
-          window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
+          if (prev.some(n => String(n.id) === idKey)) return prev;
 
           return [notification, ...prev];
         });
         setUnreadCount(prev => prev + 1);
+        playNormalSound();
+        if (Notification.permission === 'granted') {
+          new Notification(notification.title, { body: notification.message });
+        }
+        window.dispatchEvent(new CustomEvent('new_notification', { detail: notification }));
       });
 
       // Listen for global balance updates to refresh UI live

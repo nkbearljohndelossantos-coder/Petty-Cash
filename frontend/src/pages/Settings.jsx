@@ -22,8 +22,11 @@ const Settings = () => {
     company_name: '',
     currency: 'PHP',
     petty_cash_limit: 0,
-    admin_email: ''
+    admin_email: '',
+    expense_units: '[]'
   });
+  const [unitsList, setUnitsList] = useState([]);
+  const [newUnit, setNewUnit] = useState('');
   const [notificationPrefs, setNotificationPrefs] = useState({
     email_enabled: true,
     in_app_enabled: true
@@ -39,6 +42,12 @@ const Settings = () => {
       const data = await api.get('/settings');
       if (data) {
         setSettings(data);
+        try {
+          const parsed = JSON.parse(data.expense_units || '[]');
+          setUnitsList(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          setUnitsList([]);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch settings:', err);
@@ -53,6 +62,19 @@ const Settings = () => {
       }
     } catch (err) {
       console.error('Failed to fetch notification prefs:', err);
+    }
+  };
+
+  const handleSaveUnits = async () => {
+    setLoading(true);
+    try {
+      await api.put('/settings', { expense_units: JSON.stringify(unitsList) });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      alert('Failed to save units');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,6 +115,7 @@ const Settings = () => {
   const tabs = [
     { name: 'General', icon: SettingsIcon },
     { name: 'Users', icon: Shield },
+    { name: 'Master Data', icon: Globe },
     { name: 'Notifications', icon: Bell },
     { name: 'Appearance', icon: Palette },
     { name: 'Security', icon: Lock },
@@ -219,6 +242,57 @@ const Settings = () => {
                            </div>
                         </div>
                      </div>
+                  </div>
+               )}
+
+               {activeTab === 'Master Data' && (
+                  <div className="space-y-8">
+                     <div className="pb-6 border-b border-slate-100">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight">Units of Measure</h3>
+                        <p className="text-sm text-slate-500 font-medium">Options shown in the Expenses form (Box, Piece, etc.).</p>
+                     </div>
+                     <div className="flex gap-3">
+                        <input
+                          type="text"
+                          className="flex-1 px-5 py-3 border border-slate-200 rounded-xl font-bold"
+                          placeholder="New unit (e.g. Sack)"
+                          value={newUnit}
+                          onChange={(e) => setNewUnit(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && newUnit.trim()) {
+                              e.preventDefault();
+                              if (!unitsList.includes(newUnit.trim())) {
+                                setUnitsList([...unitsList, newUnit.trim()]);
+                              }
+                              setNewUnit('');
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newUnit.trim() && !unitsList.includes(newUnit.trim())) {
+                              setUnitsList([...unitsList, newUnit.trim()]);
+                            }
+                            setNewUnit('');
+                          }}
+                          className="px-6 py-3 bg-erp-blue text-white rounded-xl text-xs font-black uppercase"
+                        >
+                          Add
+                        </button>
+                     </div>
+                     <div className="flex flex-wrap gap-2">
+                        {unitsList.map((u) => (
+                          <span key={u} className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-bold">
+                            {u}
+                            <button type="button" onClick={() => setUnitsList(unitsList.filter(x => x !== u))} className="text-rose-500 hover:text-rose-700">×</button>
+                          </span>
+                        ))}
+                     </div>
+                     <button onClick={handleSaveUnits} disabled={loading} className="btn-erp btn-erp-primary">
+                        {loading ? 'Saving...' : 'Save Units'}
+                     </button>
+                     <p className="text-xs text-slate-400">Cost centers: open Cost Centers in the sidebar to add or edit departments.</p>
                   </div>
                )}
 

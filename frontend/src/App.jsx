@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Categories = lazy(() => import('./pages/Categories'));
+const Departments = lazy(() => import('./pages/Departments'));
 const Users = lazy(() => import('./pages/Users'));
 const Funds = lazy(() => import('./pages/Funds'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -71,6 +72,11 @@ function App() {
                   } />
                   <Route path="reports" element={<Reports />} />
                   <Route path="categories" element={<Categories />} />
+                  <Route path="departments" element={
+                    <ProtectedRoute allowedRoles={['Super Admin', 'Accounting']}>
+                      <Departments />
+                    </ProtectedRoute>
+                  } />
                   <Route path="users" element={
                     <ProtectedRoute allowedRoles={['Super Admin']}>
                       <Users />

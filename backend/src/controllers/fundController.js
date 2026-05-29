@@ -55,6 +55,31 @@ exports.addFund = async (req, res) => {
   }
 };
 
+exports.deleteFund = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fund = await db('funds').where({ id }).first();
+    if (!fund) {
+      return res.status(404).json({ success: false, message: 'Fund entry not found' });
+    }
+
+    await db('funds').where({ id }).del();
+
+    await db('activity_logs').insert({
+      user_id: req.user.id,
+      action: 'DELETE_FUND',
+      details: `Removed fund entry #${id} (PHP ${fund.amount})`,
+      ip_address: req.ip
+    });
+
+    broadcast('balance_updated', { type: 'FUND_DELETED', id });
+
+    res.json({ success: true, message: 'Fund entry deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.getBalance = async (req, res) => {
   try {
     const totalInResult = await db('funds').sum('amount as total').first();
