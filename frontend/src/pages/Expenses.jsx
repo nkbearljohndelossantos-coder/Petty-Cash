@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { 
   Plus, 
@@ -63,21 +63,16 @@ const Expenses = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const filtersRef = useRef(filters);
+  const fetchAbortRef = useRef(null);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
 
   useEffect(() => {
     fetchMetadata();
   }, []);
-
-  useEffect(() => {
-    const handleBalanceUpdate = () => {
-      fetchData(true);
-    };
-
-    window.addEventListener('balance_updated', handleBalanceUpdate);
-    return () => {
-      window.removeEventListener('balance_updated', handleBalanceUpdate);
-    };
-  }, [filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -90,19 +85,43 @@ const Expenses = () => {
     fetchData();
   }, [filters]);
 
-  const fetchData = async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await api.get('/expenses', { params: filters });
-      setExpenses(res.data || res || []);
-      setPagination(res.pagination || { total: 0, page: 1, limit: 10 });
-    } catch (err) {
-      console.error('Fetch Expenses Error:', err);
-      if (!silent) setExpenses([]);
-    } finally {
-      if (!silent) setLoading(false);
+  const fetchData = useCallback(async (showSpinner = true) => {
+    if (fetchAbortRef.current) {
+      fetchAbortRef.current.abort();
     }
-  };
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+
+    if (showSpinner) setLoading(true);
+    try {
+      const res = await api.get('/expenses', {
+        params: filtersRef.current,
+        signal: controller.signal
+      });
+      if (controller.signal.aborted) return;
+
+      const nextExpenses = res.data || res || [];
+      const nextPagination = res.pagination || { total: 0, page: 1, limit: 10 };
+
+      setExpenses(prev => {
+        const prevKey = prev.map(e => `${e.id}:${e.status}:${e.amount}`).join('|');
+        const nextKey = nextExpenses.map(e => `${e.id}:${e.status}:${e.amount}`).join('|');
+        return prevKey === nextKey ? prev : nextExpenses;
+      });
+      setPagination(prev => {
+        if (prev.total === nextPagination.total && prev.page === nextPagination.page && prev.limit === nextPagination.limit) {
+          return prev;
+        }
+        return nextPagination;
+      });
+    } catch (err) {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || err?.message === 'canceled') return;
+      console.error('Fetch Expenses Error:', err);
+      if (showSpinner) setExpenses([]);
+    } finally {
+      if (!controller.signal.aborted && showSpinner) setLoading(false);
+    }
+  }, []);
 
   const fetchMetadata = async () => {
     try {
@@ -148,7 +167,7 @@ const Expenses = () => {
         status: 'Pending'
       });
       setFiles([]);
-      fetchData();
+      fetchData(true);
     } catch (err) {
       alert(err.message);
     }
@@ -190,7 +209,7 @@ const Expenses = () => {
     try {
       await api.put(`/expenses/${selectedExpense.id}`, formData);
       setShowEditModal(false);
-      fetchData();
+      fetchData(true);
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -202,7 +221,7 @@ const Expenses = () => {
   const handleStatusUpdate = async (id, status) => {
     try {
       await api.patch(`/expenses/${id}/status`, { status });
-      fetchData();
+      fetchData(true);
     } catch (err) {
       alert(err.message);
     }
