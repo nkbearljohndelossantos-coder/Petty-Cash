@@ -45,6 +45,7 @@ const Expenses = () => {
     endDate: ''
   });
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10 });
+  const [newUnit, setNewUnit] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -129,6 +130,28 @@ const Expenses = () => {
     return () => window.removeEventListener('expense_updated', onExpenseUpdated);
   }, [fetchData]);
 
+  const handleAddUnit = async () => {
+    const trimmed = newUnit.trim();
+    if (!trimmed) return;
+    if (units.includes(trimmed)) {
+      setFormData((prev) => ({ ...prev, unit: trimmed }));
+      setNewUnit('');
+      return;
+    }
+    try {
+      const res = await api.post('/settings/expense-units', { unit: trimmed });
+      const updated = res.data || res || [];
+      const list = Array.isArray(updated) ? updated : [...units, trimmed];
+      setUnits(list);
+      setFormData((prev) => ({ ...prev, unit: trimmed }));
+      setNewUnit('');
+    } catch (err) {
+      setUnits((prev) => [...prev, trimmed]);
+      setFormData((prev) => ({ ...prev, unit: trimmed }));
+      setNewUnit('');
+    }
+  };
+
   const fetchMetadata = async () => {
     try {
       const [catRes, deptRes, settingsRes] = await Promise.all([
@@ -165,6 +188,7 @@ const Expenses = () => {
         alert('Amount exceeds the approval threshold. This expense has been sent for email approval.');
       }
       setShowAddModal(false);
+      setNewUnit('');
       setFormData({
         date: format(new Date(), 'yyyy-MM-dd'),
         category_id: '',
@@ -621,6 +645,29 @@ const Expenses = () => {
                         <option key={u} value={u}>{u}</option>
                       ))}
                     </select>
+                    <div className="flex gap-2 mt-2">
+                      <input
+                        type="text"
+                        className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-800 placeholder:text-slate-300"
+                        placeholder="Add new unit if not listed..."
+                        value={newUnit}
+                        onChange={(e) => setNewUnit(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddUnit();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddUnit}
+                        disabled={!newUnit.trim()}
+                        className="px-4 py-3 bg-erp-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        Add Unit
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Total Amount (PHP)</label>

@@ -34,6 +34,41 @@ router.put('/', protect, authorize('Super Admin'), async (req, res) => {
   }
 });
 
+router.post('/expense-units', protect, async (req, res) => {
+  try {
+    const { unit } = req.body;
+    const trimmed = (unit || '').trim();
+    if (!trimmed) {
+      return res.status(400).json({ success: false, message: 'Unit name is required' });
+    }
+
+    const row = await db('settings').where({ key: 'expense_units' }).first();
+    let units = [];
+    if (row?.value) {
+      try {
+        const parsed = JSON.parse(row.value);
+        units = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        units = [];
+      }
+    }
+
+    if (!units.includes(trimmed)) {
+      units.push(trimmed);
+      const stored = JSON.stringify(units);
+      if (row) {
+        await db('settings').where({ key: 'expense_units' }).update({ value: stored, updated_at: db.fn.now() });
+      } else {
+        await db('settings').insert({ key: 'expense_units', value: stored });
+      }
+    }
+
+    res.json({ success: true, data: units, message: 'Unit added' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.post('/clear-transactions', protect, authorize('Super Admin'), async (req, res) => {
   try {
     // Disable foreign key checks to allow truncation

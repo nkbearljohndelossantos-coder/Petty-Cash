@@ -17,7 +17,9 @@ exports.getExpenses = async (req, res) => {
     requestedBy
   } = req.query;
 
-  const offset = (page - 1) * limit;
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+  const offset = (pageNum - 1) * limitNum;
 
   try {
     let query = db('expenses')
@@ -28,7 +30,7 @@ exports.getExpenses = async (req, res) => {
         'expenses.*',
         'categories.name as category_name',
         'departments.name as department_name',
-        'users.full_name as creator_name'
+        db.raw('COALESCE(users.full_name, users.username) as creator_name')
       );
 
     // Filters
@@ -55,19 +57,20 @@ exports.getExpenses = async (req, res) => {
 
     const expenses = await query
       .orderBy('expenses.date', 'desc')
-      .limit(limit)
+      .limit(limitNum)
       .offset(offset);
 
     res.json({
       success: true,
       data: expenses,
       pagination: {
-        total: parseInt(totalCount.total),
-        page: parseInt(page),
-        limit: parseInt(limit)
+        total: parseInt(totalCount?.total || 0, 10),
+        page: pageNum,
+        limit: limitNum
       }
     });
   } catch (err) {
+    console.error('getExpenses error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };
