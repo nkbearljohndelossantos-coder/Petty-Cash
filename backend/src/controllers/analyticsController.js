@@ -8,7 +8,7 @@ exports.getDashboardStats = async (req, res) => {
     const [totalExpensesResult] = await db('expenses').sum('amount as total').whereNot('status', 'Rejected').catch(() => [{}]);
     const [dailyExpensesResult] = await db('expenses').sum('amount as total').where('date', today).whereNot('status', 'Rejected').catch(() => [{}]);
     const [monthlyExpensesResult] = await db('expenses').sum('amount as total').where('date', '>=', firstDayOfMonth).whereNot('status', 'Rejected').catch(() => [{}]);
-    const [pendingApprovalResult] = await db('expenses').count('id as total').where('status', 'Pending').catch(() => [{}]);
+    const [pendingApprovalResult] = await db('expenses').count('id as total').whereIn('status', ['Pending', 'For Approval']).catch(() => [{}]);
     const [pendingLiquidationResult] = await db('expenses').count('id as total').where('status', 'Approved').catch(() => [{}]);
     
     const totalExpenses = parseFloat(totalExpensesResult?.total) || 0;

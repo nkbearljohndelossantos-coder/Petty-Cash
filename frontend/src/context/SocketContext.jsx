@@ -274,6 +274,10 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new Event('balance_updated'));
       });
 
+      newSocket.on('expense_updated', (data) => {
+        window.dispatchEvent(new CustomEvent('expense_updated', { detail: data }));
+      });
+
       setSocket(newSocket);
 
       return () => newSocket.close();

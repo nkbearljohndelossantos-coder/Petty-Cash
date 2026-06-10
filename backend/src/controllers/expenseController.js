@@ -2,6 +2,7 @@ const db = require('../config/db');
 const { logActivity } = require('../utils/logService');
 const { dispatchNotification } = require('../services/notificationDispatcher');
 const { broadcast } = require('../services/socketService');
+const approvalService = require('../services/approvalService');
 
 exports.getExpenses = async (req, res) => {
   const { 
@@ -83,8 +84,9 @@ exports.getExpense = async (req, res) => {
     }
 
     const attachments = await db('expense_attachments').where({ expense_id: expense.id });
+    const audit_trail = await approvalService.getExpenseAuditTrail(expense.id);
 
-    res.json({ success: true, data: { ...expense, attachments } });
+    res.json({ success: true, data: { ...expense, attachments, audit_trail } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -93,6 +95,12 @@ exports.getExpense = async (req, res) => {
 exports.createExpense = async (req, res) => {
   try {
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
+
+    const requiresApproval = await approvalService.shouldRequireApproval(amount);
+    let initialStatus = status || 'Pending';
+    if (requiresApproval) {
+      initialStatus = 'For Approval';
+    }
 
     const [expenseId] = await db('expenses').insert({
       date,
@@ -103,11 +111,15 @@ exports.createExpense = async (req, res) => {
       amount,
       quantity: quantity || 1,
       unit: unit || 'Piece',
-      status: status || 'Pending',
-      created_by: req.user.id
+      status: initialStatus,
+      created_by: req.user.id,
+      current_approval_level: requiresApproval ? 1 : 0,
+      submitted_by: requiresApproval ? req.user.id : null,
+      submitted_at: requiresApproval ? db.fn.now() : null,
+      approval_context: requiresApproval ? 'create' : null
     });
 
-    const expense = await db('expenses').where({ id: expenseId }).first();
+    let expense = await db('expenses').where({ id: expenseId }).first();
 
     // Handle attachments if any (multer will handle files)
     if (req.files && req.files.length > 0) {
@@ -127,23 +139,51 @@ exports.createExpense = async (req, res) => {
       ip_address: req.ip
     });
 
-    // Notify Admins
-    const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
-    for (const admin of admins) {
-      await dispatchNotification(admin.id, {
-        title: 'New Expense Request',
-        message: `A new expense request for ₱${amount} has been submitted by ${requested_by}.`,
-        type: 'approval',
-        link: `/expenses?id=${expense.id}`,
-        templateName: 'expense_request_admin'
+    if (requiresApproval) {
+      await approvalService.recordAudit({
+        expenseId: expense.id,
+        action: 'created',
+        actorType: 'user',
+        actorUserId: req.user.id,
+        ipAddress: approvalService.getClientIp(req),
+        approvalLevel: 0
       });
+      await approvalService.recordAudit({
+        expenseId: expense.id,
+        action: 'submitted',
+        actorType: 'user',
+        actorUserId: req.user.id,
+        ipAddress: approvalService.getClientIp(req),
+        approvalLevel: 1
+      });
+
+      const expenseDetails = await db('expenses')
+        .leftJoin('categories', 'expenses.category_id', 'categories.id')
+        .leftJoin('departments', 'expenses.department_id', 'departments.id')
+        .select('expenses.*', 'categories.name as category_name', 'departments.name as department_name')
+        .where('expenses.id', expense.id)
+        .first();
+
+      await approvalService.sendApprovalEmail(expenseDetails, 1);
+      broadcast('expense_updated', { expenseId: expense.id, status: 'For Approval' });
+    } else {
+      const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
+      for (const admin of admins) {
+        await dispatchNotification(admin.id, {
+          title: 'New Expense Request',
+          message: `A new expense request for ₱${amount} has been submitted by ${requested_by}.`,
+          type: 'approval',
+          link: `/expenses?id=${expense.id}`,
+          templateName: 'expense_request_admin'
+        });
+      }
+
+      if (status === 'Approved') {
+        broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount });
+      }
     }
 
-    // Broadcast real-time balance update if it affects funds (Direct Approval)
-    if (status === 'Approved') {
-      broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount });
-    }
-
+    expense = await db('expenses').where({ id: expenseId }).first();
     res.status(201).json({ success: true, data: expense });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -225,6 +265,30 @@ exports.updateStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    const currentExpense = await db('expenses').where({ id }).first();
+    if (!currentExpense) {
+      return res.status(404).json({ success: false, message: 'Expense not found' });
+    }
+
+    // Intercept liquidation requests that exceed the approval threshold
+    if (status === 'Liquidated' && currentExpense.status === 'Approved') {
+      const requiresApproval = await approvalService.shouldRequireApproval(currentExpense.amount);
+      if (requiresApproval) {
+        const updatedExpense = await approvalService.initiateApprovalWorkflow(
+          id,
+          req.user.id,
+          approvalService.getClientIp(req),
+          'liquidation'
+        );
+        return res.json({
+          success: true,
+          data: updatedExpense,
+          message: 'Amount exceeds approval threshold. Sent for email approval.',
+          requiresApproval: true
+        });
+      }
+    }
+
     await db('expenses')
       .where({ id })
       .update({
@@ -234,10 +298,6 @@ exports.updateStatus = async (req, res) => {
 
     const updatedExpense = await db('expenses').where({ id }).first();
 
-    if (!updatedExpense) {
-      return res.status(404).json({ success: false, message: 'Expense not found' });
-    }
-
     await db('activity_logs').insert({
       user_id: req.user.id,
       action: 'UPDATE_STATUS',
@@ -245,7 +305,6 @@ exports.updateStatus = async (req, res) => {
       ip_address: req.ip
     });
 
-    // Notify Creator
     if (updatedExpense.created_by) {
       await dispatchNotification(updatedExpense.created_by, {
         title: `Expense ${status}`,
@@ -256,10 +315,11 @@ exports.updateStatus = async (req, res) => {
       });
     }
 
-    // Broadcast real-time balance update if status affects balance
     if (['Approved', 'Rejected', 'Liquidated'].includes(status)) {
       broadcast('balance_updated', { type: 'STATUS_UPDATED', status });
     }
+
+    broadcast('expense_updated', { expenseId: id, status });
 
     res.json({ success: true, data: updatedExpense });
   } catch (err) {

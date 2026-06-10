@@ -123,6 +123,12 @@ const Expenses = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const onExpenseUpdated = () => fetchData(false);
+    window.addEventListener('expense_updated', onExpenseUpdated);
+    return () => window.removeEventListener('expense_updated', onExpenseUpdated);
+  }, [fetchData]);
+
   const fetchMetadata = async () => {
     try {
       const [catRes, deptRes, settingsRes] = await Promise.all([
@@ -151,9 +157,13 @@ const Expenses = () => {
     files.forEach(file => data.append('attachments', file));
 
     try {
-      await api.post('/expenses', data, {
+      const res = await api.post('/expenses', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      const created = res.data || res;
+      if (created?.status === 'For Approval') {
+        alert('Amount exceeds the approval threshold. This expense has been sent for email approval.');
+      }
       setShowAddModal(false);
       setFormData({
         date: format(new Date(), 'yyyy-MM-dd'),
@@ -220,7 +230,10 @@ const Expenses = () => {
 
   const handleStatusUpdate = async (id, status) => {
     try {
-      await api.patch(`/expenses/${id}/status`, { status });
+      const res = await api.patch(`/expenses/${id}/status`, { status });
+      if (res.requiresApproval) {
+        alert(res.message || 'This expense has been sent for email approval.');
+      }
       fetchData(true);
     } catch (err) {
       alert(err.message);
@@ -256,6 +269,8 @@ const Expenses = () => {
       case 'Pending': return 'status-pending';
       case 'Rejected': return 'status-rejected';
       case 'Liquidated': return 'status-liquidated';
+      case 'For Approval': return 'status-for-approval';
+      case 'Declined': return 'status-declined';
       default: return '';
     }
   };
@@ -319,6 +334,8 @@ const Expenses = () => {
               <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
               <option value="Liquidated">Liquidated</option>
+              <option value="For Approval">For Approval</option>
+              <option value="Declined">Declined</option>
             </select>
           </div>
           <div className="lg:col-span-2 flex items-center gap-4">
@@ -686,6 +703,24 @@ const Expenses = () => {
                              </a>
                           ))}
                        </div>
+                    </div>
+                  )}
+                  {selectedExpense.audit_trail && selectedExpense.audit_trail.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Approval Audit Trail</p>
+                      <div className="space-y-2">
+                        {selectedExpense.audit_trail.map((entry, i) => (
+                          <div key={i} className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl text-xs">
+                            <Activity size={14} className="text-erp-blue mt-0.5 shrink-0" />
+                            <div className="flex-1">
+                              <p className="font-bold text-slate-800">{entry.label}: {entry.actor_name}</p>
+                              <p className="text-slate-500">{format(new Date(entry.created_at), 'MMM dd, yyyy HH:mm:ss')}</p>
+                              {entry.ip_address && <p className="text-slate-400">IP: {entry.ip_address}</p>}
+                              {entry.decline_reason && <p className="text-rose-600 mt-1">Reason: {entry.decline_reason}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                </div>

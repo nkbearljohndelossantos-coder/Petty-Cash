@@ -21,6 +21,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const BackupRestore = lazy(() => import('./pages/BackupRestore'));
 const EmailAutomation = lazy(() => import('./pages/EmailAutomation'));
 const QueueMonitor = lazy(() => import('./pages/QueueMonitor'));
+const ApprovalAction = lazy(() => import('./pages/ApprovalAction'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -56,6 +57,8 @@ function App() {
             <Suspense fallback={loadingFallback}>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/approval/approve/:token" element={<ApprovalAction mode="approve" />} />
+                <Route path="/approval/decline/:token" element={<ApprovalAction mode="decline" />} />
                 
                 <Route path="/" element={
                   <ProtectedRoute>

@@ -5,12 +5,13 @@ import {
   Palette, Globe, Database, HelpCircle,
   Sun, Save, RefreshCcw,
   Building, Wallet, Coins, Lock, Mail,
-  CheckCircle2, AlertCircle
+  CheckCircle2, AlertCircle, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
 import Users from './Users';
+import ApprovalSettingsPanel from '../components/ApprovalSettingsPanel';
 
 const Settings = () => {
   const { user, logout } = useAuth();
@@ -116,6 +117,7 @@ const Settings = () => {
     { name: 'General', icon: SettingsIcon },
     { name: 'Users', icon: Shield },
     { name: 'Master Data', icon: Globe },
+    { name: 'Approval', icon: ShieldCheck },
     { name: 'Notifications', icon: Bell },
     { name: 'Appearance', icon: Palette },
     { name: 'Security', icon: Lock },
@@ -295,6 +297,8 @@ const Settings = () => {
                      <p className="text-xs text-slate-400">Cost centers: open Cost Centers in the sidebar to add or edit departments.</p>
                   </div>
                )}
+
+               {activeTab === 'Approval' && <ApprovalSettingsPanel />}
 
                {activeTab === 'Notifications' && (
                   <div className="space-y-8">

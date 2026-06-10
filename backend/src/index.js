@@ -170,6 +170,7 @@ app.use('/api/backup', require('./routes/backup'));
 // New Notification Routes
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/email-automation', require('./routes/emailAutomation'));
+app.use('/api/approval', require('./routes/approval'));
 
 // Health check route
 app.get('/health', (req, res) => {
