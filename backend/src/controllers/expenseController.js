@@ -33,8 +33,10 @@ exports.getExpenses = async (req, res) => {
 
     // Filters
     if (search) {
-      query = query.where('expenses.remarks', 'like', `%${search}%`)
-        .orWhere('expenses.requested_by', 'like', `%${search}%`);
+      query = query.where(function () {
+        this.where('expenses.remarks', 'like', `%${search}%`)
+          .orWhere('expenses.requested_by', 'like', `%${search}%`);
+      });
     }
 
     if (category) query = query.where('expenses.category_id', category);
@@ -84,7 +86,12 @@ exports.getExpense = async (req, res) => {
     }
 
     const attachments = await db('expense_attachments').where({ expense_id: expense.id });
-    const audit_trail = await approvalService.getExpenseAuditTrail(expense.id);
+    let audit_trail = [];
+    try {
+      audit_trail = await approvalService.getExpenseAuditTrail(expense.id);
+    } catch (_) {
+      audit_trail = [];
+    }
 
     res.json({ success: true, data: { ...expense, attachments, audit_trail } });
   } catch (err) {
@@ -96,13 +103,14 @@ exports.createExpense = async (req, res) => {
   try {
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
 
-    const requiresApproval = await approvalService.shouldRequireApproval(amount);
+    const hasApprovalSchema = await db.schema.hasColumn('expenses', 'approval_context');
+    const requiresApproval = hasApprovalSchema && await approvalService.shouldRequireApproval(amount);
     let initialStatus = status || 'Pending';
     if (requiresApproval) {
       initialStatus = 'For Approval';
     }
 
-    const [expenseId] = await db('expenses').insert({
+    const insertData = {
       date,
       category_id: category_id || null,
       remarks,
@@ -112,12 +120,17 @@ exports.createExpense = async (req, res) => {
       quantity: quantity || 1,
       unit: unit || 'Piece',
       status: initialStatus,
-      created_by: req.user.id,
-      current_approval_level: requiresApproval ? 1 : 0,
-      submitted_by: requiresApproval ? req.user.id : null,
-      submitted_at: requiresApproval ? db.fn.now() : null,
-      approval_context: requiresApproval ? 'create' : null
-    });
+      created_by: req.user.id
+    };
+
+    if (hasApprovalSchema && requiresApproval) {
+      insertData.current_approval_level = 1;
+      insertData.submitted_by = req.user.id;
+      insertData.submitted_at = db.fn.now();
+      insertData.approval_context = 'create';
+    }
+
+    const [expenseId] = await db('expenses').insert(insertData);
 
     let expense = await db('expenses').where({ id: expenseId }).first();
 
@@ -139,7 +152,7 @@ exports.createExpense = async (req, res) => {
       ip_address: req.ip
     });
 
-    if (requiresApproval) {
+    if (requiresApproval && hasApprovalSchema) {
       await approvalService.recordAudit({
         expenseId: expense.id,
         action: 'created',
@@ -271,7 +284,8 @@ exports.updateStatus = async (req, res) => {
     }
 
     // Intercept liquidation requests that exceed the approval threshold
-    if (status === 'Liquidated' && currentExpense.status === 'Approved') {
+    const hasApprovalSchema = await db.schema.hasColumn('expenses', 'approval_context');
+    if (hasApprovalSchema && status === 'Liquidated' && currentExpense.status === 'Approved') {
       const requiresApproval = await approvalService.shouldRequireApproval(currentExpense.amount);
       if (requiresApproval) {
         const updatedExpense = await approvalService.initiateApprovalWorkflow(

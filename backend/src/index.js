@@ -112,6 +112,10 @@ const PORT = process.env.PORT || 5000;
         }
       }
     }
+    // Approval workflow schema repair (idempotent)
+    const { ensureApprovalSchema } = require('./utils/approvalSchemaRepair');
+    await ensureApprovalSchema(db);
+
     console.log('--- SCHEMA REPAIR ENGINE: CHECK COMPLETE ---');
   } catch (err) {
     console.error('CRITICAL: Database initialization failed!');

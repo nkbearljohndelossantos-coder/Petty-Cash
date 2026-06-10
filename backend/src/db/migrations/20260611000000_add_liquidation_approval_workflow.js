@@ -1,12 +1,13 @@
 exports.up = async function (knex) {
-  // Extend expense status enum
-  await knex.raw(`
-    ALTER TABLE expenses
-    MODIFY COLUMN status ENUM(
-      'Pending', 'Approved', 'Rejected', 'Liquidated',
-      'For Approval', 'Declined'
-    ) DEFAULT 'Pending'
-  `);
+  // Use VARCHAR for status (ENUM alters often fail on shared hosting)
+  const [statusCol] = await knex.raw("SHOW COLUMNS FROM expenses LIKE 'status'");
+  const statusType = statusCol?.[0]?.Type || '';
+  if (statusType.startsWith('enum')) {
+    await knex.raw(`
+      ALTER TABLE expenses
+      MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'Pending'
+    `);
+  }
 
   if (!(await knex.schema.hasColumn('expenses', 'current_approval_level'))) {
     await knex.schema.table('expenses', (table) => {

@@ -44,9 +44,12 @@ exports.getApprovalSettings = async () => {
     }
   });
 
-  const approvers = await db('liquidation_approvers')
-    .where({ is_active: true })
-    .orderBy('approval_level', 'asc');
+  let approvers = [];
+  if (await db.schema.hasTable('liquidation_approvers')) {
+    approvers = await db('liquidation_approvers')
+      .where({ is_active: true })
+      .orderBy('approval_level', 'asc');
+  }
 
   settings.approvers = approvers;
 
@@ -124,6 +127,8 @@ exports.recordAudit = async ({
   declineReason = null,
   approvalLevel = 1
 }) => {
+  if (!(await db.schema.hasTable('liquidation_approval_audit'))) return;
+
   await db('liquidation_approval_audit').insert({
     expense_id: expenseId,
     action,
@@ -154,6 +159,10 @@ const getExpenseDetails = async (expenseId) => {
 };
 
 exports.getExpenseAuditTrail = async (expenseId) => {
+  if (!(await db.schema.hasTable('liquidation_approval_audit'))) {
+    return [];
+  }
+
   const audits = await db('liquidation_approval_audit')
     .leftJoin('users', 'liquidation_approval_audit.actor_user_id', 'users.id')
     .select(
@@ -539,8 +548,10 @@ exports.processDecline = async (token, declineReason, ipAddress, approverEmail =
 };
 
 // CRUD for approvers (future multi-level)
-exports.listApprovers = () =>
-  db('liquidation_approvers').orderBy('approval_level', 'asc');
+exports.listApprovers = async () => {
+  if (!(await db.schema.hasTable('liquidation_approvers'))) return [];
+  return db('liquidation_approvers').orderBy('approval_level', 'asc');
+};
 
 exports.addApprover = async (data) => {
   const [id] = await db('liquidation_approvers').insert({
