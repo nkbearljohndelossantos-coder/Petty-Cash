@@ -186,7 +186,19 @@ const frontendPath = path.join(__dirname, '../dist');
 const indexPath = path.join(frontendPath, 'index.html');
 
 if (fs.existsSync(frontendPath)) {
-  app.use(express.static(frontendPath));
+  app.use(express.static(frontendPath, {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+      } else if (filePath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+      }
+      if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
   console.log('Serving frontend from:', frontendPath);
 } else {
   console.warn('Frontend dist folder not found at:', frontendPath);
@@ -195,6 +207,11 @@ if (fs.existsSync(frontendPath)) {
 app.get(/.*/, (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     return res.status(404).json({ success: false, message: 'API Route Not Found' });
+  }
+
+  // Missing static assets must NOT return index.html (causes MIME type errors)
+  if (req.originalUrl.startsWith('/assets/')) {
+    return res.status(404).type('text/plain').send('Asset not found');
   }
   
   if (fs.existsSync(indexPath)) {
