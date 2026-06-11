@@ -43,6 +43,6 @@ router.get('/:id', getExpense);
 router.post('/', upload.array('attachments', 5), createExpense);
 router.put('/:id', authorize('Super Admin', 'Accounting', 'Manager'), updateExpense);
 router.patch('/:id/status', authorize('Super Admin', 'Accounting', 'Manager'), updateStatus);
-router.delete('/:id', authorize('Super Admin', 'Accounting'), deleteExpense);
+router.delete('/:id', authorize('Super Admin'), deleteExpense);
 
 module.exports = router;

@@ -264,6 +264,19 @@ const Expenses = () => {
     }
   };
 
+  const handleDelete = async (expense) => {
+    const ref = `PCV-${String(expense.id).padStart(4, '0')}`;
+    if (!window.confirm(`Permanently delete ${ref} (₱${parseFloat(expense.amount).toLocaleString()})? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/expenses/${expense.id}`);
+      fetchData(true);
+    } catch (err) {
+      alert(err.message || 'Failed to delete expense');
+    }
+  };
+
   const handleExportPDF = () => {
     exportExpensesToPDF(expenses, filters);
   };
@@ -502,6 +515,15 @@ const Expenses = () => {
                         >
                           <Edit size={18} />
                         </button>
+                        {user?.role === 'Super Admin' && (
+                          <button
+                            onClick={() => handleDelete(expense)}
+                            className="p-2.5 hover:bg-rose-600 hover:text-white rounded-xl text-rose-500 transition-all shadow-sm bg-white border border-rose-100"
+                            title="Delete from Database"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

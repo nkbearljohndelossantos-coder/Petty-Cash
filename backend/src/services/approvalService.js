@@ -264,22 +264,29 @@ exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
   const { approveToken, declineToken } = await createApprovalTokens(expense.id, approvalLevel);
   const baseUrl = getFrontendUrl();
 
-  await sendEmail({
-    templateName: 'liquidation_approval_request',
-    recipient: approver.email,
-    data: {
-      reference_number: formatReference(expense.id),
-      requested_by: expense.requested_by,
-      department: expense.department_name || 'N/A',
-      category: expense.category_name || 'N/A',
-      amount: parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }),
-      remarks: expense.remarks || 'No remarks provided',
-      approve_link: `${baseUrl}/approval/approve/${approveToken}`,
-      decline_link: `${baseUrl}/approval/decline/${declineToken}`
+  try {
+    const result = await sendEmail({
+      templateName: 'liquidation_approval_request',
+      recipient: approver.email,
+      data: {
+        reference_number: formatReference(expense.id),
+        requested_by: expense.requested_by,
+        department: expense.department_name || 'N/A',
+        category: expense.category_name || 'N/A',
+        amount: parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+        remarks: expense.remarks || 'No remarks provided',
+        approve_link: `${baseUrl}/approval/approve/${approveToken}`,
+        decline_link: `${baseUrl}/approval/decline/${declineToken}`
+      }
+    });
+    if (!result.success) {
+      console.warn('Approval email not sent:', result.message);
     }
-  });
-
-  return true;
+    return result.success;
+  } catch (err) {
+    console.error('Approval email error:', err.message);
+    return false;
+  }
 };
 
 exports.initiateApprovalWorkflow = async (expenseId, submittedByUserId, ipAddress, context = 'liquidation') => {

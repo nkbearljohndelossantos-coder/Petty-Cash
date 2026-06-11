@@ -1,22 +1,37 @@
 const nodemailer = require('nodemailer');
 const knex = require('../config/db');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_PORT == 465, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+const getSmtpConfig = () => ({
+  host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
+  port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10),
+  user: process.env.SMTP_USER || process.env.EMAIL_USER,
+  pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
 });
 
-/**
- * Replace placeholders in template body
- */
+const isEmailConfigured = () => {
+  const { host, user, pass } = getSmtpConfig();
+  return Boolean(host && user && pass);
+};
+
+let transporter = null;
+
+const getTransporter = () => {
+  if (!isEmailConfigured()) return null;
+  if (!transporter) {
+    const { host, port, user, pass } = getSmtpConfig();
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass }
+    });
+  }
+  return transporter;
+};
+
 const compileTemplate = (html, data) => {
   let compiled = html;
-  Object.keys(data).forEach(key => {
+  Object.keys(data).forEach((key) => {
     const regex = new RegExp(`{{${key}}}`, 'g');
     compiled = compiled.replace(regex, data[key]);
   });
@@ -24,15 +39,27 @@ const compileTemplate = (html, data) => {
 };
 
 const sendEmail = async ({ templateName, recipient, data, attachments = [] }) => {
+  if (!isEmailConfigured()) {
+    console.warn('Email skipped: SMTP not configured (set SMTP_HOST, SMTP_USER, SMTP_PASS in .env)');
+    return { success: false, skipped: true, message: 'Email not configured' };
+  }
+
+  const mailer = getTransporter();
+  if (!mailer) {
+    return { success: false, skipped: true, message: 'Email not configured' };
+  }
+
   try {
-    // 1. Fetch Template
     const template = await knex('email_templates').where('name', templateName).first();
-    if (!template) throw new Error(`Template [${templateName}] not found`);
+    if (!template) {
+      console.error(`Email template [${templateName}] not found`);
+      return { success: false, message: `Template [${templateName}] not found` };
+    }
 
     const compiledBody = compileTemplate(template.body, data);
     const compiledSubject = compileTemplate(template.subject, data);
+    const { user } = getSmtpConfig();
 
-    // 2. Create Log Entry
     const [logId] = await knex('email_logs').insert({
       recipient,
       subject: compiledSubject,
@@ -42,20 +69,18 @@ const sendEmail = async ({ templateName, recipient, data, attachments = [] }) =>
     });
 
     try {
-      // 3. Send Email
-      const info = await transporter.sendMail({
-        from: `"${process.env.APP_NAME || 'NKB Petty Cash'}" <${process.env.SMTP_USER}>`,
+      const info = await mailer.sendMail({
+        from: `"${process.env.APP_NAME || 'NKB Petty Cash'}" <${user}>`,
         to: recipient,
         subject: compiledSubject,
         html: compiledBody,
-        attachments: attachments.map(att => ({
+        attachments: attachments.map((att) => ({
           filename: att.filename,
-          path: att.path, // or content: att.content
+          path: att.path,
           contentType: att.contentType
         }))
       });
 
-      // 4. Update Log on Success
       await knex('email_logs').where('id', logId).update({
         status: 'sent',
         sent_at: new Date()
@@ -63,25 +88,25 @@ const sendEmail = async ({ templateName, recipient, data, attachments = [] }) =>
 
       console.log(`Email sent to ${recipient}: ${info.messageId}`);
       return { success: true, messageId: info.messageId };
-
     } catch (sendErr) {
-      // 5. Update Log on Failure
       await knex('email_logs').where('id', logId).update({
         status: 'failed',
         error_message: sendErr.message
       });
-      throw sendErr;
+      console.error(`Email send failed to ${recipient}:`, sendErr.message);
+      return { success: false, message: sendErr.message };
     }
-
   } catch (err) {
     console.error('Email Service Error:', err.message);
-    throw err;
+    return { success: false, message: err.message };
   }
 };
 
 const verifyConnection = async () => {
   try {
-    await transporter.verify();
+    const mailer = getTransporter();
+    if (!mailer) return false;
+    await mailer.verify();
     return true;
   } catch (err) {
     console.error('SMTP Connection Failed:', err.message);
@@ -91,5 +116,6 @@ const verifyConnection = async () => {
 
 module.exports = {
   sendEmail,
-  verifyConnection
+  verifyConnection,
+  isEmailConfigured
 };

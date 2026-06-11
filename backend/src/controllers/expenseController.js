@@ -180,7 +180,11 @@ exports.createExpense = async (req, res) => {
         .where('expenses.id', expense.id)
         .first();
 
-      await approvalService.sendApprovalEmail(expenseDetails, 1);
+      try {
+        await approvalService.sendApprovalEmail(expenseDetails, 1);
+      } catch (emailErr) {
+        console.error('Approval email failed (expense still created):', emailErr.message);
+      }
       broadcast('expense_updated', { expenseId: expense.id, status: 'For Approval' });
     } else {
       const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
@@ -252,12 +256,19 @@ exports.deleteExpense = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Check if it exists
     const expense = await db('expenses').where({ id }).first();
     if (!expense) {
       return res.status(404).json({ success: false, message: 'Expense not found' });
     }
 
+    // Remove related records before delete
+    if (await db.schema.hasTable('liquidation_approval_tokens')) {
+      await db('liquidation_approval_tokens').where({ expense_id: id }).del();
+    }
+    if (await db.schema.hasTable('liquidation_approval_audit')) {
+      await db('liquidation_approval_audit').where({ expense_id: id }).del();
+    }
+    await db('expense_attachments').where({ expense_id: id }).del();
     await db('expenses').where({ id }).del();
 
     await db('activity_logs').insert({
@@ -269,8 +280,9 @@ exports.deleteExpense = async (req, res) => {
 
     // Broadcast since balance might have been restored if it was approved
     broadcast('balance_updated', { type: 'EXPENSE_DELETED' });
+    broadcast('expense_updated', { expenseId: id, status: 'Deleted' });
 
-    res.json({ success: true, message: 'Expense deleted successfully' });
+    res.json({ success: true, message: 'Expense permanently deleted from database' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
