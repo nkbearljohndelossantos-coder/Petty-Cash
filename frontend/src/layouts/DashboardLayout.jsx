@@ -103,7 +103,7 @@ const DashboardLayout = () => {
     { icon: History, label: 'Audit Logs', to: '/logs', roles: ['Super Admin'] },
     { icon: Database, label: 'Maintenance', to: '/maintenance', roles: ['Super Admin'] },
     { icon: Settings, label: 'Settings', to: '/settings', roles: ['Super Admin'] },
-    { icon: BookOpen, label: 'User Manual', to: '/USER_MANUAL.md', external: true },
+    { icon: BookOpen, label: 'User Manual', to: '/user-manual' },
   ];
 
   const filteredNavItems = navItems.filter(item => 
