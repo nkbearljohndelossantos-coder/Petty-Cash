@@ -20,7 +20,8 @@ import {
   Calendar,
   Wallet,
   History,
-  Database
+  Database,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -29,22 +30,38 @@ import { format } from 'date-fns';
 import api from '../services/api';
 import logo from '../assets/logo.png';
 
-const SidebarItem = ({ icon: Icon, label, to, active, collapsed }) => (
-  <Link to={to} className="relative group flex items-center">
-    {active && <div className="sidebar-glow" />}
-    <div className={`sidebar-erp-link w-full ${active ? 'sidebar-erp-link-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}>
-      <Icon size={18} className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
-      {!collapsed && <span className="text-sm">{label}</span>}
-      {!collapsed && active && <ChevronRight size={12} className="ml-auto opacity-50" />}
-    </div>
-    
-    <div className="sidebar-tooltip">
-      {label}
-      {/* Tooltip Arrow */}
-      <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
-    </div>
-  </Link>
-);
+const SidebarItem = ({ icon: Icon, label, to, active, collapsed, external }) => {
+  const linkContent = (
+    <>
+      {active && !external && <div className="sidebar-glow" />}
+      <div className={`sidebar-erp-link w-full ${active && !external ? 'sidebar-erp-link-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}>
+        <Icon size={18} className={`${active && !external ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
+        {!collapsed && <span className="text-sm">{label}</span>}
+        {!collapsed && active && !external && <ChevronRight size={12} className="ml-auto opacity-50" />}
+      </div>
+      
+      <div className="sidebar-tooltip">
+        {label}
+        {/* Tooltip Arrow */}
+        <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+      </div>
+    </>
+  );
+
+  if (external) {
+    return (
+      <a href={to} target="_blank" rel="noopener noreferrer" className="relative group flex items-center">
+        {linkContent}
+      </a>
+    );
+  }
+
+  return (
+    <Link to={to} className="relative group flex items-center">
+      {linkContent}
+    </Link>
+  );
+};
 
 import NotificationCenter from '../components/NotificationCenter';
 
@@ -86,6 +103,7 @@ const DashboardLayout = () => {
     { icon: History, label: 'Audit Logs', to: '/logs', roles: ['Super Admin'] },
     { icon: Database, label: 'Maintenance', to: '/maintenance', roles: ['Super Admin'] },
     { icon: Settings, label: 'Settings', to: '/settings', roles: ['Super Admin'] },
+    { icon: BookOpen, label: 'User Manual', to: '/USER_MANUAL.md', external: true },
   ];
 
   const filteredNavItems = navItems.filter(item => 
