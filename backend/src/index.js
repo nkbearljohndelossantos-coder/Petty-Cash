@@ -185,6 +185,17 @@ app.get('/health', (req, res) => {
 const frontendPath = path.join(__dirname, '../dist');
 const indexPath = path.join(frontendPath, 'index.html');
 
+// Serve User Manual explicitly (before SPA catch-all)
+app.get('/USER_MANUAL.md', (req, res) => {
+  const manualPath = path.join(frontendPath, 'USER_MANUAL.md');
+  if (fs.existsSync(manualPath)) {
+    res.setHeader('Content-Type', 'text/markdown; charset=UTF-8');
+    res.sendFile(manualPath);
+  } else {
+    res.status(404).type('text/plain').send('User manual not found');
+  }
+});
+
 if (fs.existsSync(frontendPath)) {
   app.use(express.static(frontendPath, {
     index: false,
