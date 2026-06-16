@@ -181,12 +181,13 @@ exports.createExpense = async (req, res) => {
         .where('expenses.id', expense.id)
         .first();
 
-      emailResult = { sent: false, reason: 'Unknown error' };
+      emailResult = { sent: false, reason: 'Email service error — check server logs' };
       try {
         emailResult = await approvalService.sendApprovalEmail(expenseDetails, 1);
       } catch (emailErr) {
-        emailResult = { sent: false, reason: emailErr.message };
-        console.error('Approval email failed (expense still created):', emailErr.message);
+        const errMsg = emailErr?.message || String(emailErr) || 'Unexpected error in approval service';
+        emailResult = { sent: false, reason: errMsg };
+        console.error('Approval email failed (expense still created):', errMsg);
       }
 
       // Fallback: notify admins in-app when email fails

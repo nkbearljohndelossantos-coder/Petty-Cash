@@ -186,12 +186,13 @@ const Expenses = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const created = res.data || res;
-      const emailStatus = created?.emailStatus;
+      const emailStatus = typeof created?.emailStatus === 'object' && created?.emailStatus !== null ? created.emailStatus : {};
       if (created?.status === 'For Approval') {
-        if (emailStatus?.sent) {
+        if (emailStatus.sent) {
           alert(`Amount exceeds the approval threshold. Approval email sent to ${emailStatus.recipient}.`);
         } else {
-          alert(`Amount exceeds the approval threshold. ⚠️ Approval email could not be sent: ${emailStatus?.reason || 'Unknown error'}. Admins have been notified in-app.`);
+          const reason = emailStatus.reason || 'Unknown error — please check that approval settings and SMTP are configured in Settings > Approval';
+          alert(`Amount exceeds the approval threshold. ⚠️ Approval email could not be sent: ${reason}. Admins have been notified in-app.`);
         }
       }
       setShowAddModal(false);

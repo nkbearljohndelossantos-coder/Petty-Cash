@@ -250,22 +250,22 @@ const createApprovalTokens = async (expenseId, approvalLevel = 1) => {
 };
 
 exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
-  const settings = await exports.getApprovalSettings();
-  if (!settings.liquidation_approval_email_enabled) {
-    return { success: false, sent: false, reason: 'Email approval is disabled in settings', skipped: true };
-  }
-
-  const approvers = await exports.getActiveApprovers();
-  const approver = approvers.find((a) => a.approval_level === approvalLevel) || approvers[0];
-
-  if (!approver?.email) {
-    return { success: false, sent: false, reason: 'No approver email configured in Settings > Approval', skipped: true };
-  }
-
-  const { approveToken, declineToken } = await createApprovalTokens(expense.id, approvalLevel);
-  const baseUrl = getFrontendUrl();
-
   try {
+    const settings = await exports.getApprovalSettings();
+    if (!settings.liquidation_approval_email_enabled) {
+      return { success: false, sent: false, reason: 'Email approval is disabled in settings', skipped: true };
+    }
+
+    const approvers = await exports.getActiveApprovers();
+    const approver = approvers.find((a) => a.approval_level === approvalLevel) || approvers[0];
+
+    if (!approver?.email) {
+      return { success: false, sent: false, reason: 'No approver email configured in Settings > Approval', skipped: true };
+    }
+
+    const { approveToken, declineToken } = await createApprovalTokens(expense.id, approvalLevel);
+    const baseUrl = getFrontendUrl();
+
     const result = await sendEmail({
       templateName: 'liquidation_approval_request',
       recipient: approver.email,
@@ -287,7 +287,7 @@ exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
 
     return { success: true, sent: true, reason: 'Email sent successfully', recipient: approver.email };
   } catch (err) {
-    return { success: false, sent: false, reason: err.message || 'Unknown email error' };
+    return { success: false, sent: false, reason: err?.message || String(err) || 'Unexpected error in approval email' };
   }
 };
 
