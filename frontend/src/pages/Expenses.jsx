@@ -214,7 +214,7 @@ const Expenses = () => {
         status: 'Pending'
       });
       setFiles([]);
-      fetchData(true);
+      fetchData(false);
     } catch (err) {
       alert(err.message);
     }
@@ -256,7 +256,7 @@ const Expenses = () => {
     try {
       await api.put(`/expenses/${selectedExpense.id}`, formData);
       setShowEditModal(false);
-      fetchData(true);
+      fetchData(false);
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -272,7 +272,7 @@ const Expenses = () => {
       if (res?.requiresApproval) {
         alert(res.message || 'This expense has been sent for email approval.');
       }
-      fetchData(true);
+      fetchData(false);
     } catch (err) {
       alert(err.message);
     }
@@ -285,7 +285,7 @@ const Expenses = () => {
     }
     try {
       await api.delete(`/expenses/${expense.id}`);
-      fetchData(true);
+      fetchData(false);
     } catch (err) {
       alert(err.message || 'Failed to delete expense');
     }
