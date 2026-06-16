@@ -184,8 +184,13 @@ const Expenses = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const created = res.data || res;
+      const emailStatus = created?.emailStatus;
       if (created?.status === 'For Approval') {
-        alert('Amount exceeds the approval threshold. This expense has been sent for email approval.');
+        if (emailStatus?.sent) {
+          alert(`Amount exceeds the approval threshold. Approval email sent to ${emailStatus.recipient}.`);
+        } else {
+          alert(`Amount exceeds the approval threshold. ⚠️ Approval email could not be sent: ${emailStatus?.reason || 'Unknown error'}. Admins have been notified in-app.`);
+        }
       }
       setShowAddModal(false);
       setNewUnit('');
@@ -255,8 +260,9 @@ const Expenses = () => {
   const handleStatusUpdate = async (id, status) => {
     try {
       const res = await api.patch(`/expenses/${id}/status`, { status });
-      if (res.requiresApproval) {
-        alert(res.message || 'This expense has been sent for email approval.');
+      const payload = res.data || res;
+      if (payload?.requiresApproval) {
+        alert(payload.message || 'This expense has been sent for email approval.');
       }
       fetchData(true);
     } catch (err) {

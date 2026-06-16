@@ -180,12 +180,29 @@ exports.createExpense = async (req, res) => {
         .where('expenses.id', expense.id)
         .first();
 
+      let emailResult = { sent: false, reason: 'Unknown error' };
       try {
-        await approvalService.sendApprovalEmail(expenseDetails, 1);
+        emailResult = await approvalService.sendApprovalEmail(expenseDetails, 1);
       } catch (emailErr) {
+        emailResult = { sent: false, reason: emailErr.message };
         console.error('Approval email failed (expense still created):', emailErr.message);
       }
-      broadcast('expense_updated', { expenseId: expense.id, status: 'For Approval' });
+
+      // Fallback: notify admins in-app when email fails
+      if (!emailResult.sent) {
+        const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
+        for (const admin of admins) {
+          await dispatchNotification(admin.id, {
+            title: 'Approval Email Failed',
+            message: `Expense ${expenseDetails.id} requires approval but email could not be sent: ${emailResult.reason}. Please check SMTP settings.`,
+            type: 'warning',
+            link: `/expenses?id=${expense.id}`,
+            templateName: 'expense_request_admin'
+          });
+        }
+      }
+
+      broadcast('expense_updated', { expenseId: expense.id, status: 'For Approval', emailSent: emailResult.sent });
     } else {
       const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
       for (const admin of admins) {
@@ -204,7 +221,11 @@ exports.createExpense = async (req, res) => {
     }
 
     expense = await db('expenses').where({ id: expenseId }).first();
-    res.status(201).json({ success: true, data: expense });
+    res.status(201).json({
+      success: true,
+      data: expense,
+      emailStatus: requiresApproval && hasApprovalSchema ? emailResult : undefined
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -303,17 +324,22 @@ exports.updateStatus = async (req, res) => {
     if (hasApprovalSchema && status === 'Liquidated' && currentExpense.status === 'Approved') {
       const requiresApproval = await approvalService.shouldRequireApproval(currentExpense.amount);
       if (requiresApproval) {
-        const updatedExpense = await approvalService.initiateApprovalWorkflow(
+        const workflow = await approvalService.initiateApprovalWorkflow(
           id,
           req.user.id,
           approvalService.getClientIp(req),
           'liquidation'
         );
+        const emailSent = workflow.emailResult?.sent;
+        const message = emailSent
+          ? 'Amount exceeds approval threshold. Approval email sent successfully.'
+          : `Amount exceeds approval threshold. Approval email failed: ${workflow.emailResult?.reason}. Admins have been notified in-app.`;
         return res.json({
           success: true,
-          data: updatedExpense,
-          message: 'Amount exceeds approval threshold. Sent for email approval.',
-          requiresApproval: true
+          data: workflow.expense,
+          message,
+          requiresApproval: true,
+          emailStatus: workflow.emailResult
         });
       }
     }

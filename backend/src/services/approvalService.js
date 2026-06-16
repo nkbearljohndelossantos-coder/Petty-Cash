@@ -251,14 +251,15 @@ const createApprovalTokens = async (expenseId, approvalLevel = 1) => {
 
 exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
   const settings = await exports.getApprovalSettings();
-  if (!settings.liquidation_approval_email_enabled) return false;
+  if (!settings.liquidation_approval_email_enabled) {
+    return { success: false, sent: false, reason: 'Email approval is disabled in settings', skipped: true };
+  }
 
   const approvers = await exports.getActiveApprovers();
   const approver = approvers.find((a) => a.approval_level === approvalLevel) || approvers[0];
 
   if (!approver?.email) {
-    console.warn('No approver email configured for liquidation approval');
-    return false;
+    return { success: false, sent: false, reason: 'No approver email configured in Settings > Approval', skipped: true };
   }
 
   const { approveToken, declineToken } = await createApprovalTokens(expense.id, approvalLevel);
@@ -279,13 +280,14 @@ exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
         decline_link: `${baseUrl}/approval/decline/${declineToken}`
       }
     });
+
     if (!result.success) {
-      console.warn('Approval email not sent:', result.message);
+      return { success: false, sent: false, reason: result.message || 'SMTP email failed', skipped: result.skipped || false };
     }
-    return result.success;
+
+    return { success: true, sent: true, reason: 'Email sent successfully', recipient: approver.email };
   } catch (err) {
-    console.error('Approval email error:', err.message);
-    return false;
+    return { success: false, sent: false, reason: err.message || 'Unknown email error' };
   }
 };
 
@@ -315,15 +317,30 @@ exports.initiateApprovalWorkflow = async (expenseId, submittedByUserId, ipAddres
   });
 
   const updatedExpense = await getExpenseDetails(expenseId);
-  await exports.sendApprovalEmail(updatedExpense, 1);
+  const emailResult = await exports.sendApprovalEmail(updatedExpense, 1);
+
+  // Fallback: notify admins in-app when email fails
+  if (!emailResult.sent) {
+    const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
+    for (const admin of admins) {
+      await dispatchNotification(admin.id, {
+        title: 'Approval Email Failed',
+        message: `Expense ${formatReference(expenseId)} requires approval but email could not be sent: ${emailResult.reason}. Please check SMTP settings.`,
+        type: 'warning',
+        link: `/expenses?id=${expenseId}`,
+        templateName: 'expense_request_admin'
+      });
+    }
+  }
 
   broadcast('expense_updated', {
     expenseId,
     status: 'For Approval',
-    context
+    context,
+    emailSent: emailResult.sent
   });
 
-  return updatedExpense;
+  return { expense: updatedExpense, emailResult };
 };
 
 exports.createExpenseWithApprovalCheck = async (expenseId, userId, amount, ipAddress) => {
@@ -463,15 +480,30 @@ exports.processApproval = async (token, ipAddress, approverEmail = null) => {
     });
 
     const updatedExpense = await getExpenseDetails(record.expense_id);
-    await exports.sendApprovalEmail(updatedExpense, nextLevel);
+    const nextEmailResult = await exports.sendApprovalEmail(updatedExpense, nextLevel);
+
+    // Fallback: notify admins in-app when next-level email fails
+    if (!nextEmailResult.sent) {
+      const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
+      for (const admin of admins) {
+        await dispatchNotification(admin.id, {
+          title: 'Multi-Level Approval Email Failed',
+          message: `Expense ${formatReference(record.expense_id)} Level ${nextLevel} approval email could not be sent: ${nextEmailResult.reason}.`,
+          type: 'warning',
+          link: `/expenses?id=${record.expense_id}`,
+          templateName: 'expense_request_admin'
+        });
+      }
+    }
 
     broadcast('expense_updated', {
       expenseId: record.expense_id,
       status: 'For Approval',
-      approvalLevel: nextLevel
+      approvalLevel: nextLevel,
+      emailSent: nextEmailResult.sent
     });
 
-    return { status: 'For Approval', expense: updatedExpense, multiLevel: true, level: nextLevel };
+    return { status: 'For Approval', expense: updatedExpense, multiLevel: true, level: nextLevel, emailResult: nextEmailResult };
   }
 
   const finalStatus = expense.approval_context === 'liquidation' ? 'Liquidated' : 'Approved';

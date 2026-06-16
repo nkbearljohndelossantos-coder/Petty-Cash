@@ -1,4 +1,5 @@
 const approvalService = require('../services/approvalService');
+const { isEmailConfigured, verifyConnection } = require('../services/emailService');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -101,6 +102,39 @@ exports.getAuditTrail = async (req, res) => {
   try {
     const trail = await approvalService.getExpenseAuditTrail(req.params.expenseId);
     res.json({ success: true, data: trail });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getEmailHealth = async (req, res) => {
+  try {
+    const configured = isEmailConfigured();
+    let connected = false;
+    let error = null;
+
+    if (configured) {
+      try {
+        connected = await verifyConnection();
+      } catch (err) {
+        error = err.message;
+      }
+    }
+
+    const settings = await approvalService.getApprovalSettings();
+
+    res.json({
+      success: true,
+      data: {
+        smtpConfigured: configured,
+        smtpConnected: connected,
+        smtpError: error,
+        emailApprovalEnabled: settings.liquidation_approval_email_enabled,
+        primaryApproverEmail: settings.liquidation_approval_recipient_email,
+        approverCount: settings.approvers?.length || 0,
+        threshold: settings.liquidation_approval_threshold
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
