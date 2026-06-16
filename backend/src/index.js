@@ -117,6 +117,34 @@ const PORT = process.env.PORT || 5000;
     await ensureApprovalSchema(db);
 
     console.log('--- SCHEMA REPAIR ENGINE: CHECK COMPLETE ---');
+
+    // 1.6 Auto-seed missing email templates (idempotent — only inserts what's missing)
+    try {
+      const hasTemplatesTable = await db.schema.hasTable('email_templates');
+      if (hasTemplatesTable) {
+        const requiredNames = [
+          'expense_request_admin',
+          'expense_status_update',
+          'liquidation_approval_request',
+          'liquidation_approved_requester',
+          'liquidation_declined_requester',
+          'fund_replenished'
+        ];
+        const existing = await db('email_templates').select('name');
+        const existingNames = new Set(existing.map(r => r.name));
+        const missing = requiredNames.filter(n => !existingNames.has(n));
+
+        if (missing.length > 0) {
+          console.log(`TEMPLATE SEED: ${missing.length} missing template(s) detected: ${missing.join(', ')}`);
+          // Re-run the seed file which inserts ALL templates (safe — duplicates handled by seed)
+          const seedModule = require('./db/seeds/03_email_templates');
+          await seedModule.seed(db);
+          console.log('TEMPLATE SEED: All email templates synced successfully');
+        }
+      }
+    } catch (tplErr) {
+      console.warn('Template auto-seed skipped:', tplErr.message);
+    }
   } catch (err) {
     console.error('CRITICAL: Database initialization failed!');
     console.error('Error Name:', err.name);
