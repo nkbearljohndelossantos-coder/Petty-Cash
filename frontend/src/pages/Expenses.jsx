@@ -176,7 +176,9 @@ const Expenses = () => {
   const handleAddExpense = async (e) => {
     e.preventDefault();
     const data = new FormData();
-    Object.keys(formData).forEach(key => data.append(key, formData[key]));
+    Object.keys(formData).forEach(key => {
+      if (key !== 'status') data.append(key, formData[key]);
+    });
     files.forEach(file => data.append('attachments', file));
 
     try {
@@ -711,17 +713,6 @@ const Expenses = () => {
                         onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Status</label>
-                    <select 
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800" 
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    >
-                      <option value="Pending">Pending Verification</option>
-                      <option value="Approved">Direct Approval</option>
-                    </select>
                   </div>
                 </div>
                 <div className="space-y-2">
