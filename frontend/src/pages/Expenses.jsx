@@ -185,8 +185,11 @@ const Expenses = () => {
       const res = await api.post('/expenses', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      // res = { success, data: {expense}, emailStatus } — interceptor already unwrapped response.data
       const created = res.data || res;
-      const emailStatus = typeof created?.emailStatus === 'object' && created?.emailStatus !== null ? created.emailStatus : {};
+      const emailStatus = typeof res.emailStatus === 'object' && res.emailStatus !== null
+        ? res.emailStatus
+        : (typeof created?.emailStatus === 'object' ? created.emailStatus : {});
       if (created?.status === 'For Approval') {
         if (emailStatus.sent) {
           alert(`Amount exceeds the approval threshold. Approval email sent to ${emailStatus.recipient}.`);
@@ -263,9 +266,9 @@ const Expenses = () => {
   const handleStatusUpdate = async (id, status) => {
     try {
       const res = await api.patch(`/expenses/${id}/status`, { status });
-      const payload = res.data || res;
-      if (payload?.requiresApproval) {
-        alert(payload.message || 'This expense has been sent for email approval.');
+      // res = { success, data, message, requiresApproval, emailStatus } (interceptor unwrapped)
+      if (res?.requiresApproval) {
+        alert(res.message || 'This expense has been sent for email approval.');
       }
       fetchData(true);
     } catch (err) {

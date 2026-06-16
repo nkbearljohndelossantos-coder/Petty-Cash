@@ -3,9 +3,11 @@ const knex = require('../config/db');
 
 const getSmtpConfig = () => ({
   host: process.env.SMTP_HOST || process.env.EMAIL_HOST,
-  port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10),
+  port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '465', 10),
+  secure: (process.env.SMTP_SECURE === 'true') || parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '465', 10) === 465,
   user: process.env.SMTP_USER || process.env.EMAIL_USER,
-  pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
+  pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
+  from: process.env.EMAIL_FROM || `"NKB Petty Cash" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`
 });
 
 const isEmailConfigured = () => {
@@ -18,11 +20,11 @@ let transporter = null;
 const getTransporter = () => {
   if (!isEmailConfigured()) return null;
   if (!transporter) {
-    const { host, port, user, pass } = getSmtpConfig();
+    const { host, port, secure, user, pass } = getSmtpConfig();
     transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
+      secure, // true for port 465 (SSL), false for 587 (STARTTLS)
       auth: { user, pass }
     });
   }
@@ -114,8 +116,47 @@ const verifyConnection = async () => {
   }
 };
 
+// ─── Reusable Approval Email Sender ────────────────────────────────────────────
+// Does NOT require a DB template – builds HTML inline for reliability.
+const sendApprovalEmail = async ({ to, subject, html, cc, bcc, attachments = [] }) => {
+  if (!isEmailConfigured()) {
+    return { success: false, skipped: true, message: 'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env' };
+  }
+
+  const mailer = getTransporter();
+  if (!mailer) {
+    return { success: false, skipped: true, message: 'Mailer transporter not available' };
+  }
+
+  const { from, user } = getSmtpConfig();
+
+  try {
+    const info = await mailer.sendMail({
+      from: from || `"NKB Petty Cash" <${user}>`,
+      to,
+      cc,
+      bcc,
+      subject,
+      html,
+      attachments: attachments.map(att => ({
+        filename: att.filename,
+        path: att.path,
+        contentType: att.contentType
+      }))
+    });
+
+    console.log(`[Approval Email] Sent to ${to} | messageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    console.error(`[Approval Email] Failed to ${to}:`, err.message);
+    return { success: false, message: err.message };
+  }
+};
+
 module.exports = {
   sendEmail,
+  sendApprovalEmail,
   verifyConnection,
-  isEmailConfigured
+  isEmailConfigured,
+  getSmtpConfig
 };

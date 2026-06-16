@@ -12,7 +12,8 @@ const {
   approveByToken,
   declineByToken,
   getAuditTrail,
-  getEmailHealth
+  getEmailHealth,
+  sendApprovalEmailHandler
 } = require('../controllers/approvalController');
 
 // Public token-based routes (no login required)
@@ -33,5 +34,8 @@ router.delete('/approvers/:id', authorize('Super Admin'), deleteApprover);
 
 router.get('/audit/:expenseId', getAuditTrail);
 router.get('/email-health', authorize('Super Admin'), getEmailHealth);
+
+// Send approval email (protected – any authenticated user can trigger)
+router.post('/send-approval', sendApprovalEmailHandler);
 
 module.exports = router;

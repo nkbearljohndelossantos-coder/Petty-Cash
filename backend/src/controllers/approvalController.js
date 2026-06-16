@@ -1,5 +1,5 @@
 const approvalService = require('../services/approvalService');
-const { isEmailConfigured, verifyConnection } = require('../services/emailService');
+const { isEmailConfigured, verifyConnection, sendApprovalEmail, getSmtpConfig } = require('../services/emailService');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -137,5 +137,61 @@ exports.getEmailHealth = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── POST /api/approval/send-approval ────────────────────────────────────────────
+// Sends a custom approval request email via Hostinger SMTP.
+//
+// Sample Request Body (JSON):
+// {
+//   "to": "approver@company.com",
+//   "subject": "Liquidation Approval Required – EXP-2026-0042",
+//   "html": "<h1>Approval Request</h1><p>Please review the liquidation.</p>",
+//   "cc": "finance@company.com",          // optional
+//   "bcc": "audit@company.com",           // optional
+//   "attachments": []                      // optional: [{ filename, path, contentType }]
+// }
+//
+// Sample Success Response (200):
+// {
+//   "success": true,
+//   "message": "Approval email sent successfully",
+//   "data": { "messageId": "<abc123@smtp.hostinger.com>" }
+// }
+//
+// Sample Error Response (400 / 500):
+// {
+//   "success": false,
+//   "message": "SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env"
+// }
+exports.sendApprovalEmailHandler = async (req, res) => {
+  try {
+    const { to, subject, html, cc, bcc, attachments } = req.body;
+
+    // ── Validation ─────────────────────────────────────────────────────────────
+    if (!to || !subject || !html) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: "to", "subject", and "html" are all required.'
+      });
+    }
+
+    // ── Send via reusable mailer ────────────────────────────────────────────────
+    const result = await sendApprovalEmail({ to, subject, html, cc, bcc, attachments });
+
+    if (!result.success) {
+      const status = result.skipped ? 503 : 500;
+      return res.status(status).json({ success: false, message: result.message });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Approval email sent successfully',
+      data: { messageId: result.messageId }
+    });
+  } catch (err) {
+    console.error('[sendApprovalEmailHandler] Unexpected error:', err);
+    return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
   }
 };
