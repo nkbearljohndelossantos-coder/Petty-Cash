@@ -145,6 +145,28 @@ const PORT = process.env.PORT || 5000;
     } catch (tplErr) {
       console.warn('Template auto-seed skipped:', tplErr.message);
     }
+
+    // 1.7 SMTP connection diagnostic
+    try {
+      const { verifyConnection, getSmtpConfig } = require('./services/emailService');
+      const smtpCfg = getSmtpConfig();
+      if (smtpCfg.host) {
+        const smtpOk = await verifyConnection();
+        if (smtpOk) {
+          console.log(`[SMTP] ✓ Connection verified to ${smtpCfg.host}`);
+        } else {
+          console.error(`[SMTP] ✗ Connection FAILED to ${smtpCfg.host} — check SMTP_HOST, SMTP_USER, SMTP_PASS in .env`);
+          if (smtpCfg.host && smtpCfg.host.includes('gmail')) {
+            console.error('[SMTP] ⚠ WARNING: SMTP_HOST is set to Gmail! This project uses Hostinger SMTP.');
+            console.error('[SMTP] Fix: Set SMTP_HOST=smtp.hostinger.com in /home/u335953510/domains/pc.nkbmanufacturing.com/nodejs/.env');
+          }
+        }
+      } else {
+        console.warn('[SMTP] ⚠ SMTP_HOST not set in .env — email features disabled');
+      }
+    } catch (smtpErr) {
+      console.warn('[SMTP] Diagnostic skipped:', smtpErr.message);
+    }
   } catch (err) {
     console.error('CRITICAL: Database initialization failed!');
     console.error('Error Name:', err.name);

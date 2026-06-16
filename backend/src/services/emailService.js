@@ -21,6 +21,13 @@ const getTransporter = () => {
   if (!isEmailConfigured()) return null;
   if (!transporter) {
     const { host, port, secure, user, pass } = getSmtpConfig();
+
+    // Startup diagnostic — make misconfigured SMTP obvious
+    console.log(`[SMTP] Connecting to: ${host}:${port} (secure=${secure}) as ${user}`);
+    if (host && host.includes('gmail')) {
+      console.warn('⚠️  [SMTP WARNING] Host is set to Gmail SMTP! This project requires Hostinger SMTP (smtp.hostinger.com). Check .env');
+    }
+
     transporter = nodemailer.createTransport({
       host,
       port,
