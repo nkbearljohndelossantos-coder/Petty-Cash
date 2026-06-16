@@ -49,12 +49,27 @@ const PORT = process.env.PORT || 5000;
     await new Promise(resolve => setTimeout(resolve, delay));
     
     await db.migrate.forceFreeMigrationsLock(); 
-    const [batchNo, log] = await db.migrate.latest();
-    if (log.length > 0) {
-      console.log(`Success: Run ${log.length} migrations (Batch ${batchNo})`);
-      console.log('Migrations:', log.join(', '));
-    } else {
-      console.log('Database schema is already up to date according to migration history.');
+    try {
+      const [batchNo, log] = await db.migrate.latest();
+      if (log.length > 0) {
+        console.log(`Success: Run ${log.length} migrations (Batch ${batchNo})`);
+        console.log('Migrations:', log.join(', '));
+      } else {
+        console.log('Database schema is already up to date according to migration history.');
+      }
+    } catch (migErr) {
+      if (migErr.message && migErr.message.includes('locked')) {
+        console.warn('Migration lock detected, forcing unlock and retrying...');
+        await db.migrate.forceFreeMigrationsLock();
+        const [batchNo2, log2] = await db.migrate.latest();
+        if (log2.length > 0) {
+          console.log(`Success (retry): Run ${log2.length} migrations (Batch ${batchNo2})`);
+        } else {
+          console.log('Database schema is already up to date according to migration history.');
+        }
+      } else {
+        throw migErr;
+      }
     }
 
     // 1.5 Schema Repair Bootstrapper: Check for missing tables regardless of migration status
