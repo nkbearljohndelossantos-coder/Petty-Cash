@@ -136,6 +136,7 @@ exports.createExpense = async (req, res) => {
     const [expenseId] = await db('expenses').insert(insertData);
 
     let expense = await db('expenses').where({ id: expenseId }).first();
+    let emailResult = undefined;
 
     // Handle attachments if any (multer will handle files)
     if (req.files && req.files.length > 0) {
@@ -180,7 +181,7 @@ exports.createExpense = async (req, res) => {
         .where('expenses.id', expense.id)
         .first();
 
-      let emailResult = { sent: false, reason: 'Unknown error' };
+      emailResult = { sent: false, reason: 'Unknown error' };
       try {
         emailResult = await approvalService.sendApprovalEmail(expenseDetails, 1);
       } catch (emailErr) {
