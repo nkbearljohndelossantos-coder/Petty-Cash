@@ -115,12 +115,14 @@ const Expenses = () => {
         }
         return nextPagination;
       });
+      if (showSpinner) setLoading(false);
     } catch (err) {
       if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED' || err?.message === 'canceled') return;
       console.error('Fetch Expenses Error:', err);
-      if (showSpinner) setExpenses([]);
-    } finally {
-      if (!controller.signal.aborted && showSpinner) setLoading(false);
+      if (showSpinner) {
+        setExpenses([]);
+        setLoading(false);
+      }
     }
   }, []);
 
