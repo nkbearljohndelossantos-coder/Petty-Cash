@@ -19,7 +19,8 @@ import {
   ArrowUpDown,
   History,
   FileText,
-  Activity
+  Activity,
+  Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -64,6 +65,8 @@ const Expenses = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [remindingExpenseId, setRemindingExpenseId] = useState(null);
+  const [toast, setToast] = useState(null);
   const filtersRef = useRef(filters);
   const fetchAbortRef = useRef(null);
 
@@ -295,6 +298,25 @@ const Expenses = () => {
     exportExpensesToPDF(expenses, filters);
   };
 
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleRemindApprover = async (expenseId) => {
+    const ref = `PCV-${String(expenseId).padStart(4, '0')}`;
+    setRemindingExpenseId(expenseId);
+    try {
+      const res = await api.post(`/approval/remind/${expenseId}`);
+      showToast(res.message || `Reminder sent for ${ref}.`, 'success');
+      fetchData(false);
+    } catch (err) {
+      showToast(err.message || 'Failed to send reminder. Please try again later.', 'error');
+    } finally {
+      setRemindingExpenseId(null);
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       const blob = await api.get('/reports/export-excel', { 
@@ -488,6 +510,16 @@ const Expenses = () => {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
+                        {['Staff', 'Accounting', 'Super Admin', 'Manager'].includes(user?.role) && expense.status === 'For Approval' && (
+                          <button
+                            onClick={() => handleRemindApprover(expense.id)}
+                            disabled={remindingExpenseId === expense.id}
+                            className={`p-2.5 rounded-xl transition-all shadow-sm bg-white border border-amber-200 ${remindingExpenseId === expense.id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white text-amber-500'}`}
+                            title={remindingExpenseId === expense.id ? 'Sending reminder...' : 'Remind Approver'}
+                          >
+                            <Bell size={18} className={remindingExpenseId === expense.id ? 'animate-pulse' : ''} />
+                          </button>
+                        )}
                         {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Accounting') && expense.status === 'Pending' && (
                           <>
                             <button 
@@ -782,8 +814,12 @@ const Expenses = () => {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Approval Audit Trail</p>
                       <div className="space-y-2">
                         {selectedExpense.audit_trail.map((entry, i) => (
-                          <div key={i} className="flex items-start gap-3 p-3 bg-white border border-slate-100 rounded-xl text-xs">
-                            <Activity size={14} className="text-erp-blue mt-0.5 shrink-0" />
+                          <div key={i} className={`flex items-start gap-3 p-3 bg-white border rounded-xl text-xs ${entry.action === 'reminded' ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100'}`}>
+                            {entry.action === 'reminded' ? (
+                              <Bell size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                            ) : (
+                              <Activity size={14} className="text-erp-blue mt-0.5 shrink-0" />
+                            )}
                             <div className="flex-1">
                               <p className="font-bold text-slate-800">{entry.label}: {entry.actor_name}</p>
                               <p className="text-slate-500">{format(new Date(entry.created_at), 'MMM dd, yyyy HH:mm:ss')}</p>
@@ -849,6 +885,39 @@ const Expenses = () => {
                </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Professional Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            className={`fixed bottom-8 left-1/2 z-[200] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${
+              toast.type === 'error'
+                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            }`}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              toast.type === 'error' ? 'bg-rose-100' : 'bg-emerald-100'
+            }`}>
+              {toast.type === 'error' ? (
+                <X size={16} className="text-rose-500" />
+              ) : (
+                <Check size={16} className="text-emerald-500" />
+              )}
+            </div>
+            <p className="text-sm font-bold max-w-md">{toast.message}</p>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 p-1 rounded-lg hover:bg-black/5 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

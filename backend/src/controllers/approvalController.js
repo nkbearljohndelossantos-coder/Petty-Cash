@@ -195,3 +195,26 @@ exports.sendApprovalEmailHandler = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message || 'Internal server error' });
   }
 };
+
+// ─── POST /api/approval/remind/:expenseId ──────────────────────────────────────────
+// Sends a reminder notification (email + in-app) to the current approver for
+// an expense that is stuck in "For Approval" status.
+// Accessible by Staff and Accounting roles (and above).
+// 30-minute cooldown per expense to prevent spam.
+exports.sendReminder = async (req, res) => {
+  try {
+    const { expenseId } = req.params;
+    const ipAddress = approvalService.getClientIp(req);
+
+    const result = await approvalService.sendReminder(expenseId, req.user.id, ipAddress);
+
+    const message = result.emailSent
+      ? `Reminder sent to ${result.approver}. The approver has been notified via email and in-app.`
+      : `Reminder sent to ${result.approver} via in-app notification. Email could not be sent: ${result.emailReason}`;
+
+    res.json({ success: true, message, data: result });
+  } catch (err) {
+    const status = err.message.includes('wait') ? 429 : 400;
+    res.status(status).json({ success: false, message: err.message });
+  }
+};

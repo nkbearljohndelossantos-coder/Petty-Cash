@@ -13,7 +13,8 @@ const {
   declineByToken,
   getAuditTrail,
   getEmailHealth,
-  sendApprovalEmailHandler
+  sendApprovalEmailHandler,
+  sendReminder
 } = require('../controllers/approvalController');
 
 // Public token-based routes (no login required)
@@ -37,5 +38,8 @@ router.get('/email-health', authorize('Super Admin'), getEmailHealth);
 
 // Send approval email (protected – any authenticated user can trigger)
 router.post('/send-approval', sendApprovalEmailHandler);
+
+// Send reminder to approver (Staff, Accounting, Super Admin)
+router.post('/remind/:expenseId', authorize('Staff', 'Accounting', 'Super Admin', 'Manager'), sendReminder);
 
 module.exports = router;

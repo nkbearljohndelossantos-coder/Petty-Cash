@@ -196,7 +196,8 @@ exports.getExpenseAuditTrail = async (expenseId) => {
       created: 'Created By',
       submitted: 'Submitted By',
       approved: 'Approved By',
-      declined: 'Declined By'
+      declined: 'Declined By',
+      reminded: 'Reminder Sent By'
     };
     trail.push({
       action: a.action,
@@ -619,3 +620,106 @@ exports.deleteApprover = async (id) => {
 
 exports.getClientIp = getClientIp;
 exports.formatReference = formatReference;
+
+// ─── Reminder System ────────────────────────────────────────────────────────────
+// Allows Staff / Accounting to nudge the current approver when an expense is
+// stuck in "For Approval" status.  Includes a 30-minute cooldown per expense
+// to prevent spam.
+
+const REMINDER_COOLDOWN_MINUTES = 30;
+
+exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
+  const expense = await getExpenseDetails(expenseId);
+  if (!expense) throw new Error('Expense not found');
+  if (expense.status !== 'For Approval') {
+    throw new Error('Only expenses with "For Approval" status can be reminded');
+  }
+
+  // ── Cooldown check ──────────────────────────────────────────────────────────
+  const lastReminder = await db('liquidation_approval_audit')
+    .where({ expense_id: expenseId, action: 'reminded' })
+    .orderBy('created_at', 'desc')
+    .first();
+
+  if (lastReminder) {
+    const elapsed = (Date.now() - new Date(lastReminder.created_at).getTime()) / 60000;
+    if (elapsed < REMINDER_COOLDOWN_MINUTES) {
+      const wait = Math.ceil(REMINDER_COOLDOWN_MINUTES - elapsed);
+      throw new Error(
+        `A reminder was recently sent. Please wait ${wait} minute${wait !== 1 ? 's' : ''} before sending another.`
+      );
+    }
+  }
+
+  // ── Resolve current approver ────────────────────────────────────────────────
+  const approvers = await exports.getActiveApprovers();
+  const currentLevel = expense.current_approval_level || 1;
+  const approver = approvers.find((a) => a.approval_level === currentLevel) || approvers[0];
+
+  if (!approver?.email) {
+    throw new Error('No approver email configured. Please check Settings > Approval.');
+  }
+
+  // ── Send reminder email ─────────────────────────────────────────────────────
+  let emailResult = { sent: false, reason: 'Email not attempted' };
+  try {
+    const baseUrl = getFrontendUrl();
+    const ref = formatReference(expenseId);
+
+    // Re-send the approval email with new tokens so approver gets fresh links
+    emailResult = await exports.sendApprovalEmail(expense, currentLevel);
+  } catch (emailErr) {
+    emailResult = { sent: false, reason: emailErr?.message || String(emailErr) };
+  }
+
+  // ── In-app notification to the approver ─────────────────────────────────────
+  const approverUser = await db('users').where({ email: approver.email }).first();
+  if (approverUser) {
+    await dispatchNotification(approverUser.id, {
+      title: 'Approval Reminder',
+      message: `This is a friendly reminder that ${formatReference(expenseId)} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}) is still awaiting your approval.`,
+      type: 'warning',
+      link: `/expenses?id=${expenseId}`,
+      templateName: 'approval_reminder'
+    });
+  }
+
+  // ── Also notify all Super Admins / Accounting so nothing falls through ──────
+  const adminUsers = await db('users')
+    .whereIn('role', ['Super Admin', 'Accounting'])
+    .whereNot({ id: requesterUserId })
+    .select('id');
+  for (const admin of adminUsers) {
+    await dispatchNotification(admin.id, {
+      title: 'Approval Reminder Sent',
+      message: `A reminder was sent to ${approver.name || approver.email} for expense ${formatReference(expenseId)} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
+      type: 'info',
+      link: `/expenses?id=${expenseId}`
+    });
+  }
+
+  // ── Record in audit trail ────────────────────────────────────────────────────
+  const requester = await db('users').where({ id: requesterUserId }).first();
+  await exports.recordAudit({
+    expenseId,
+    action: 'reminded',
+    actorType: 'user',
+    actorUserId: requesterUserId,
+    actorName: requester?.full_name || requester?.username || 'Unknown',
+    ipAddress,
+    approvalLevel: currentLevel
+  });
+
+  broadcast('expense_updated', {
+    expenseId,
+    status: 'For Approval',
+    reminder: true
+  });
+
+  return {
+    success: true,
+    approver: approver.name || approver.email,
+    emailSent: emailResult.sent,
+    emailReason: emailResult.reason
+  };
+};
