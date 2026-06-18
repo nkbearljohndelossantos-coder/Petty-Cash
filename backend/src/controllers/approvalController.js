@@ -214,7 +214,11 @@ exports.sendReminder = async (req, res) => {
 
     res.json({ success: true, message, data: result });
   } catch (err) {
-    const status = err.message.includes('wait') ? 429 : 400;
-    res.status(status).json({ success: false, message: err.message });
+    console.error('[sendReminder]', req.params.expenseId, err?.message || err);
+    const status = err.message?.includes('wait') ? 429 : 400;
+    res.status(status).json({
+      success: false,
+      message: err.message || 'Failed to send reminder. Please try again.'
+    });
   }
 };

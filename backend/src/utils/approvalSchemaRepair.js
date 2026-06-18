@@ -3,6 +3,30 @@
  * Safe to run on every server start — fixes Hostinger deployments
  * where knex migration history is out of sync with actual schema.
  */
+async function repairAuditActionColumns(db) {
+  if (!(await db.schema.hasTable('liquidation_approval_audit'))) return;
+
+  const [actionCol] = await db.raw("SHOW COLUMNS FROM liquidation_approval_audit LIKE 'action'");
+  const actionType = actionCol?.[0]?.Type || '';
+  if (actionType.startsWith('enum')) {
+    console.log('REPAIR: Converting liquidation_approval_audit.action from ENUM to VARCHAR(20)...');
+    await db.raw(`
+      ALTER TABLE liquidation_approval_audit
+      MODIFY COLUMN action VARCHAR(20) NOT NULL
+    `);
+  }
+
+  const [actorTypeCol] = await db.raw("SHOW COLUMNS FROM liquidation_approval_audit LIKE 'actor_type'");
+  const actorType = actorTypeCol?.[0]?.Type || '';
+  if (actorType.startsWith('enum')) {
+    console.log('REPAIR: Converting liquidation_approval_audit.actor_type from ENUM to VARCHAR(10)...');
+    await db.raw(`
+      ALTER TABLE liquidation_approval_audit
+      MODIFY COLUMN actor_type VARCHAR(10) NOT NULL DEFAULT 'user'
+    `);
+  }
+}
+
 async function ensureApprovalSchema(db) {
   try {
     const hasExpenses = await db.schema.hasTable('expenses');
@@ -74,25 +98,7 @@ async function ensureApprovalSchema(db) {
         table.index(['expense_id', 'created_at']);
       });
     } else {
-      const [actionCol] = await db.raw("SHOW COLUMNS FROM liquidation_approval_audit LIKE 'action'");
-      const actionType = actionCol?.[0]?.Type || '';
-      if (actionType.startsWith('enum')) {
-        console.log('REPAIR: Converting liquidation_approval_audit.action from ENUM to VARCHAR(20)...');
-        await db.raw(`
-          ALTER TABLE liquidation_approval_audit
-          MODIFY COLUMN action VARCHAR(20) NOT NULL
-        `);
-      }
-
-      const [actorTypeCol] = await db.raw("SHOW COLUMNS FROM liquidation_approval_audit LIKE 'actor_type'");
-      const actorType = actorTypeCol?.[0]?.Type || '';
-      if (actorType.startsWith('enum')) {
-        console.log('REPAIR: Converting liquidation_approval_audit.actor_type from ENUM to VARCHAR(10)...');
-        await db.raw(`
-          ALTER TABLE liquidation_approval_audit
-          MODIFY COLUMN actor_type VARCHAR(10) NOT NULL DEFAULT 'user'
-        `);
-      }
+      await repairAuditActionColumns(db);
     }
 
     if (!(await db.schema.hasColumn('expenses', 'last_reminder_at'))) {
@@ -149,4 +155,4 @@ async function ensureApprovalSchema(db) {
   }
 }
 
-module.exports = { ensureApprovalSchema };
+module.exports = { ensureApprovalSchema, repairAuditActionColumns };

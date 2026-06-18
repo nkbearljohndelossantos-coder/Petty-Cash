@@ -131,8 +131,11 @@ exports.recordAudit = async ({
     throw new Error('Approval audit table is not available');
   }
 
-  const [auditId] = await db('liquidation_approval_audit').insert({
-    expense_id: expenseId,
+  const { repairAuditActionColumns } = require('../utils/approvalSchemaRepair');
+  await repairAuditActionColumns(db);
+
+  const payload = {
+    expense_id: Number(expenseId),
     action,
     actor_type: actorType,
     actor_user_id: actorUserId,
@@ -141,9 +144,20 @@ exports.recordAudit = async ({
     ip_address: ipAddress,
     decline_reason: declineReason,
     approval_level: approvalLevel
-  });
+  };
 
-  return auditId;
+  try {
+    const insertResult = await db('liquidation_approval_audit').insert(payload);
+    return Array.isArray(insertResult) ? insertResult[0] : insertResult;
+  } catch (err) {
+    const msg = err?.message || String(err);
+    if (/Data truncated|Incorrect enum|invalid.*action|cannot be null/i.test(msg)) {
+      await repairAuditActionColumns(db);
+      const insertResult = await db('liquidation_approval_audit').insert(payload);
+      return Array.isArray(insertResult) ? insertResult[0] : insertResult;
+    }
+    throw new Error(`Failed to record audit entry: ${msg}`);
+  }
 };
 
 const getExpenseDetails = async (expenseId) => {
@@ -682,45 +696,89 @@ exports.formatReference = formatReference;
 
 const REMINDER_COOLDOWN_MINUTES = 30;
 
+const parseExpenseId = (expenseId) => {
+  const parsed = parseInt(expenseId, 10);
+  if (!parsed || Number.isNaN(parsed)) {
+    throw new Error('Invalid expense ID');
+  }
+  return parsed;
+};
+
+const resolveApproverForReminder = async (currentLevel) => {
+  const approvers = await exports.getActiveApprovers();
+  let approver = approvers.find((a) => a.approval_level === currentLevel) || approvers[0];
+
+  if (!approver?.email) {
+    const admin = await db('users')
+      .whereIn('role', ['Super Admin', 'Accounting', 'Manager'])
+      .whereNotNull('email')
+      .where('email', '!=', '')
+      .orderBy('id', 'asc')
+      .first();
+
+    if (admin?.email) {
+      approver = {
+        email: admin.email,
+        name: admin.full_name || admin.username,
+        approval_level: currentLevel
+      };
+    }
+  }
+
+  return approver;
+};
+
 exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
-  const expense = await getExpenseDetails(expenseId);
+  const parsedExpenseId = parseExpenseId(expenseId);
+
+  const { ensureApprovalSchema } = require('../utils/approvalSchemaRepair');
+  await ensureApprovalSchema(db);
+
+  const expense = await getExpenseDetails(parsedExpenseId);
   if (!expense) throw new Error('Expense not found');
-  if (expense.status !== 'For Approval') {
-    throw new Error('Only expenses with "For Approval" status can be reminded');
+
+  const normalizedStatus = String(expense.status || '').trim();
+  if (normalizedStatus !== 'For Approval') {
+    throw new Error(
+      `Only expenses with "For Approval" status can be reminded (current status: "${expense.status || 'Unknown'}")`
+    );
   }
 
   // ── Cooldown check ──────────────────────────────────────────────────────────
-  const lastReminder = await db('liquidation_approval_audit')
-    .where({ expense_id: expenseId, action: 'reminded' })
-    .orderBy('created_at', 'desc')
-    .first();
+  if (await db.schema.hasTable('liquidation_approval_audit')) {
+    const lastReminder = await db('liquidation_approval_audit')
+      .where({ expense_id: parsedExpenseId, action: 'reminded' })
+      .orderBy('created_at', 'desc')
+      .first();
 
-  if (lastReminder) {
-    const elapsed = (Date.now() - new Date(lastReminder.created_at).getTime()) / 60000;
-    if (elapsed < REMINDER_COOLDOWN_MINUTES) {
-      const wait = Math.ceil(REMINDER_COOLDOWN_MINUTES - elapsed);
-      throw new Error(
-        `A reminder was recently sent. Please wait ${wait} minute${wait !== 1 ? 's' : ''} before sending another.`
-      );
+    if (lastReminder) {
+      const elapsed = (Date.now() - new Date(lastReminder.created_at).getTime()) / 60000;
+      if (elapsed < REMINDER_COOLDOWN_MINUTES) {
+        const wait = Math.ceil(REMINDER_COOLDOWN_MINUTES - elapsed);
+        throw new Error(
+          `A reminder was recently sent. Please wait ${wait} minute${wait !== 1 ? 's' : ''} before sending another.`
+        );
+      }
     }
   }
 
   // ── Resolve current approver ────────────────────────────────────────────────
-  const approvers = await exports.getActiveApprovers();
   const currentLevel = expense.current_approval_level || 1;
-  const approver = approvers.find((a) => a.approval_level === currentLevel) || approvers[0];
+  const approver = await resolveApproverForReminder(currentLevel);
 
   if (!approver?.email) {
-    throw new Error('No approver email configured. Please check Settings > Approval.');
+    throw new Error(
+      'No approver email configured. Go to Settings > Approval and set a recipient email or add an active approver.'
+    );
   }
 
   const requester = await db('users').where({ id: requesterUserId }).first();
-  const ref = formatReference(expenseId);
+  const ref = formatReference(parsedExpenseId);
   const now = db.fn.now();
 
   // ── Persist reminder to database first ──────────────────────────────────────
   const auditId = await exports.recordAudit({
-    expenseId,
+    expenseId: parsedExpenseId,
     action: 'reminded',
     actorType: 'user',
     actorUserId: requesterUserId,
@@ -729,11 +787,14 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
     approvalLevel: currentLevel
   });
 
-  const reminderUpdate = { last_reminder_at: now, updated_at: now };
+  const reminderUpdate = { last_reminder_at: now };
   if (await db.schema.hasColumn('expenses', 'reminder_count')) {
     reminderUpdate.reminder_count = db.raw('COALESCE(reminder_count, 0) + 1');
   }
-  await db('expenses').where({ id: expenseId }).update(reminderUpdate);
+  if (await db.schema.hasColumn('expenses', 'updated_at')) {
+    reminderUpdate.updated_at = now;
+  }
+  await db('expenses').where({ id: parsedExpenseId }).update(reminderUpdate);
 
   const { logActivity } = require('../utils/logService');
   await logActivity(
@@ -746,7 +807,7 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
   // ── Send dedicated reminder email with fresh Approve/Decline buttons ─────────
   const updatedExpense = await db('expenses')
     .select('reminder_count', 'last_reminder_at')
-    .where({ id: expenseId })
+    .where({ id: parsedExpenseId })
     .first();
 
   let emailResult = { sent: false, reason: 'Email not attempted' };
@@ -766,7 +827,7 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
       title: 'Approval Reminder — Action Required',
       message: `Reminder #${updatedExpense?.reminder_count ?? 1}: ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}) is still awaiting your approval. A new email with Approve/Decline buttons has been sent.`,
       type: 'warning',
-      link: `/expenses?id=${expenseId}`,
+      link: `/expenses?id=${parsedExpenseId}`,
     });
   }
 
@@ -780,12 +841,12 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
       title: 'Approval Reminder Sent',
       message: `A reminder was sent to ${approver.name || approver.email} for expense ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
       type: 'info',
-      link: `/expenses?id=${expenseId}`
+      link: `/expenses?id=${parsedExpenseId}`
     });
   }
 
   broadcast('expense_updated', {
-    expenseId,
+    expenseId: parsedExpenseId,
     status: 'For Approval',
     reminder: true,
     last_reminder_at: new Date().toISOString()

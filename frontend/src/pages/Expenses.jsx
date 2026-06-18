@@ -320,7 +320,8 @@ const Expenses = () => {
         }
       }
     } catch (err) {
-      showToast(err.message || 'Failed to send reminder. Please try again later.', 'error');
+      const message = err?.message || err?.response?.data?.message || 'Failed to send reminder. Please try again later.';
+      showToast(message, 'error');
     } finally {
       setRemindingExpenseId(null);
     }
