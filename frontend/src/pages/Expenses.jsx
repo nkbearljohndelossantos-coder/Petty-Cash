@@ -303,13 +303,19 @@ const Expenses = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
+  const canSendReminder = ['Staff', 'Accounting', 'Super Admin', 'Manager', 'Cashier'].includes(user?.role);
+
   const handleRemindApprover = async (expenseId) => {
     const ref = `PCV-${String(expenseId).padStart(4, '0')}`;
     setRemindingExpenseId(expenseId);
     try {
       const res = await api.post(`/approval/remind/${expenseId}`);
-      showToast(res.message || `Reminder sent for ${ref}.`, 'success');
-      fetchData(false);
+      showToast(res.message || `Reminder recorded for ${ref}.`, 'success');
+      await fetchData(false);
+      if (showViewModal && selectedExpense?.id === expenseId) {
+        const detail = await api.get(`/expenses/${expenseId}`);
+        setSelectedExpense(detail.data);
+      }
     } catch (err) {
       showToast(err.message || 'Failed to send reminder. Please try again later.', 'error');
     } finally {
@@ -510,12 +516,18 @@ const Expenses = () => {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
-                        {['Staff', 'Accounting', 'Super Admin', 'Manager'].includes(user?.role) && expense.status === 'For Approval' && (
+                        {canSendReminder && expense.status === 'For Approval' && (
                           <button
                             onClick={() => handleRemindApprover(expense.id)}
                             disabled={remindingExpenseId === expense.id}
                             className={`p-2.5 rounded-xl transition-all shadow-sm bg-white border border-amber-200 ${remindingExpenseId === expense.id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white text-amber-500'}`}
-                            title={remindingExpenseId === expense.id ? 'Sending reminder...' : 'Remind Approver'}
+                            title={
+                              remindingExpenseId === expense.id
+                                ? 'Recording reminder...'
+                                : expense.last_reminder_at
+                                  ? `Remind Approver (last: ${format(new Date(expense.last_reminder_at), 'MMM dd, HH:mm')})`
+                                  : 'Remind Approver'
+                            }
                           >
                             <Bell size={18} className={remindingExpenseId === expense.id ? 'animate-pulse' : ''} />
                           </button>

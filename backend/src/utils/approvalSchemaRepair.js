@@ -29,6 +29,14 @@ async function ensureApprovalSchema(db) {
       });
     }
 
+    if (!(await db.schema.hasColumn('expenses', 'last_reminder_at'))) {
+      console.log('REPAIR: Adding reminder tracking columns to expenses table...');
+      await db.schema.table('expenses', (table) => {
+        table.timestamp('last_reminder_at').nullable();
+        table.integer('reminder_count').unsigned().notNullable().defaultTo(0);
+      });
+    }
+
     if (!(await db.schema.hasTable('liquidation_approvers'))) {
       console.log('REPAIR: Creating liquidation_approvers table...');
       await db.schema.createTable('liquidation_approvers', (table) => {

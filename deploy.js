@@ -12,6 +12,7 @@ const commands = [
   `cd ${TEMP} && git log --oneline -3`,
   `cp -v ${TEMP}/backend/src/controllers/authController.js ${NODEJS}/src/controllers/authController.js`,
   `cp -v ${TEMP}/backend/src/index.js ${NODEJS}/src/index.js`,
+  `cp -v ${TEMP}/backend/src/utils/approvalSchemaRepair.js ${NODEJS}/src/utils/approvalSchemaRepair.js`,
   `cp -v ${TEMP}/backend/src/controllers/approvalController.js ${NODEJS}/src/controllers/approvalController.js`,
   `cp -v ${TEMP}/backend/src/routes/approval.js ${NODEJS}/src/routes/approval.js`,
   `cp -v ${TEMP}/backend/src/services/approvalService.js ${NODEJS}/src/services/approvalService.js`,
