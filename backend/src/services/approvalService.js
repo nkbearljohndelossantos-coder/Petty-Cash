@@ -296,6 +296,56 @@ exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
   }
 };
 
+exports.sendReminderEmail = async (expense, approvalLevel = 1, reminderMeta = {}) => {
+  try {
+    const settings = await exports.getApprovalSettings();
+    if (!settings.liquidation_approval_email_enabled) {
+      return { success: false, sent: false, reason: 'Email approval is disabled in settings', skipped: true };
+    }
+
+    const approvers = await exports.getActiveApprovers();
+    const approver = approvers.find((a) => a.approval_level === approvalLevel) || approvers[0];
+
+    if (!approver?.email) {
+      return { success: false, sent: false, reason: 'No approver email configured in Settings > Approval', skipped: true };
+    }
+
+    const { approveToken, declineToken } = await createApprovalTokens(expense.id, approvalLevel);
+    const baseUrl = getFrontendUrl();
+    const formattedAmount = parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+    const result = await sendEmail({
+      templateName: 'approval_reminder',
+      recipient: approver.email,
+      data: {
+        reference_number: formatReference(expense.id),
+        requested_by: expense.requested_by,
+        department: expense.department_name || 'N/A',
+        category: expense.category_name || 'N/A',
+        amount: formattedAmount,
+        remarks: expense.remarks || 'No remarks provided',
+        approve_link: `${baseUrl}/approval/approve/${approveToken}`,
+        decline_link: `${baseUrl}/approval/decline/${declineToken}`,
+        reminder_count: String(reminderMeta.reminderCount || 1),
+        reminded_by: reminderMeta.remindedBy || 'System'
+      }
+    });
+
+    if (!result.success) {
+      return { success: false, sent: false, reason: result.message || 'SMTP email failed', skipped: result.skipped || false };
+    }
+
+    return {
+      success: true,
+      sent: true,
+      reason: 'Reminder email sent with fresh Approve/Decline links',
+      recipient: approver.email
+    };
+  } catch (err) {
+    return { success: false, sent: false, reason: err?.message || String(err) || 'Unexpected error in reminder email' };
+  }
+};
+
 exports.initiateApprovalWorkflow = async (expenseId, submittedByUserId, ipAddress, context = 'liquidation') => {
   const expense = await getExpenseDetails(expenseId);
   if (!expense) throw new Error('Expense not found');
@@ -693,10 +743,18 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
     ipAddress
   );
 
-  // ── Send reminder email ─────────────────────────────────────────────────────
+  // ── Send dedicated reminder email with fresh Approve/Decline buttons ─────────
+  const updatedExpense = await db('expenses')
+    .select('reminder_count', 'last_reminder_at')
+    .where({ id: expenseId })
+    .first();
+
   let emailResult = { sent: false, reason: 'Email not attempted' };
   try {
-    emailResult = await exports.sendApprovalEmail(expense, currentLevel);
+    emailResult = await exports.sendReminderEmail(expense, currentLevel, {
+      reminderCount: updatedExpense?.reminder_count ?? 1,
+      remindedBy: requester?.full_name || requester?.username || 'System'
+    });
   } catch (emailErr) {
     emailResult = { sent: false, reason: emailErr?.message || String(emailErr) };
   }
@@ -705,18 +763,10 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
   const approverUser = await db('users').where({ email: approver.email }).first();
   if (approverUser) {
     await dispatchNotification(approverUser.id, {
-      title: 'Approval Reminder',
-      message: `This is a friendly reminder that ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}) is still awaiting your approval.`,
+      title: 'Approval Reminder — Action Required',
+      message: `Reminder #${updatedExpense?.reminder_count ?? 1}: ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}) is still awaiting your approval. A new email with Approve/Decline buttons has been sent.`,
       type: 'warning',
       link: `/expenses?id=${expenseId}`,
-      templateName: 'approval_reminder',
-      data: {
-        reference_number: ref,
-        amount: parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }),
-        requested_by: expense.requested_by,
-        department: expense.department_name || 'N/A',
-        remarks: expense.remarks || 'No remarks provided'
-      }
     });
   }
 
@@ -740,11 +790,6 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
     reminder: true,
     last_reminder_at: new Date().toISOString()
   });
-
-  const updatedExpense = await db('expenses')
-    .select('reminder_count', 'last_reminder_at')
-    .where({ id: expenseId })
-    .first();
 
   return {
     success: true,

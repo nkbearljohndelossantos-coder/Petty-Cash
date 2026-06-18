@@ -524,7 +524,7 @@ const Expenses = () => {
                             onClick={() => handleRemindApprover(expense.id)}
                             disabled={remindingExpenseId === expense.id}
                             className={`p-2.5 rounded-xl transition-all shadow-sm bg-white border border-amber-200 ${remindingExpenseId === expense.id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white text-amber-500'}`}
-                            title={remindingExpenseId === expense.id ? 'Sending reminder...' : 'Remind Approver'}
+                            title={remindingExpenseId === expense.id ? 'Sending reminder...' : 'Send approval reminder with Approve/Decline email'}
                           >
                             <Bell size={18} className={remindingExpenseId === expense.id ? 'animate-pulse' : ''} />
                           </button>

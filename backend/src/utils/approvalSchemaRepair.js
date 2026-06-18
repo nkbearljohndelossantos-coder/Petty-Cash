@@ -125,29 +125,21 @@ async function ensureApprovalSchema(db) {
     }
 
     if (await db.schema.hasTable('email_templates')) {
+      const { APPROVAL_REMINDER_TEMPLATE } = require('./emailTemplates/approvalReminder');
       const reminderTemplate = await db('email_templates').where({ name: 'approval_reminder' }).first();
-      if (!reminderTemplate) {
-        console.log('REPAIR: Seeding approval_reminder email template...');
-        await db('email_templates').insert({
-          name: 'approval_reminder',
-          subject: 'Reminder: Approval Required for {{reference_number}}',
-          body: `
-            <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px;">
-              <h2 style="color: #d97706;">Approval Reminder</h2>
-              <p>This is a friendly reminder that the following petty cash request is still awaiting your approval.</p>
-              <div style="background: #fffbeb; padding: 20px; border-radius: 10px; border: 1px solid #fde68a; margin: 20px 0;">
-                <p><strong>Reference:</strong> {{reference_number}}</p>
-                <p><strong>Amount:</strong> ₱{{amount}}</p>
-                <p><strong>Requester:</strong> {{requested_by}}</p>
-                <p><strong>Department:</strong> {{department}}</p>
-                <p><strong>Remarks:</strong> {{remarks}}</p>
-              </div>
-              <p style="font-size: 12px; color: #64748b;">Please review and respond at your earliest convenience.</p>
-              <p style="margin-top: 20px; font-size: 12px; color: #64748b;">NKB Petty Cash System</p>
-            </div>
-          `,
-          type: 'approval'
-        });
+      const needsUpdate = !reminderTemplate || !reminderTemplate.body.includes('approve_link');
+
+      if (needsUpdate) {
+        console.log('REPAIR: Upserting approval_reminder email template with Approve/Decline buttons...');
+        if (reminderTemplate) {
+          await db('email_templates').where({ name: 'approval_reminder' }).update({
+            subject: APPROVAL_REMINDER_TEMPLATE.subject,
+            body: APPROVAL_REMINDER_TEMPLATE.body,
+            type: APPROVAL_REMINDER_TEMPLATE.type
+          });
+        } else {
+          await db('email_templates').insert(APPROVAL_REMINDER_TEMPLATE);
+        }
       }
     }
 

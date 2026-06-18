@@ -209,8 +209,8 @@ exports.sendReminder = async (req, res) => {
     const result = await approvalService.sendReminder(expenseId, req.user.id, ipAddress);
 
     const message = result.emailSent
-      ? `Reminder recorded and sent to ${result.approver}. The approver has been notified via email and in-app.`
-      : `Reminder recorded for ${result.approver}. In-app notification sent; email could not be delivered: ${result.emailReason}`;
+      ? `Reminder email sent to ${result.approver} with fresh Approve and Decline buttons.`
+      : `Reminder recorded for ${result.approver}. In-app alert sent; email could not be delivered: ${result.emailReason}`;
 
     res.json({ success: true, message, data: result });
   } catch (err) {

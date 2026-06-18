@@ -1,4 +1,6 @@
 exports.seed = async function(knex) {
+  const { APPROVAL_REMINDER_TEMPLATE } = require('../../utils/emailTemplates/approvalReminder');
+
   // Deletes ALL existing entries
   await knex('email_templates').del();
   await knex('email_templates').insert([
@@ -86,6 +88,7 @@ exports.seed = async function(knex) {
       `,
       type: 'expense_status'
     },
+    APPROVAL_REMINDER_TEMPLATE,
     {
       name: 'fund_replenished',
       subject: 'System Alert: Petty Cash Fund Replenished',
