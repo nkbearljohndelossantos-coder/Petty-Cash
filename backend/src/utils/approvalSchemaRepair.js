@@ -29,14 +29,6 @@ async function ensureApprovalSchema(db) {
       });
     }
 
-    if (!(await db.schema.hasColumn('expenses', 'last_reminder_at'))) {
-      console.log('REPAIR: Adding reminder tracking columns to expenses table...');
-      await db.schema.table('expenses', (table) => {
-        table.timestamp('last_reminder_at').nullable();
-        table.integer('reminder_count').unsigned().notNullable().defaultTo(0);
-      });
-    }
-
     if (!(await db.schema.hasTable('liquidation_approvers'))) {
       console.log('REPAIR: Creating liquidation_approvers table...');
       await db.schema.createTable('liquidation_approvers', (table) => {
@@ -81,6 +73,40 @@ async function ensureApprovalSchema(db) {
         table.timestamp('created_at').defaultTo(db.fn.now());
         table.index(['expense_id', 'created_at']);
       });
+    } else {
+      const [actionCol] = await db.raw("SHOW COLUMNS FROM liquidation_approval_audit LIKE 'action'");
+      const actionType = actionCol?.[0]?.Type || '';
+      if (actionType.startsWith('enum')) {
+        console.log('REPAIR: Converting liquidation_approval_audit.action from ENUM to VARCHAR(20)...');
+        await db.raw(`
+          ALTER TABLE liquidation_approval_audit
+          MODIFY COLUMN action VARCHAR(20) NOT NULL
+        `);
+      }
+
+      const [actorTypeCol] = await db.raw("SHOW COLUMNS FROM liquidation_approval_audit LIKE 'actor_type'");
+      const actorType = actorTypeCol?.[0]?.Type || '';
+      if (actorType.startsWith('enum')) {
+        console.log('REPAIR: Converting liquidation_approval_audit.actor_type from ENUM to VARCHAR(10)...');
+        await db.raw(`
+          ALTER TABLE liquidation_approval_audit
+          MODIFY COLUMN actor_type VARCHAR(10) NOT NULL DEFAULT 'user'
+        `);
+      }
+    }
+
+    if (!(await db.schema.hasColumn('expenses', 'last_reminder_at'))) {
+      console.log('REPAIR: Adding expenses.last_reminder_at column...');
+      await db.schema.table('expenses', (table) => {
+        table.timestamp('last_reminder_at').nullable();
+      });
+    }
+
+    if (!(await db.schema.hasColumn('expenses', 'reminder_count'))) {
+      console.log('REPAIR: Adding expenses.reminder_count column...');
+      await db.schema.table('expenses', (table) => {
+        table.integer('reminder_count').unsigned().notNullable().defaultTo(0);
+      });
     }
 
     const defaultSettings = [
@@ -95,6 +121,33 @@ async function ensureApprovalSchema(db) {
         if (!exists) {
           await db('settings').insert(setting);
         }
+      }
+    }
+
+    if (await db.schema.hasTable('email_templates')) {
+      const reminderTemplate = await db('email_templates').where({ name: 'approval_reminder' }).first();
+      if (!reminderTemplate) {
+        console.log('REPAIR: Seeding approval_reminder email template...');
+        await db('email_templates').insert({
+          name: 'approval_reminder',
+          subject: 'Reminder: Approval Required for {{reference_number}}',
+          body: `
+            <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px;">
+              <h2 style="color: #d97706;">Approval Reminder</h2>
+              <p>This is a friendly reminder that the following petty cash request is still awaiting your approval.</p>
+              <div style="background: #fffbeb; padding: 20px; border-radius: 10px; border: 1px solid #fde68a; margin: 20px 0;">
+                <p><strong>Reference:</strong> {{reference_number}}</p>
+                <p><strong>Amount:</strong> ₱{{amount}}</p>
+                <p><strong>Requester:</strong> {{requested_by}}</p>
+                <p><strong>Department:</strong> {{department}}</p>
+                <p><strong>Remarks:</strong> {{remarks}}</p>
+              </div>
+              <p style="font-size: 12px; color: #64748b;">Please review and respond at your earliest convenience.</p>
+              <p style="margin-top: 20px; font-size: 12px; color: #64748b;">NKB Petty Cash System</p>
+            </div>
+          `,
+          type: 'approval'
+        });
       }
     }
 

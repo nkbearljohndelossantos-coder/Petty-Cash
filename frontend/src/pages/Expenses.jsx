@@ -108,8 +108,8 @@ const Expenses = () => {
       const nextPagination = res.pagination || { total: 0, page: 1, limit: 10 };
 
       setExpenses(prev => {
-        const prevKey = prev.map(e => `${e.id}:${e.status}:${e.amount}`).join('|');
-        const nextKey = nextExpenses.map(e => `${e.id}:${e.status}:${e.amount}`).join('|');
+        const prevKey = prev.map(e => `${e.id}:${e.status}:${e.amount}:${e.reminder_count}:${e.last_reminder_at}`).join('|');
+        const nextKey = nextExpenses.map(e => `${e.id}:${e.status}:${e.amount}:${e.reminder_count}:${e.last_reminder_at}`).join('|');
         return prevKey === nextKey ? prev : nextExpenses;
       });
       setPagination(prev => {
@@ -303,18 +303,21 @@ const Expenses = () => {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const canSendReminder = ['Staff', 'Accounting', 'Super Admin', 'Manager', 'Cashier'].includes(user?.role);
-
   const handleRemindApprover = async (expenseId) => {
     const ref = `PCV-${String(expenseId).padStart(4, '0')}`;
     setRemindingExpenseId(expenseId);
     try {
       const res = await api.post(`/approval/remind/${expenseId}`);
-      showToast(res.message || `Reminder recorded for ${ref}.`, 'success');
+      showToast(res.message || `Reminder sent for ${ref}.`, 'success');
       await fetchData(false);
-      if (showViewModal && selectedExpense?.id === expenseId) {
-        const detail = await api.get(`/expenses/${expenseId}`);
-        setSelectedExpense(detail.data);
+
+      if (selectedExpense?.id === expenseId) {
+        try {
+          const detail = await api.get(`/expenses/${expenseId}`);
+          if (detail?.data) setSelectedExpense(detail.data);
+        } catch {
+          // Non-blocking — list refresh already completed
+        }
       }
     } catch (err) {
       showToast(err.message || 'Failed to send reminder. Please try again later.', 'error');
@@ -516,18 +519,12 @@ const Expenses = () => {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2 transition-opacity">
-                        {canSendReminder && expense.status === 'For Approval' && (
+                        {['Staff', 'Accounting', 'Super Admin', 'Manager'].includes(user?.role) && expense.status === 'For Approval' && (
                           <button
                             onClick={() => handleRemindApprover(expense.id)}
                             disabled={remindingExpenseId === expense.id}
                             className={`p-2.5 rounded-xl transition-all shadow-sm bg-white border border-amber-200 ${remindingExpenseId === expense.id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white text-amber-500'}`}
-                            title={
-                              remindingExpenseId === expense.id
-                                ? 'Recording reminder...'
-                                : expense.last_reminder_at
-                                  ? `Remind Approver (last: ${format(new Date(expense.last_reminder_at), 'MMM dd, HH:mm')})`
-                                  : 'Remind Approver'
-                            }
+                            title={remindingExpenseId === expense.id ? 'Sending reminder...' : 'Remind Approver'}
                           >
                             <Bell size={18} className={remindingExpenseId === expense.id ? 'animate-pulse' : ''} />
                           </button>
@@ -808,6 +805,19 @@ const Expenses = () => {
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Remarks / Justification</p>
                      <p className="text-sm font-medium text-slate-700 leading-relaxed">{selectedExpense.remarks || 'No remarks.'}</p>
                   </div>
+                  {(selectedExpense.last_reminder_at || Number(selectedExpense.reminder_count) > 0) && (
+                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Approval Reminders</p>
+                      <p className="text-sm font-bold text-amber-900">
+                        {Number(selectedExpense.reminder_count) || 0} reminder{(Number(selectedExpense.reminder_count) || 0) !== 1 ? 's' : ''} sent
+                      </p>
+                      {selectedExpense.last_reminder_at && (
+                        <p className="text-xs text-amber-700 mt-1">
+                          Last reminder: {format(new Date(selectedExpense.last_reminder_at), 'MMM dd, yyyy HH:mm:ss')}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {selectedExpense.attachments && selectedExpense.attachments.length > 0 && (
                     <div>
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Attachments ({selectedExpense.attachments.length})</p>

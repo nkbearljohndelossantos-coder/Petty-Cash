@@ -203,29 +203,16 @@ exports.sendApprovalEmailHandler = async (req, res) => {
 // 30-minute cooldown per expense to prevent spam.
 exports.sendReminder = async (req, res) => {
   try {
-    const expenseId = Number(req.params.expenseId);
-    if (!Number.isFinite(expenseId) || expenseId <= 0) {
-      return res.status(400).json({ success: false, message: 'Invalid expense ID' });
-    }
-
+    const { expenseId } = req.params;
     const ipAddress = approvalService.getClientIp(req);
+
     const result = await approvalService.sendReminder(expenseId, req.user.id, ipAddress);
 
     const message = result.emailSent
       ? `Reminder recorded and sent to ${result.approver}. The approver has been notified via email and in-app.`
-      : `Reminder recorded for ${result.approver}. Email could not be sent: ${result.emailReason}`;
+      : `Reminder recorded for ${result.approver}. In-app notification sent; email could not be delivered: ${result.emailReason}`;
 
-    res.json({
-      success: true,
-      message,
-      data: {
-        auditId: result.auditId,
-        lastReminderAt: result.lastReminderAt,
-        approver: result.approver,
-        emailSent: result.emailSent,
-        emailReason: result.emailReason
-      }
-    });
+    res.json({ success: true, message, data: result });
   } catch (err) {
     const status = err.message.includes('wait') ? 429 : 400;
     res.status(status).json({ success: false, message: err.message });

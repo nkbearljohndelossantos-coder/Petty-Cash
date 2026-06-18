@@ -126,11 +126,12 @@ exports.recordAudit = async ({
   ipAddress = null,
   declineReason = null,
   approvalLevel = 1
-}, trx = null) => {
-  const client = trx || db;
-  if (!(await client.schema.hasTable('liquidation_approval_audit'))) return null;
+}) => {
+  if (!(await db.schema.hasTable('liquidation_approval_audit'))) {
+    throw new Error('Approval audit table is not available');
+  }
 
-  const [auditId] = await client('liquidation_approval_audit').insert({
+  const [auditId] = await db('liquidation_approval_audit').insert({
     expense_id: expenseId,
     action,
     actor_type: actorType,
@@ -632,12 +633,7 @@ exports.formatReference = formatReference;
 const REMINDER_COOLDOWN_MINUTES = 30;
 
 exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
-  const id = Number(expenseId);
-  if (!Number.isFinite(id) || id <= 0) {
-    throw new Error('Invalid expense ID');
-  }
-
-  const expense = await getExpenseDetails(id);
+  const expense = await getExpenseDetails(expenseId);
   if (!expense) throw new Error('Expense not found');
   if (expense.status !== 'For Approval') {
     throw new Error('Only expenses with "For Approval" status can be reminded');
@@ -645,7 +641,7 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
 
   // ── Cooldown check ──────────────────────────────────────────────────────────
   const lastReminder = await db('liquidation_approval_audit')
-    .where({ expense_id: id, action: 'reminded' })
+    .where({ expense_id: expenseId, action: 'reminded' })
     .orderBy('created_at', 'desc')
     .first();
 
@@ -659,108 +655,104 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
     }
   }
 
+  // ── Resolve current approver ────────────────────────────────────────────────
   const approvers = await exports.getActiveApprovers();
   const currentLevel = expense.current_approval_level || 1;
   const approver = approvers.find((a) => a.approval_level === currentLevel) || approvers[0];
+
+  if (!approver?.email) {
+    throw new Error('No approver email configured. Please check Settings > Approval.');
+  }
+
   const requester = await db('users').where({ id: requesterUserId }).first();
-  const ref = formatReference(id);
-  const amountFormatted = parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 });
-  const approverLabel = approver?.name || approver?.email || 'configured approver';
+  const ref = formatReference(expenseId);
+  const now = db.fn.now();
 
-  // ── Persist reminder to database first (always, even if email fails) ───────
-  let auditId = null;
-  let lastReminderAt = null;
-
-  await db.transaction(async (trx) => {
-    auditId = await exports.recordAudit({
-      expenseId: id,
-      action: 'reminded',
-      actorType: 'user',
-      actorUserId: requesterUserId,
-      actorName: requester?.full_name || requester?.username || 'Unknown',
-      ipAddress,
-      approvalLevel: currentLevel
-    }, trx);
-
-    if (!auditId) {
-      throw new Error('Approval audit system is not available. Please contact your administrator.');
-    }
-
-    const expenseUpdate = { updated_at: trx.fn.now() };
-    if (await trx.schema.hasColumn('expenses', 'last_reminder_at')) {
-      expenseUpdate.last_reminder_at = trx.fn.now();
-    }
-    if (await trx.schema.hasColumn('expenses', 'reminder_count')) {
-      expenseUpdate.reminder_count = trx.raw('COALESCE(reminder_count, 0) + 1');
-    }
-    await trx('expenses').where({ id }).update(expenseUpdate);
-
-    await trx('activity_logs').insert({
-      user_id: requesterUserId,
-      action: 'REMIND_APPROVER',
-      details: `Sent approval reminder for ${ref} (₱${amountFormatted}) to ${approverLabel}`,
-      ip_address: ipAddress
-    });
-
-    lastReminderAt = new Date();
+  // ── Persist reminder to database first ──────────────────────────────────────
+  const auditId = await exports.recordAudit({
+    expenseId,
+    action: 'reminded',
+    actorType: 'user',
+    actorUserId: requesterUserId,
+    actorName: requester?.full_name || requester?.username || 'Unknown',
+    ipAddress,
+    approvalLevel: currentLevel
   });
 
-  // ── Best-effort email & notifications (after DB commit) ─────────────────────
+  const reminderUpdate = { last_reminder_at: now, updated_at: now };
+  if (await db.schema.hasColumn('expenses', 'reminder_count')) {
+    reminderUpdate.reminder_count = db.raw('COALESCE(reminder_count, 0) + 1');
+  }
+  await db('expenses').where({ id: expenseId }).update(reminderUpdate);
+
+  const { logActivity } = require('../utils/logService');
+  await logActivity(
+    requesterUserId,
+    'REMIND_APPROVER',
+    `Sent approval reminder for ${ref} to ${approver.name || approver.email}`,
+    ipAddress
+  );
+
+  // ── Send reminder email ─────────────────────────────────────────────────────
   let emailResult = { sent: false, reason: 'Email not attempted' };
-  if (approver?.email) {
-    try {
-      emailResult = await exports.sendApprovalEmail(expense, currentLevel);
-    } catch (emailErr) {
-      emailResult = { sent: false, reason: emailErr?.message || String(emailErr) };
-    }
-  } else {
-    emailResult = {
-      sent: false,
-      reason: 'No approver email configured. Update Settings > Approval to enable email reminders.'
-    };
+  try {
+    emailResult = await exports.sendApprovalEmail(expense, currentLevel);
+  } catch (emailErr) {
+    emailResult = { sent: false, reason: emailErr?.message || String(emailErr) };
   }
 
-  if (approver?.email) {
-    const approverUser = await db('users').where({ email: approver.email }).first();
-    if (approverUser) {
-      await dispatchNotification(approverUser.id, {
-        title: 'Approval Reminder',
-        message: `This is a friendly reminder that ${ref} (₱${amountFormatted}) is still awaiting your approval.`,
-        type: 'warning',
-        link: `/expenses?id=${id}`,
-        templateName: 'approval_reminder'
-      });
-    }
+  // ── In-app notification to the approver ─────────────────────────────────────
+  const approverUser = await db('users').where({ email: approver.email }).first();
+  if (approverUser) {
+    await dispatchNotification(approverUser.id, {
+      title: 'Approval Reminder',
+      message: `This is a friendly reminder that ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}) is still awaiting your approval.`,
+      type: 'warning',
+      link: `/expenses?id=${expenseId}`,
+      templateName: 'approval_reminder',
+      data: {
+        reference_number: ref,
+        amount: parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+        requested_by: expense.requested_by,
+        department: expense.department_name || 'N/A',
+        remarks: expense.remarks || 'No remarks provided'
+      }
+    });
   }
 
+  // ── Also notify all Super Admins / Accounting so nothing falls through ──────
   const adminUsers = await db('users')
     .whereIn('role', ['Super Admin', 'Accounting'])
     .whereNot({ id: requesterUserId })
     .select('id');
-
   for (const admin of adminUsers) {
     await dispatchNotification(admin.id, {
       title: 'Approval Reminder Sent',
-      message: `A reminder was recorded for ${ref} (₱${amountFormatted})${approver?.email ? ` and sent to ${approverLabel}` : '. Configure an approver email in Settings > Approval.'}`,
+      message: `A reminder was sent to ${approver.name || approver.email} for expense ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
       type: 'info',
-      link: `/expenses?id=${id}`
+      link: `/expenses?id=${expenseId}`
     });
   }
 
   broadcast('expense_updated', {
-    expenseId: id,
+    expenseId,
     status: 'For Approval',
     reminder: true,
-    lastReminderAt,
-    auditId
+    last_reminder_at: new Date().toISOString()
   });
+
+  const updatedExpense = await db('expenses')
+    .select('reminder_count', 'last_reminder_at')
+    .where({ id: expenseId })
+    .first();
 
   return {
     success: true,
     auditId,
-    lastReminderAt,
-    approver: approverLabel,
+    approver: approver.name || approver.email,
     emailSent: emailResult.sent,
-    emailReason: emailResult.reason
+    emailReason: emailResult.reason,
+    reminderCount: updatedExpense?.reminder_count ?? 1,
+    lastReminderAt: updatedExpense?.last_reminder_at || new Date()
   };
 };
