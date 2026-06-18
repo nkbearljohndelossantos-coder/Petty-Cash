@@ -133,6 +133,33 @@ const PORT = process.env.PORT || 5000;
 
     console.log('--- SCHEMA REPAIR ENGINE: CHECK COMPLETE ---');
 
+    // 1.55 Bootstrap default admin when users table is empty
+    try {
+      const userCountRow = await db('users').count('* as count').first();
+      const userCount = Number(userCountRow?.count ?? 0);
+      if (userCount === 0) {
+        const bcrypt = require('bcryptjs');
+        let dept = await db('departments').first();
+        if (!dept) {
+          await db('departments').insert({ name: 'Administration' });
+          dept = await db('departments').first();
+        }
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await db('users').insert({
+          username: 'admin',
+          password: hashedPassword,
+          full_name: 'System Administrator',
+          email: 'admin@nkbmanufacturing.com',
+          role: 'Super Admin',
+          department_id: dept.id,
+          status: true,
+        });
+        console.log('[BOOTSTRAP] Default admin created (username: admin, password: admin123)');
+      }
+    } catch (bootstrapErr) {
+      console.error('[BOOTSTRAP] Failed to create default admin:', bootstrapErr.message);
+    }
+
     // 1.6 Auto-seed missing email templates (idempotent — only inserts what's missing)
     try {
       const hasTemplatesTable = await db.schema.hasTable('email_templates');

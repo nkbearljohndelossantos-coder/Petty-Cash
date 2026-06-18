@@ -26,15 +26,22 @@ const UserManual = lazy(() => import('./pages/UserManual'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading } = useAuth();
+  const { user, token, loading } = useAuth();
   
   if (loading) return (
     <div className="h-screen w-full flex items-center justify-center bg-white">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-erp-blue"></div>
     </div>
   );
+
+  // Token present but user not hydrated yet — avoid bouncing back to login
+  if (!user && token) return (
+    <div className="h-screen w-full flex items-center justify-center bg-white">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-erp-blue"></div>
+    </div>
+  );
   
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" replace />;
   
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" />;

@@ -3,18 +3,54 @@ const jwt = require('jsonwebtoken');
 const { logActivity } = require('../utils/logService');
 const db = require('../config/db');
 
+async function verifyPassword(plainPassword, storedHash, userId) {
+  if (!storedHash) return false;
+
+  if (storedHash.startsWith('$2')) {
+    return bcrypt.compare(plainPassword, storedHash);
+  }
+
+  // Legacy plain-text password — rehash on successful login
+  if (storedHash === plainPassword) {
+    const hashed = await bcrypt.hash(plainPassword, 10);
+    await db('users').where({ id: userId }).update({ password: hashed });
+    return true;
+  }
+
+  return false;
+}
+
+function isAccountDisabled(status) {
+  return status === false || status === 0 || status === '0';
+}
+
 exports.login = async (req, res) => {
-  const { username, password } = req.body;
+  const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
+  const password = req.body.password;
+
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Username and password are required' });
+  }
+
+  if (!process.env.JWT_SECRET) {
+    console.error('[AUTH] JWT_SECRET is not configured');
+    return res.status(500).json({ success: false, message: 'Server authentication is not configured' });
+  }
 
   try {
     const user = await db('users').where({ username }).first();
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (!user.status) {
+    if (isAccountDisabled(user.status)) {
       return res.status(401).json({ success: false, message: 'Account is disabled' });
+    }
+
+    const passwordValid = await verifyPassword(password, user.password, user.id);
+    if (!passwordValid) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     // Log successful login

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, User, Eye, EyeOff, Loader2, ShieldCheck, Globe } from 'lucide-react';
@@ -11,8 +11,14 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [authLoading, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,8 +26,10 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(username, password);
-      navigate('/');
+      const res = await login(username.trim(), password);
+      if (res?.user) {
+        navigate('/', { replace: true });
+      }
     } catch (err) {
       setError(err.message || 'Access Denied. Please verify your corporate credentials.');
     } finally {
