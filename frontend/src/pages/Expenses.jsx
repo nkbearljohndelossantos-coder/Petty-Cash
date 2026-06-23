@@ -24,33 +24,20 @@ import {
   ScanLine,
   Loader2
 } from 'lucide-react';
-
-// Canteen API config
-const CANTEEN_API_URL = 'https://canteen.nkbmanufacturing.com/api/integration/employees';
-const CANTEEN_API_KEY = 'NkbCanteenIntegrationSecretApiKey2026';
-
-async function lookupEmployeeById(idOrBarcode) {
-  try {
-    const res = await fetch(`${CANTEEN_API_URL}?api_key=${CANTEEN_API_KEY}`);
-    if (!res.ok) throw new Error('Canteen API error');
-    const data = await res.json();
-    const employees = Array.isArray(data) ? data : (data.data || data.employees || []);
-    const query = String(idOrBarcode).trim().toLowerCase();
-    const found = employees.find(emp =>
-      String(emp.employee_id || emp.id || '').toLowerCase() === query ||
-      String(emp.barcode || emp.barcode_id || '').toLowerCase() === query ||
-      String(emp.card_no || emp.card || '').toLowerCase() === query
-    );
-    return found || null;
-  } catch (err) {
-    console.error('Employee lookup failed:', err);
-    return null;
-  }
-}
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { exportExpensesToPDF } from '../utils/exportUtils';
 import { useAuth } from '../context/AuthContext';
+
+async function lookupEmployeeById(idOrBarcode) {
+  try {
+    const res = await api.get(`/integration/employees/${encodeURIComponent(String(idOrBarcode).trim())}`);
+    return res.data || res || null;
+  } catch (err) {
+    console.error('Employee lookup failed:', err);
+    throw err;
+  }
+}
 
 const Expenses = () => {
   const { user } = useAuth();
@@ -169,28 +156,32 @@ const Expenses = () => {
     if (!trimmed) return;
     setBarcodeLoading(true);
     setBarcodeError('');
-    const emp = await lookupEmployeeById(trimmed);
-    setBarcodeLoading(false);
-    if (!emp) {
-      setBarcodeError('Employee not found. Please check the ID or barcode.');
-      return;
-    }
-    const fullName = [emp.first_name, emp.middle_name, emp.last_name]
-      .filter(Boolean).join(' ') || emp.name || emp.full_name || '';
-    const deptName = (emp.department || emp.dept || emp.department_name || '').trim();
-    // Try to match department from the departments list (by name)
-    const matchedDept = departments.find(
-      d => d.name.toLowerCase() === deptName.toLowerCase()
-    );
-    setFormData(prev => ({
-      ...prev,
-      requested_by: fullName,
-      department_id: matchedDept ? String(matchedDept.id) : prev.department_id
-    }));
-    if (!matchedDept && deptName) {
-      setBarcodeError(`Employee found but department "${deptName}" not matched — please select manually.`);
-    } else {
-      setBarcodeError('');
+    try {
+      const emp = await lookupEmployeeById(trimmed);
+      if (!emp) {
+        setBarcodeError('Employee not found. Please check the ID or barcode.');
+        return;
+      }
+      const fullName = [emp.first_name, emp.middle_name, emp.last_name]
+        .filter(Boolean).join(' ') || emp.name || emp.full_name || '';
+      const deptName = (emp.department || emp.dept || emp.department_name || '').trim();
+      const matchedDept = departments.find(
+        d => d.name.toLowerCase() === deptName.toLowerCase()
+      );
+      setFormData(prev => ({
+        ...prev,
+        requested_by: fullName,
+        department_id: matchedDept ? String(matchedDept.id) : prev.department_id
+      }));
+      if (!matchedDept && deptName) {
+        setBarcodeError(`Employee found but department "${deptName}" not matched — please select manually.`);
+      } else {
+        setBarcodeError('');
+      }
+    } catch (err) {
+      setBarcodeError(err?.message || 'Employee lookup failed. Please try again.');
+    } finally {
+      setBarcodeLoading(false);
     }
   };
 

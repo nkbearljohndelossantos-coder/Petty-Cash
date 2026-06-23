@@ -267,6 +267,7 @@ app.use('/api/backup', require('./routes/backup'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/email-automation', require('./routes/emailAutomation'));
 app.use('/api/approval', require('./routes/approval'));
+app.use('/api/integration', require('./routes/integration'));
 
 // Health check route
 app.get('/health', (req, res) => {
