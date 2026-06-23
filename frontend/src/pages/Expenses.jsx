@@ -20,8 +20,33 @@ import {
   History,
   FileText,
   Activity,
-  Bell
+  Bell,
+  ScanLine,
+  Loader2
 } from 'lucide-react';
+
+// Canteen API config
+const CANTEEN_API_URL = 'https://canteen.nkbmanufacturing.com/api/integration/employees';
+const CANTEEN_API_KEY = 'NkbCanteenIntegrationSecretApiKey2026';
+
+async function lookupEmployeeById(idOrBarcode) {
+  try {
+    const res = await fetch(`${CANTEEN_API_URL}?api_key=${CANTEEN_API_KEY}`);
+    if (!res.ok) throw new Error('Canteen API error');
+    const data = await res.json();
+    const employees = Array.isArray(data) ? data : (data.data || data.employees || []);
+    const query = String(idOrBarcode).trim().toLowerCase();
+    const found = employees.find(emp =>
+      String(emp.employee_id || emp.id || '').toLowerCase() === query ||
+      String(emp.barcode || emp.barcode_id || '').toLowerCase() === query ||
+      String(emp.card_no || emp.card || '').toLowerCase() === query
+    );
+    return found || null;
+  } catch (err) {
+    console.error('Employee lookup failed:', err);
+    return null;
+  }
+}
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { exportExpensesToPDF } from '../utils/exportUtils';
@@ -67,6 +92,10 @@ const Expenses = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remindingExpenseId, setRemindingExpenseId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [barcodeError, setBarcodeError] = useState('');
+  const barcodeRef = useRef(null);
   const filtersRef = useRef(filters);
   const fetchAbortRef = useRef(null);
 
@@ -134,6 +163,36 @@ const Expenses = () => {
     window.addEventListener('expense_updated', onExpenseUpdated);
     return () => window.removeEventListener('expense_updated', onExpenseUpdated);
   }, [fetchData]);
+
+  const handleBarcodeLookup = async (value) => {
+    const trimmed = (value || barcodeInput).trim();
+    if (!trimmed) return;
+    setBarcodeLoading(true);
+    setBarcodeError('');
+    const emp = await lookupEmployeeById(trimmed);
+    setBarcodeLoading(false);
+    if (!emp) {
+      setBarcodeError('Employee not found. Please check the ID or barcode.');
+      return;
+    }
+    const fullName = [emp.first_name, emp.middle_name, emp.last_name]
+      .filter(Boolean).join(' ') || emp.name || emp.full_name || '';
+    const deptName = (emp.department || emp.dept || emp.department_name || '').trim();
+    // Try to match department from the departments list (by name)
+    const matchedDept = departments.find(
+      d => d.name.toLowerCase() === deptName.toLowerCase()
+    );
+    setFormData(prev => ({
+      ...prev,
+      requested_by: fullName,
+      department_id: matchedDept ? String(matchedDept.id) : prev.department_id
+    }));
+    if (!matchedDept && deptName) {
+      setBarcodeError(`Employee found but department "${deptName}" not matched — please select manually.`);
+    } else {
+      setBarcodeError('');
+    }
+  };
 
   const handleAddUnit = async () => {
     const trimmed = newUnit.trim();
@@ -376,7 +435,7 @@ const Expenses = () => {
              </button>
           </div>
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={() => { setShowAddModal(true); setBarcodeInput(''); setBarcodeError(''); }}
             className="btn-erp btn-erp-primary"
           >
             <Plus size={20} strokeWidth={2.5} />
@@ -654,6 +713,56 @@ const Expenses = () => {
                 <div className="flex items-center gap-4 bg-white border border-slate-100 px-4 py-2 rounded-xl">
                   <Activity size={16} className="text-erp-blue" />
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Performance Matrix</span>
+                </div>
+
+                {/* Barcode / Employee ID Scanner */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ScanLine size={16} className="text-erp-blue" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scan Barcode / Employee ID</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <input
+                      ref={barcodeRef}
+                      type="text"
+                      className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 placeholder:text-slate-300 focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all"
+                      placeholder="Scan or type Employee ID / Barcode..."
+                      value={barcodeInput}
+                      onChange={(e) => setBarcodeInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleBarcodeLookup(e.target.value);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleBarcodeLookup()}
+                      disabled={barcodeLoading || !barcodeInput.trim()}
+                      className="px-5 py-3 bg-erp-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                    >
+                      {barcodeLoading ? <Loader2 size={14} className="animate-spin" /> : <ScanLine size={14} />}
+                      {barcodeLoading ? 'Looking up...' : 'Lookup'}
+                    </button>
+                  </div>
+                  {barcodeError && (
+                    <p className="text-xs font-bold text-amber-600 flex items-center gap-1">
+                      <span>⚠</span> {barcodeError}
+                    </p>
+                  )}
+                  {formData.requested_by && !barcodeError && (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                      <Check size={14} className="text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-black text-green-800">{formData.requested_by}</p>
+                        <p className="text-[10px] text-green-600 font-bold">
+                          {departments.find(d => String(d.id) === String(formData.department_id))?.name || 'Department not set'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
