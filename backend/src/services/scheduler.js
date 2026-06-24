@@ -21,6 +21,21 @@ const initScheduler = () => {
     await addJob('notifications', 'escalation_check', {});
   });
 
+  // 3.5. Re-send approval emails after 24 hours and raise an important bell alert.
+  const runAutomaticApprovalReminders = async () => {
+    try {
+      const approvalService = require('./approvalService');
+      const result = await approvalService.sendAutomaticReminders();
+      if (result.sent || result.failed) {
+        console.log(`[Scheduler] Automatic approval reminders: ${result.sent} sent, ${result.failed} failed.`);
+      }
+    } catch (err) {
+      console.error('[Scheduler] Automatic approval reminder check failed:', err.message);
+    }
+  };
+  cron.schedule('*/15 * * * *', runAutomaticApprovalReminders);
+  void runAutomaticApprovalReminders();
+
   // 4. Low Fund Check (Run every 4 hours)
   cron.schedule('0 */4 * * *', async () => {
     console.log('Running Low Fund Checks...');

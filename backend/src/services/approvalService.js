@@ -695,6 +695,7 @@ exports.formatReference = formatReference;
 // to prevent spam.
 
 const REMINDER_COOLDOWN_MINUTES = 30;
+const AUTOMATIC_REMINDER_DELAY_MS = 24 * 60 * 60 * 1000;
 
 const parseExpenseId = (expenseId) => {
   const parsed = parseInt(expenseId, 10);
@@ -728,7 +729,7 @@ const resolveApproverForReminder = async (currentLevel) => {
   return approver;
 };
 
-exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
+exports.sendReminder = async (expenseId, requesterUserId, ipAddress, { automatic = false } = {}) => {
   const parsedExpenseId = parseExpenseId(expenseId);
 
   const { ensureApprovalSchema } = require('../utils/approvalSchemaRepair');
@@ -772,7 +773,9 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
     );
   }
 
-  const requester = await db('users').where({ id: requesterUserId }).first();
+  const requester = requesterUserId
+    ? await db('users').where({ id: requesterUserId }).first()
+    : null;
   const ref = formatReference(parsedExpenseId);
   const now = db.fn.now();
 
@@ -780,9 +783,9 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
   const auditId = await exports.recordAudit({
     expenseId: parsedExpenseId,
     action: 'reminded',
-    actorType: 'user',
+    actorType: automatic ? 'system' : 'user',
     actorUserId: requesterUserId,
-    actorName: requester?.full_name || requester?.username || 'Unknown',
+    actorName: automatic ? 'Automatic 24-hour reminder' : (requester?.full_name || requester?.username || 'Unknown'),
     ipAddress,
     approvalLevel: currentLevel
   });
@@ -796,13 +799,15 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
   }
   await db('expenses').where({ id: parsedExpenseId }).update(reminderUpdate);
 
-  const { logActivity } = require('../utils/logService');
-  await logActivity(
-    requesterUserId,
-    'REMIND_APPROVER',
-    `Sent approval reminder for ${ref} to ${approver.name || approver.email}`,
-    ipAddress
-  );
+  if (requesterUserId) {
+    const { logActivity } = require('../utils/logService');
+    await logActivity(
+      requesterUserId,
+      'REMIND_APPROVER',
+      `Sent approval reminder for ${ref} to ${approver.name || approver.email}`,
+      ipAddress
+    );
+  }
 
   // ── Send dedicated reminder email with fresh Approve/Decline buttons ─────────
   const updatedExpense = await db('expenses')
@@ -814,7 +819,7 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
   try {
     emailResult = await exports.sendReminderEmail(expense, currentLevel, {
       reminderCount: updatedExpense?.reminder_count ?? 1,
-      remindedBy: requester?.full_name || requester?.username || 'System'
+      remindedBy: automatic ? 'Automatic 24-hour reminder' : (requester?.full_name || requester?.username || 'System')
     });
   } catch (emailErr) {
     emailResult = { sent: false, reason: emailErr?.message || String(emailErr) };
@@ -824,18 +829,22 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
   const approverUser = await db('users').where({ email: approver.email }).first();
   if (approverUser) {
     await dispatchNotification(approverUser.id, {
-      title: 'Approval Reminder — Action Required',
+      title: automatic ? 'URGENT: Approval Still Required' : 'Approval Reminder — Action Required',
       message: `Reminder #${updatedExpense?.reminder_count ?? 1}: ${ref} (₱${parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}) is still awaiting your approval. A new email with Approve/Decline buttons has been sent.`,
       type: 'warning',
+      priority: automatic ? 'important' : 'normal',
       link: `/expenses?id=${parsedExpenseId}`,
     });
   }
 
   // ── Also notify all Super Admins / Accounting so nothing falls through ──────
-  const adminUsers = await db('users')
+  const adminUsersQuery = db('users')
     .whereIn('role', ['Super Admin', 'Accounting'])
-    .whereNot({ id: requesterUserId })
     .select('id');
+  if (requesterUserId) {
+    adminUsersQuery.whereNot({ id: requesterUserId });
+  }
+  const adminUsers = await adminUsersQuery;
   for (const admin of adminUsers) {
     await dispatchNotification(admin.id, {
       title: 'Approval Reminder Sent',
@@ -861,4 +870,45 @@ exports.sendReminder = async (expenseId, requesterUserId, ipAddress) => {
     reminderCount: updatedExpense?.reminder_count ?? 1,
     lastReminderAt: updatedExpense?.last_reminder_at || new Date()
   };
+};
+
+// Re-send requests that remain unanswered for 24 hours. The conditional update
+// claims each expense first, preventing duplicate emails from overlapping workers.
+exports.sendAutomaticReminders = async () => {
+  const { ensureApprovalSchema } = require('../utils/approvalSchemaRepair');
+  await ensureApprovalSchema(db);
+
+  const expenses = await db('expenses')
+    .select('id', 'created_at', 'last_reminder_at')
+    .where({ status: 'For Approval' });
+  const cutoff = new Date(Date.now() - AUTOMATIC_REMINDER_DELAY_MS);
+  const results = { checked: expenses.length, sent: 0, failed: 0 };
+
+  for (const expense of expenses) {
+    const lastContact = expense.last_reminder_at || expense.created_at;
+    if (!lastContact || new Date(lastContact).getTime() > cutoff.getTime()) {
+      continue;
+    }
+
+    const claim = db('expenses').where({ id: expense.id, status: 'For Approval' });
+    if (expense.last_reminder_at) {
+      claim.where('last_reminder_at', expense.last_reminder_at);
+    } else {
+      claim.whereNull('last_reminder_at');
+    }
+
+    const claimed = await claim.update({ last_reminder_at: db.fn.now(), updated_at: db.fn.now() });
+    if (!claimed) continue;
+
+    try {
+      const reminder = await exports.sendReminder(expense.id, null, 'system', { automatic: true });
+      if (reminder.emailSent) results.sent += 1;
+      else results.failed += 1;
+    } catch (err) {
+      results.failed += 1;
+      console.error(`[Approval Reminder] Automatic resend failed for expense ${expense.id}:`, err.message);
+    }
+  }
+
+  return results;
 };

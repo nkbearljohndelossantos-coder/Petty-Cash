@@ -3,7 +3,7 @@ const { sendToUser } = require('./socketService');
 const { addJob } = require('./queueManager');
 
 const dispatchNotification = async (userId, payload) => {
-  const { title, message, type, link, data, templateName } = payload;
+  const { title, message, type, link, data, templateName, priority } = payload;
 
   try {
     // 1. Get User Preferences
@@ -23,6 +23,7 @@ const dispatchNotification = async (userId, payload) => {
         title,
         message,
         type: type || 'info',
+        priority: priority || 'normal',
         link,
         is_read: false
       });
@@ -33,6 +34,7 @@ const dispatchNotification = async (userId, payload) => {
         title,
         message,
         type: type || 'info',
+        priority: priority || 'normal',
         link,
         created_at: new Date()
       });
