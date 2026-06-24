@@ -930,7 +930,7 @@ const Expenses = () => {
                     <ReceiptManager
                       transactionId={selectedExpense.id}
                       receipts={selectedExpense.receipts || []}
-                      canManage={['Finance', 'Admin', 'Super Admin', 'Accounting'].includes(user?.role)}
+                      canManage={['Finance', 'Admin', 'Super Admin', 'Accounting'].includes(user?.role) || Number(user?.id) === Number(selectedExpense.created_by)}
                       notify={showToast}
                       onChange={(receipts) => setSelectedExpense((current) => ({ ...current, receipts }))}
                     />
