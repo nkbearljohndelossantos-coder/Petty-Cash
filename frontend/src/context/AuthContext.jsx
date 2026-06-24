@@ -14,6 +14,9 @@ export const AuthProvider = ({ children }) => {
       if (storedToken) {
         try {
           const res = await api.get('/auth/me');
+          if (!res?.data) {
+            throw new Error('Session response did not contain a user');
+          }
           setUser(res.data);
           setToken(storedToken);
         } catch (err) {
