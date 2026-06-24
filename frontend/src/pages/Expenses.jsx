@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { exportExpensesToPDF } from '../utils/exportUtils';
 import { useAuth } from '../context/AuthContext';
+import ReceiptManager from '../components/ReceiptManager';
 
 async function lookupEmployeeById(idOrBarcode) {
   try {
@@ -328,6 +329,10 @@ const Expenses = () => {
         alert(res.message || 'This expense has been sent for email approval.');
       }
       fetchData(false);
+      if (status === 'Liquidated') {
+        await handleView(id);
+        showToast('Liquidation recorded. Upload the supporting receipts below.');
+      }
     } catch (err) {
       alert(err.message);
     }
@@ -920,6 +925,15 @@ const Expenses = () => {
                         </p>
                       )}
                     </div>
+                  )}
+                  {['Approved', 'Liquidated'].includes(selectedExpense.status) && (
+                    <ReceiptManager
+                      transactionId={selectedExpense.id}
+                      receipts={selectedExpense.receipts || []}
+                      canManage={['Finance', 'Admin', 'Super Admin', 'Accounting'].includes(user?.role)}
+                      notify={showToast}
+                      onChange={(receipts) => setSelectedExpense((current) => ({ ...current, receipts }))}
+                    />
                   )}
                   {selectedExpense.attachments && selectedExpense.attachments.length > 0 && (
                     <div>

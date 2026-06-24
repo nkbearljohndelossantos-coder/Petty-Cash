@@ -89,6 +89,12 @@ exports.getExpense = async (req, res) => {
     }
 
     const attachments = await db('expense_attachments').where({ expense_id: expense.id });
+    const receipts = await db('petty_cash_receipts as receipts')
+      .leftJoin('users', 'receipts.uploaded_by', 'users.id')
+      .select('receipts.*', db.raw('COALESCE(users.full_name, users.username) as uploader_name'))
+      .where('receipts.transaction_id', expense.id)
+      .whereNull('receipts.deleted_at')
+      .orderBy('receipts.uploaded_at', 'desc');
     let audit_trail = [];
     try {
       audit_trail = await approvalService.getExpenseAuditTrail(expense.id);
@@ -96,7 +102,7 @@ exports.getExpense = async (req, res) => {
       audit_trail = [];
     }
 
-    res.json({ success: true, data: { ...expense, attachments, audit_trail } });
+    res.json({ success: true, data: { ...expense, attachments, receipts, audit_trail } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
