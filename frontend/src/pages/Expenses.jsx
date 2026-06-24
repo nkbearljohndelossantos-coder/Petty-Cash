@@ -31,7 +31,9 @@ import { useAuth } from '../context/AuthContext';
 
 async function lookupEmployeeById(idOrBarcode) {
   try {
-    const res = await api.get(`/integration/employees/${encodeURIComponent(String(idOrBarcode).trim())}`);
+    const res = await api.get(`/integration/employees/${encodeURIComponent(String(idOrBarcode).trim())}`, {
+      params: { _ts: Date.now() }
+    });
     return res.data || res || null;
   } catch (err) {
     console.error('Employee lookup failed:', err);
