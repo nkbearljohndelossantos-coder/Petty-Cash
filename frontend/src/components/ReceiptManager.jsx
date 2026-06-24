@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Download, Eye, FileImage, FileText, Loader2, Trash2, Upload, X } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import { Camera, Download, Eye, FileImage, FileText, Loader2, Trash2, Upload, X } from 'lucide-react';
 import api from '../services/api';
 
 const formatSize = (bytes) => {
@@ -11,6 +12,7 @@ const formatSize = (bytes) => {
 
 const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, notify }) => {
   const inputRef = useRef(null);
+  const cameraRef = useRef(null);
   const [items, setItems] = useState(receipts);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -22,8 +24,7 @@ const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, not
     onChange?.(next);
   };
 
-  const upload = async (event) => {
-    const files = Array.from(event.target.files || []);
+  const uploadFiles = async (files) => {
     if (!files.length) return;
     const data = new FormData();
     data.append('transaction_id', transactionId);
@@ -33,8 +34,57 @@ const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, not
       const res = await api.post('/petty-cash/receipts/upload', data, { headers: { 'Content-Type': 'multipart/form-data' } });
       sync(res.data || []);
       notify?.(`${files.length} receipt${files.length > 1 ? 's' : ''} uploaded securely.`);
+      return true;
     } catch (err) {
       notify?.(err?.message || 'Receipt upload failed.', 'error');
+      return false;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const upload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    await uploadFiles(files);
+    event.target.value = '';
+  };
+
+  const convertCaptureToPdf = (imageFile) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Unable to read the captured receipt.'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('Unable to process the captured receipt.'));
+      image.onload = () => {
+        const landscape = image.width > image.height;
+        const pdf = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4', compress: true });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const scale = Math.min((pageWidth - 12) / image.width, (pageHeight - 12) / image.height);
+        const width = image.width * scale;
+        const height = image.height * scale;
+        pdf.addImage(image, imageFile.type === 'image/png' ? 'PNG' : 'JPEG', (pageWidth - width) / 2, (pageHeight - height) / 2, width, height, undefined, 'FAST');
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        resolve(new File([pdf.output('blob')], `receipt-capture-${stamp}.pdf`, { type: 'application/pdf' }));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(imageFile);
+  });
+
+  const capture = async (event) => {
+    const image = event.target.files?.[0];
+    if (!image) return;
+    setUploading(true);
+    try {
+      const pdf = await convertCaptureToPdf(image);
+      if (pdf.size > 10 * 1024 * 1024) {
+        throw new Error('The generated receipt PDF is over the 10MB upload limit. Please retake the photo closer to the receipt.');
+      }
+      const uploaded = await uploadFiles([pdf]);
+      if (uploaded) notify?.('Receipt captured and uploaded as a secure PDF.');
+    } catch (err) {
+      notify?.(err?.message || 'Unable to capture receipt.', 'error');
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -82,10 +132,14 @@ const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, not
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Liquidation Receipts</p>
           <p className="text-xs text-slate-500 mt-1">JPG, PNG, or PDF up to 10MB. Stored in protected server storage.</p>
         </div>
-        {canManage && <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="p-2 text-erp-blue hover:bg-blue-50 rounded-lg" title="Upload receipt">
-          {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-        </button>}
+        {canManage && <div className="flex items-center gap-1">
+          <button type="button" onClick={() => cameraRef.current?.click()} disabled={uploading} className="p-2 text-erp-blue hover:bg-blue-50 rounded-lg" title="Capture receipt with camera">
+            {uploading ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+          </button>
+          <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="p-2 text-erp-blue hover:bg-blue-50 rounded-lg" title="Upload receipt file"><Upload size={18} /></button>
+        </div>}
         <input ref={inputRef} type="file" multiple accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={upload} />
+        <input ref={cameraRef} type="file" accept="image/jpeg,image/png" capture="environment" className="hidden" onChange={capture} />
       </div>
       <div className="divide-y divide-slate-100">
         {items.length === 0 ? <p className="p-4 text-xs text-slate-500">No receipt uploaded yet.</p> : items.map((receipt) => (
