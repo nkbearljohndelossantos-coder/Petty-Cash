@@ -138,16 +138,8 @@ const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, not
       if (pdf.size > 10 * 1024 * 1024) {
         throw new Error('The generated receipt PDF is over the 10MB upload limit. Please retake the photo closer to the receipt.');
       }
-      // Keep a copy on the device that captured the receipt as well as the
-      // protected server copy linked to the voucher.
-      const localUrl = URL.createObjectURL(pdf);
-      const localCopy = document.createElement('a');
-      localCopy.href = localUrl;
-      localCopy.download = pdf.name;
-      localCopy.click();
-      setTimeout(() => URL.revokeObjectURL(localUrl), 1000);
       const uploaded = await uploadFiles([pdf]);
-      if (uploaded) notify?.('Receipt PDF saved to this device and uploaded securely.');
+      if (uploaded) notify?.('Receipt PDF uploaded securely. Open the same voucher on your PC to preview or download it.');
     } catch (err) {
       notify?.(err?.message || 'Unable to capture receipt.', 'error');
     } finally {
