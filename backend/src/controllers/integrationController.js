@@ -1,9 +1,10 @@
 const CANTEEN_API_URL =
   process.env.CANTEEN_API_URL ||
   'https://canteen.nkbmanufacturing.com/api/integration/employees';
+const DEFAULT_CANTEEN_API_KEY = 'NkbCanteenIntegrationSecretApiKey2026';
 const CANTEEN_API_KEY =
   process.env.CANTEEN_API_KEY ||
-  'NkbCanteenIntegrationSecretApiKey2026';
+  DEFAULT_CANTEEN_API_KEY;
 
 let employeeCache = { fetchedAt: 0, employees: [] };
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -18,8 +19,13 @@ async function fetchEmployees() {
     return employeeCache.employees;
   }
 
-  const url = `${CANTEEN_API_URL}?api_key=${encodeURIComponent(CANTEEN_API_KEY)}`;
-  const res = await fetch(url);
+  const url = (apiKey) => `${CANTEEN_API_URL}?api_key=${encodeURIComponent(apiKey)}`;
+  let res = await fetch(url(CANTEEN_API_KEY));
+  if (res.status === 401 && CANTEEN_API_KEY !== DEFAULT_CANTEEN_API_KEY) {
+    console.warn('[fetchEmployees] CANTEEN_API_KEY was rejected; retrying with default integration key');
+    res = await fetch(url(DEFAULT_CANTEEN_API_KEY));
+  }
+
   if (!res.ok) {
     throw new Error(`Canteen API error (${res.status})`);
   }
