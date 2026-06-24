@@ -49,6 +49,61 @@ const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, not
     event.target.value = '';
   };
 
+  const autoCropReceipt = (image, mimeType) => {
+    const longestSide = Math.max(image.width, image.height);
+    const scale = Math.min(1, 2200 / longestSide);
+    const sourceWidth = Math.round(image.width * scale);
+    const sourceHeight = Math.round(image.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = sourceWidth;
+    canvas.height = sourceHeight;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0, sourceWidth, sourceHeight);
+
+    const pixels = context.getImageData(0, 0, sourceWidth, sourceHeight).data;
+    const corners = [[2, 2], [sourceWidth - 3, 2], [2, sourceHeight - 3], [sourceWidth - 3, sourceHeight - 3]];
+    const background = corners.reduce((total, [x, y]) => {
+      const offset = (y * sourceWidth + x) * 4;
+      return [total[0] + pixels[offset], total[1] + pixels[offset + 1], total[2] + pixels[offset + 2]];
+    }, [0, 0]).map((value) => value / corners.length);
+
+    let left = sourceWidth;
+    let top = sourceHeight;
+    let right = 0;
+    let bottom = 0;
+    for (let y = 0; y < sourceHeight; y += 4) {
+      for (let x = 0; x < sourceWidth; x += 4) {
+        const offset = (y * sourceWidth + x) * 4;
+        const distance = Math.abs(pixels[offset] - background[0]) + Math.abs(pixels[offset + 1] - background[1]) + Math.abs(pixels[offset + 2] - background[2]);
+        if (distance > 120) {
+          left = Math.min(left, x);
+          top = Math.min(top, y);
+          right = Math.max(right, x);
+          bottom = Math.max(bottom, y);
+        }
+      }
+    }
+
+    const cropWidth = right - left;
+    const cropHeight = bottom - top;
+    // Keep the original framing when the camera already fills the frame or no
+    // clear receipt boundary is detected.
+    if (cropWidth < sourceWidth * 0.45 || cropHeight < sourceHeight * 0.45) {
+      return { dataUrl: canvas.toDataURL(mimeType, 0.9), width: sourceWidth, height: sourceHeight };
+    }
+
+    const padding = Math.round(Math.min(cropWidth, cropHeight) * 0.035);
+    const x = Math.max(0, left - padding);
+    const y = Math.max(0, top - padding);
+    const width = Math.min(sourceWidth - x, cropWidth + (padding * 2));
+    const height = Math.min(sourceHeight - y, cropHeight + (padding * 2));
+    const cropped = document.createElement('canvas');
+    cropped.width = width;
+    cropped.height = height;
+    cropped.getContext('2d').drawImage(canvas, x, y, width, height, 0, 0, width, height);
+    return { dataUrl: cropped.toDataURL(mimeType, 0.9), width, height };
+  };
+
   const convertCaptureToPdf = (imageFile) => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Unable to read the captured receipt.'));
@@ -56,14 +111,16 @@ const ReceiptManager = ({ transactionId, receipts = [], canManage, onChange, not
       const image = new Image();
       image.onerror = () => reject(new Error('Unable to process the captured receipt.'));
       image.onload = () => {
-        const landscape = image.width > image.height;
+        const mimeType = imageFile.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const cropped = autoCropReceipt(image, mimeType);
+        const landscape = cropped.width > cropped.height;
         const pdf = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4', compress: true });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        const scale = Math.min((pageWidth - 12) / image.width, (pageHeight - 12) / image.height);
-        const width = image.width * scale;
-        const height = image.height * scale;
-        pdf.addImage(image, imageFile.type === 'image/png' ? 'PNG' : 'JPEG', (pageWidth - width) / 2, (pageHeight - height) / 2, width, height, undefined, 'FAST');
+        const scale = Math.min((pageWidth - 12) / cropped.width, (pageHeight - 12) / cropped.height);
+        const width = cropped.width * scale;
+        const height = cropped.height * scale;
+        pdf.addImage(cropped.dataUrl, imageFile.type === 'image/png' ? 'PNG' : 'JPEG', (pageWidth - width) / 2, (pageHeight - height) / 2, width, height, undefined, 'FAST');
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
         resolve(new File([pdf.output('blob')], `receipt-capture-${stamp}.pdf`, { type: 'application/pdf' }));
       };
