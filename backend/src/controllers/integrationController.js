@@ -1,7 +1,9 @@
 const CANTEEN_API_URL =
   process.env.CANTEEN_API_URL ||
   'https://canteen.nkbmanufacturing.com/api/integration/employees';
-const CANTEEN_API_KEY = process.env.CANTEEN_API_KEY || '';
+const CANTEEN_API_KEY =
+  process.env.CANTEEN_API_KEY ||
+  'NkbCanteenIntegrationSecretApiKey2026';
 
 let employeeCache = { fetchedAt: 0, employees: [] };
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -34,7 +36,7 @@ function matchEmployee(employees, idOrBarcode) {
 
   return employees.find((emp) =>
     String(emp.employee_id || emp.id || '').toLowerCase() === query ||
-    String(emp.barcode || emp.barcode_id || '').toLowerCase() === query ||
+    String(emp.barcode || emp.barcode_id || emp.barcode_number || '').toLowerCase() === query ||
     String(emp.card_no || emp.card || '').toLowerCase() === query
   ) || null;
 }
