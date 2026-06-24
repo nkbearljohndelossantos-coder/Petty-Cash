@@ -321,30 +321,8 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Expense not found' });
     }
 
-    // Intercept liquidation requests that exceed the approval threshold
-    const hasApprovalSchema = await db.schema.hasColumn('expenses', 'approval_context');
-    if (hasApprovalSchema && status === 'Liquidated' && currentExpense.status === 'Approved') {
-      const requiresApproval = await approvalService.shouldRequireApproval(currentExpense.amount);
-      if (requiresApproval) {
-        const workflow = await approvalService.initiateApprovalWorkflow(
-          id,
-          req.user.id,
-          approvalService.getClientIp(req),
-          'liquidation'
-        );
-        const emailSent = workflow.emailResult?.sent;
-        const message = emailSent
-          ? 'Amount exceeds approval threshold. Approval email sent successfully.'
-          : `Amount exceeds approval threshold. Approval email failed: ${workflow.emailResult?.reason}. Admins have been notified in-app.`;
-        return res.json({
-          success: true,
-          data: workflow.expense,
-          message,
-          requiresApproval: true,
-          emailStatus: workflow.emailResult
-        });
-      }
-    }
+    // Liquidation completes an already approved expenditure request. It must not
+    // create a second approval workflow or notify approvers again.
 
     await db('expenses')
       .where({ id })
