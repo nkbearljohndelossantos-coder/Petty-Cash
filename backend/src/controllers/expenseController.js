@@ -114,10 +114,9 @@ exports.createExpense = async (req, res) => {
 
     const hasApprovalSchema = await db.schema.hasColumn('expenses', 'approval_context');
     const requiresApproval = hasApprovalSchema && await approvalService.shouldRequireApproval(amount);
-    let initialStatus = status || 'Pending';
-    if (requiresApproval) {
-      initialStatus = 'For Approval';
-    }
+    // Requests below the configured approval threshold are approved immediately.
+    // At or above the threshold, the request remains with the email approver.
+    const initialStatus = requiresApproval ? 'For Approval' : 'Approved';
 
     const insertData = {
       date,
@@ -223,9 +222,14 @@ exports.createExpense = async (req, res) => {
         });
       }
 
-      if (status === 'Approved') {
-        broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount });
-      }
+      await dispatchNotification(expense.created_by, {
+        title: 'Expense Automatically Approved',
+        message: `Your expense request for ₱${amount} was automatically approved and is ready for handover.`,
+        type: 'success',
+        link: `/expenses?id=${expense.id}`,
+        templateName: 'expense_status_update'
+      });
+      broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount, status: initialStatus });
     }
 
     expense = await db('expenses').where({ id: expenseId }).first();
