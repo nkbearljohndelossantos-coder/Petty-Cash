@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SocketProvider } from './context/SocketContext';
 import DashboardLayout from './layouts/DashboardLayout';
+import AppErrorBoundary from './components/AppErrorBoundary';
+import ServerIssueBanner from './components/ServerIssueBanner';
+import ServiceUnavailable from './components/ServiceUnavailable';
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -26,7 +29,7 @@ const UserManual = lazy(() => import('./pages/UserManual'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, token, loading } = useAuth();
+  const { user, token, loading, authError } = useAuth();
   
   if (loading) return (
     <div className="h-screen w-full flex items-center justify-center bg-white">
@@ -34,12 +37,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     </div>
   );
 
-  // Token present but user not hydrated yet — avoid bouncing back to login
-  if (!user && token) return (
-    <div className="h-screen w-full flex items-center justify-center bg-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-erp-blue"></div>
-    </div>
-  );
+  if (!user && token && authError) {
+    return (
+      <ServiceUnavailable
+        title="Cannot reach the server"
+        message="Your session is still saved, but the server is temporarily unavailable. Retry when the connection is back."
+      />
+    );
+  }
   
   if (!user) return <Navigate to="/login" replace />;
   
@@ -62,69 +67,72 @@ function App() {
       <SocketProvider>
         <ThemeProvider>
           <BrowserRouter>
-            <Suspense fallback={loadingFallback}>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/approval/approve/:token" element={<ApprovalAction mode="approve" />} />
-                <Route path="/approval/decline/:token" element={<ApprovalAction mode="decline" />} />
-                
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <DashboardLayout />
-                  </ProtectedRoute>
-                }>
-                  <Route index element={<Dashboard />} />
-                  <Route path="expenses" element={<Expenses />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="funds" element={
-                    <ProtectedRoute allowedRoles={['Super Admin']}>
-                      <Funds />
+            <AppErrorBoundary>
+              <ServerIssueBanner />
+              <Suspense fallback={loadingFallback}>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/approval/approve/:token" element={<ApprovalAction mode="approve" />} />
+                  <Route path="/approval/decline/:token" element={<ApprovalAction mode="decline" />} />
+                  
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <DashboardLayout />
                     </ProtectedRoute>
-                  } />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="categories" element={<Categories />} />
-                  <Route path="departments" element={
-                    <ProtectedRoute allowedRoles={['Super Admin', 'Accounting']}>
-                      <Departments />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="users" element={
-                    <ProtectedRoute allowedRoles={['Super Admin']}>
-                      <Users />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="email-automation" element={
-                    <ProtectedRoute allowedRoles={['Super Admin', 'Accounting']}>
-                      <EmailAutomation />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="queue-monitor" element={
-                    <ProtectedRoute allowedRoles={['Super Admin']}>
-                      <QueueMonitor />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="settings" element={
-                    <ProtectedRoute allowedRoles={['Super Admin']}>
-                      <Settings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="logs" element={
-                    <ProtectedRoute allowedRoles={['Super Admin']}>
-                      <Logs />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="maintenance" element={
-                    <ProtectedRoute allowedRoles={['Super Admin']}>
-                      <BackupRestore />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="user-manual" element={<UserManual />} />
-                </Route>
+                  }>
+                    <Route index element={<Dashboard />} />
+                    <Route path="expenses" element={<Expenses />} />
+                    <Route path="analytics" element={<Analytics />} />
+                    <Route path="funds" element={
+                      <ProtectedRoute allowedRoles={['Super Admin']}>
+                        <Funds />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="categories" element={<Categories />} />
+                    <Route path="departments" element={
+                      <ProtectedRoute allowedRoles={['Super Admin', 'Accounting']}>
+                        <Departments />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="users" element={
+                      <ProtectedRoute allowedRoles={['Super Admin']}>
+                        <Users />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="email-automation" element={
+                      <ProtectedRoute allowedRoles={['Super Admin', 'Accounting']}>
+                        <EmailAutomation />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="queue-monitor" element={
+                      <ProtectedRoute allowedRoles={['Super Admin']}>
+                        <QueueMonitor />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="settings" element={
+                      <ProtectedRoute allowedRoles={['Super Admin']}>
+                        <Settings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="logs" element={
+                      <ProtectedRoute allowedRoles={['Super Admin']}>
+                        <Logs />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="profile" element={<Profile />} />
+                    <Route path="maintenance" element={
+                      <ProtectedRoute allowedRoles={['Super Admin']}>
+                        <BackupRestore />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="user-manual" element={<UserManual />} />
+                  </Route>
 
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </Suspense>
+                  <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+              </Suspense>
+            </AppErrorBoundary>
           </BrowserRouter>
         </ThemeProvider>
       </SocketProvider>

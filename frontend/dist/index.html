@@ -5,7 +5,38 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NKB Petty Cash</title>
-    <script type="module" crossorigin src="/assets/index-DbDiTnTv.js"></script>
+    <script>
+      (function () {
+        var reloadKey = 'nkb-petty-cash-stale-build-reloaded';
+        var isAsset = function (url) { return typeof url === 'string' && url.indexOf('/assets/') !== -1; };
+        var reloadFreshBuild = function () {
+          if (sessionStorage.getItem(reloadKey) === '1') return;
+          sessionStorage.setItem(reloadKey, '1');
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+            }).finally(function () {
+              location.replace(location.pathname + '?build=' + Date.now() + location.hash);
+            });
+            return;
+          }
+          location.replace(location.pathname + '?build=' + Date.now() + location.hash);
+        };
+        window.addEventListener('load', function () { sessionStorage.removeItem(reloadKey); });
+        window.addEventListener('error', function (event) {
+          var target = event.target;
+          var url = target && (target.src || target.href);
+          if (target !== window && isAsset(url)) reloadFreshBuild();
+        }, true);
+        window.addEventListener('unhandledrejection', function (event) {
+          var message = String(event.reason && (event.reason.message || event.reason) || '');
+          if (message.indexOf('Failed to fetch dynamically imported module') !== -1 || isAsset(message)) {
+            reloadFreshBuild();
+          }
+        });
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-Bfz6Uj8b.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-BYbx6iT9.js">
     <link rel="modulepreload" crossorigin href="/assets/babel-runtime-BgY6eKc8.js">
     <link rel="modulepreload" crossorigin href="/assets/fast-png-vyXZNpr7.js">
@@ -19,8 +50,8 @@
     <link rel="modulepreload" crossorigin href="/assets/engine-io-client-Zq2plMzi.js">
     <link rel="modulepreload" crossorigin href="/assets/socket-io-client-rhFFmUiB.js">
     <link rel="modulepreload" crossorigin href="/assets/axios-BSVaDs6F.js">
-    <link rel="modulepreload" crossorigin href="/assets/api-8YHFd92T.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CUCa2ifM.css">
+    <link rel="modulepreload" crossorigin href="/assets/api-onzPQ7Te.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-BJvuKTko.css">
   </head>
   <body>
     <div id="root"></div>

@@ -7,12 +7,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
     const checkLoggedIn = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
+          setAuthError(null);
           const res = await api.get('/auth/me');
           if (!res?.data) {
             throw new Error('Session response did not contain a user');
@@ -20,8 +22,14 @@ export const AuthProvider = ({ children }) => {
           setUser(res.data);
           setToken(storedToken);
         } catch (err) {
-          localStorage.removeItem('token');
-          setToken(null);
+          if ([502, 503, 504].includes(err?.status) || err?.code === 'ERR_NETWORK') {
+            setAuthError(err);
+            setToken(storedToken);
+          } else {
+            localStorage.removeItem('token');
+            setToken(null);
+            setUser(null);
+          }
         }
       } else {
         setToken(null);
@@ -40,6 +48,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', res.token);
     setToken(res.token);
     setUser(res.user);
+    setAuthError(null);
     return res;
   };
 
@@ -47,10 +56,11 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    setAuthError(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, authError, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
