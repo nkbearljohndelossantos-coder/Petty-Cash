@@ -1,0 +1,3 @@
+- All route handlers return a consistent JSON response structure with `success` (boolean) and `data` or `message` fields.
+- Database aggregation results are explicitly parsed using `parseFloat` or `parseInt` to ensure correct numeric types in API responses.
+- Query errors are handled using `.catch()` blocks or try-catch wrappers to prevent unhandled promise rejections and return 500 status codes.

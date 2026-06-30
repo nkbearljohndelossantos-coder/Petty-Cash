@@ -1,0 +1,1 @@
+Provides administrative capabilities for database backup/restore, activity log retrieval, and system settings management.

@@ -1,0 +1,3 @@
+- Services expose an init function (initSocket, initQueueManager, initWorkers, initScheduler) that is called during application startup in index.js.
+- Queue operations use addJob() which transparently handles Redis-to-database fallback without requiring callers to know the active backend.
+- Database queries use Knex query builder consistently across scheduler, queue manager, and worker services.

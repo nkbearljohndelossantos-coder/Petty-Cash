@@ -1,0 +1,5 @@
+- **Component Structure**: Implements three distinct page-level components (`Categories.jsx`, `Departments.jsx`, `Users.jsx`) that function as independent views for specific organizational entities.
+- **Data Access**: Relies on a centralized API client (`../services/api`) for all backend communication, following a RESTful pattern (GET/POST/PUT/DELETE) against specific resource endpoints.
+- **State Management**: Utilizes local React state (`useState`) for data fetching, form handling, and modal visibility, with `useEffect` for initial data hydration.
+- **UI Framework**: Leverages `framer-motion` for entry animations and modal transitions, `lucide-react` for iconography, and Tailwind CSS for layout and styling.
+- **Styling Architecture**: Adopts a design-system approach using shared utility classes (`.erp-card`, `.btn-erp`, `.fade-in`) defined in global styles to ensure visual consistency across all management views.

@@ -1,0 +1,1 @@
+Manages enterprise-wide settings, user access governance, audit logging, and data maintenance operations.

@@ -1,0 +1,4 @@
+- Centralized orchestration in `src/index.js` initializes the Express server, HTTP listener, and WebSocket service (`socketService`).
+- Enforces a shared database contract via `knex` (MySQL) with an aggressive boot-time schema repair engine that validates and reconstructs missing tables/columns across all modules.
+- Implements a resilient asynchronous messaging layer (`queueManager`) that abstracts BullMQ (Redis) with a MySQL fallback, ensuring reliable email and notification delivery regardless of infrastructure availability.
+- Applies a uniform security boundary via `middleware/auth.js`, providing JWT verification and role-based authorization guards consumed by all feature-specific route handlers.

@@ -47,7 +47,7 @@
 </FilesMatch>
 
 <IfModule mod_headers.c>
-    <FilesMatch "\.(js|mjs|css|png|jpg|jpeg|svg|woff2?)$">
+    <FilesMatch "\.(js|mjs|css|png|jpg|jpeg|svg|ico|woff2?)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
 </IfModule>
@@ -59,6 +59,8 @@
   RewriteRule ^index\.html$ - [L]
   RewriteRule ^api(?:/|$) api/index.php [QSA,L]
   RewriteRule ^assets/ - [L]
+  # Redirect favicon.ico to favicon.png (browsers auto-request .ico even if not declared)
+  RewriteRule ^favicon\.ico$ /favicon.png [R=301,L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]

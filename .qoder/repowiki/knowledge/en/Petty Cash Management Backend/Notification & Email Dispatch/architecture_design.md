@@ -1,0 +1,5 @@
+- **Layering**: Follows a standard Controller-Service pattern. Controllers (`notificationController`, `notificationCenterController`) handle HTTP requests, while services (`emailService`, `notificationDispatcher`) encapsulate business logic.
+- **Real-time Communication**: Integrates `socketService` to push live notifications to connected clients, bypassing polling.
+- **Asynchronous Processing**: Uses `queueManager` (BullMQ with Redis fallback to DB) to decouple email sending from the main request cycle, ensuring reliability.
+- **Routing & Security**: Routes are protected by JWT middleware (`protect`) and role-based access control (`authorize`), restricting administrative actions like broadcasting and template management to 'Super Admin' and 'Accounting' roles.
+- **Data Persistence**: Relies on Knex.js for direct database interaction across multiple tables including `notifications`, `notification_preferences`, `email_templates`, and `email_logs`.

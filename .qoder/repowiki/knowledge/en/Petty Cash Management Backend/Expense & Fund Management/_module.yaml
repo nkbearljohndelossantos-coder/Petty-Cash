@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: backend/expenses_and_funds
+title: Expense & Fund Management
+scope:
+    - backend/src/controllers/expenseController.js
+    - backend/src/controllers/fundController.js
+    - backend/src/routes/expenses.js
+    - backend/src/routes/fundRoutes.js
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/approvals
+    - path: backend/notifications_and_email
+    - path: frontend/dashboard_overview
+    - path: backend/analytics_and_reports
+    - path: backend/categories_and_departments

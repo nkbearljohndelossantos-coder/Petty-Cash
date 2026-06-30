@@ -1,0 +1,337 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+exported_at: "2026-06-16T00:40:02Z"
+modules:
+    "":
+        dir_name: NKB Petty Cash Management Platform
+        title: NKB Petty Cash Management Platform
+        scope:
+            - .gitignore
+            - README.md
+            - USER_MANUAL.md
+            - deployment_guide.md
+            - deployment_progress.md
+            - progress_memory.md
+            - .vscode\settings.json
+            - Petty1.png
+            - backend\.env
+            - backend\.env.example
+            - backend\check_db.js
+            - backend\diag_db.js
+            - backend\direct_check.js
+            - backend\index.js
+            - backend\init_logs.js
+            - backend\inspect_db.js
+            - backend\knexfile.js
+            - backend\package-lock.json
+            - backend\package.json
+            - backend\reset_db.js
+            - backend\run_migrations.js
+            - backend\scripts\htaccess.template
+            - backend\scripts\sync-dist.js
+            - backend\src\config\db.js
+            - backend\src\controllers\analyticsController.js
+            - backend\src\controllers\approvalController.js
+            - backend\src\controllers\authController.js
+            - backend\src\controllers\backupController.js
+            - backend\src\controllers\categoryController.js
+            - backend\src\controllers\departmentController.js
+            - backend\src\controllers\emailAutomationController.js
+            - backend\src\controllers\expenseController.js
+            - backend\src\controllers\fundController.js
+            - backend\src\controllers\logController.js
+            - backend\src\controllers\notificationCenterController.js
+            - backend\src\controllers\notificationController.js
+            - backend\src\db\migrations\20260512000000_initial_schema.js
+            - backend\src\db\migrations\20260512075907_create_funds_table.js
+            - backend\src\db\migrations\20260512080000_add_quantity_unit_to_expenses.js
+            - backend\src\db\migrations\20260512080100_add_brand_to_expenses.js
+            - backend\src\db\migrations\20260515064955_add_notifications_and_email_system.js
+            - backend\src\db\migrations\20260517090000_create_notification_center_tables.js
+            - backend\src\db\migrations\20260519120000_alter_user_role_to_string.js
+            - backend\src\db\migrations\20260529120000_add_expense_units_setting.js
+            - backend\src\db\migrations\20260611000000_add_liquidation_approval_workflow.js
+            - backend\src\db\migrations\20260611010000_fix_expense_status_varchar.js
+            - backend\src\db\seeds\01_initial_data.js
+            - backend\src\db\seeds\02_sample_data.js
+            - backend\src\db\seeds\03_email_templates.js
+            - backend\src\index.js
+            - backend\src\middleware\auth.js
+            - backend\src\routes\analytics.js
+            - backend\src\routes\approval.js
+            - backend\src\routes\auth.js
+            - backend\src\routes\backup.js
+            - backend\src\routes\categories.js
+            - backend\src\routes\departments.js
+            - backend\src\routes\emailAutomation.js
+            - backend\src\routes\expenses.js
+            - backend\src\routes\fundRoutes.js
+            - backend\src\routes\logs.js
+            - backend\src\routes\notifications.js
+            - backend\src\routes\profile.js
+            - backend\src\routes\reports.js
+            - backend\src\routes\settings.js
+            - backend\src\routes\users.js
+            - backend\src\services\approvalService.js
+            - backend\src\services\emailService.js
+            - backend\src\services\notificationDispatcher.js
+            - backend\src\services\queueManager.js
+            - backend\src\services\scheduler.js
+            - backend\src\services\socketService.js
+            - backend\src\services\worker.js
+            - backend\src\utils\approvalSchemaRepair.js
+            - backend\src\utils\create_db.js
+            - backend\src\utils\logService.js
+            - deep_search.js
+            - frontend\.env.example
+            - frontend\.gitignore
+            - frontend\README.md
+            - frontend\eslint.config.js
+            - frontend\index.html
+            - frontend\package-lock.json
+            - frontend\package.json
+            - frontend\postcss.config.js
+            - frontend\public\.htaccess
+            - frontend\public\favicon.png
+            - frontend\public\favicon.svg
+            - frontend\public\icons.svg
+            - frontend\public\receiver.html
+            - frontend\public\sender.html
+            - frontend\src\App.css
+            - frontend\src\App.jsx
+            - frontend\src\assets\hero.png
+            - frontend\src\assets\logo.png
+            - frontend\src\assets\react.svg
+            - frontend\src\assets\vite.svg
+            - frontend\src\components\ApprovalSettingsPanel.jsx
+            - frontend\src\components\NotificationCenter.jsx
+            - frontend\src\context\AuthContext.jsx
+            - frontend\src\context\SocketContext.jsx
+            - frontend\src\context\ThemeContext.jsx
+            - frontend\src\index.css
+            - frontend\src\layouts\DashboardLayout.jsx
+            - frontend\src\main.jsx
+            - frontend\src\pages\Analytics.jsx
+            - frontend\src\pages\ApprovalAction.jsx
+            - frontend\src\pages\BackupRestore.jsx
+            - frontend\src\pages\Categories.jsx
+            - frontend\src\pages\Dashboard.jsx
+            - frontend\src\pages\Departments.jsx
+            - frontend\src\pages\EmailAutomation.jsx
+            - frontend\src\pages\Expenses.jsx
+            - frontend\src\pages\Funds.jsx
+            - frontend\src\pages\Login.jsx
+            - frontend\src\pages\Logs.jsx
+            - frontend\src\pages\Profile.jsx
+            - frontend\src\pages\QueueMonitor.jsx
+            - frontend\src\pages\Reports.jsx
+            - frontend\src\pages\Settings.jsx
+            - frontend\src\pages\Users.jsx
+            - frontend\src\services\api.js
+            - frontend\src\utils\exportUtils.js
+            - frontend\tailwind.config.js
+            - frontend\vite.config.js
+            - nkb_pettycash_webapp.zip
+            - search_results.txt
+            - test_api.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    backend:
+        dir_name: Petty Cash Management Backend
+        title: Petty Cash Management Backend
+        scope:
+            - backend/
+        source_files: []
+        children:
+            - backend/infrastructure
+            - backend/system_ops
+            - backend/categories_and_departments
+            - backend/notifications_and_email
+            - backend/approvals
+            - backend/analytics_and_reports
+            - backend/expenses_and_funds
+            - backend/auth_and_users
+        depends_on: []
+        related_to: []
+    backend/analytics_and_reports:
+        dir_name: Analytics & Reporting
+        title: Analytics & Reporting
+        scope:
+            - backend/src/controllers/analyticsController.js
+            - backend/src/routes/analytics.js
+            - backend/src/routes/reports.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend/dashboard_overview
+            - path: backend/expenses_and_funds
+    backend/approvals:
+        dir_name: Liquidation Approval Workflow
+        title: Liquidation Approval Workflow
+        scope:
+            - backend/src/controllers/approvalController.js
+            - backend/src/routes/approval.js
+            - backend/src/services/approvalService.js
+            - backend/src/utils/approvalSchemaRepair.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/expenses_and_funds
+            - path: backend/notifications_and_email
+    backend/auth_and_users:
+        dir_name: Authentication and User Management
+        title: Authentication and User Management
+        scope:
+            - backend/src/controllers/authController.js
+            - backend/src/routes/auth.js
+            - backend/src/routes/users.js
+            - backend/src/routes/profile.js
+            - backend/src/middleware/auth.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend/organization
+            - path: backend/system_ops
+            - path: frontend/system_admin
+    backend/categories_and_departments:
+        dir_name: Category and Department Management
+        title: Category and Department Management
+        scope:
+            - backend/src/controllers/categoryController.js
+            - backend/src/controllers/departmentController.js
+            - backend/src/routes/categories.js
+            - backend/src/routes/departments.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend/organization
+            - path: backend/expenses_and_funds
+    backend/expenses_and_funds:
+        dir_name: Expense & Fund Management
+        title: Expense & Fund Management
+        scope:
+            - backend/src/controllers/expenseController.js
+            - backend/src/controllers/fundController.js
+            - backend/src/routes/expenses.js
+            - backend/src/routes/fundRoutes.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/approvals
+            - path: backend/notifications_and_email
+            - path: frontend/dashboard_overview
+            - path: backend/analytics_and_reports
+            - path: backend/categories_and_departments
+    backend/infrastructure:
+        dir_name: Application Infrastructure & Background Processing
+        title: Application Infrastructure & Background Processing
+        scope:
+            - backend/src/services/socketService.js
+            - backend/src/services/queueManager.js
+            - backend/src/services/scheduler.js
+            - backend/src/services/worker.js
+            - backend/src/utils/create_db.js
+            - backend/src/index.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/notifications_and_email
+            - path: frontend/dashboard_overview
+    backend/notifications_and_email:
+        dir_name: Notification & Email Dispatch
+        title: Notification & Email Dispatch
+        scope:
+            - backend/src/controllers/notificationController.js
+            - backend/src/controllers/notificationCenterController.js
+            - backend/src/controllers/emailAutomationController.js
+            - backend/src/routes/notifications.js
+            - backend/src/routes/emailAutomation.js
+            - backend/src/services/emailService.js
+            - backend/src/services/notificationDispatcher.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/expenses_and_funds
+            - path: backend/approvals
+            - path: backend/infrastructure
+    backend/system_ops:
+        dir_name: System Operations & Administration
+        title: System Operations & Administration
+        scope:
+            - backend/src/controllers/backupController.js
+            - backend/src/controllers/logController.js
+            - backend/src/routes/backup.js
+            - backend/src/routes/logs.js
+            - backend/src/routes/settings.js
+            - backend/src/utils/logService.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend/system_admin
+            - path: backend/auth_and_users
+    frontend:
+        dir_name: Petty Cash Management UI
+        title: Petty Cash Management UI
+        scope:
+            - frontend/
+        source_files: []
+        children:
+            - frontend/organization
+            - frontend/dashboard_overview
+            - frontend/system_admin
+        depends_on: []
+        related_to: []
+    frontend/dashboard_overview:
+        dir_name: Financial Analytics & Operational Monitoring
+        title: Financial Analytics & Operational Monitoring
+        scope:
+            - frontend/src/pages/Dashboard.jsx
+            - frontend/src/pages/Analytics.jsx
+            - frontend/src/pages/Reports.jsx
+            - frontend/src/pages/QueueMonitor.jsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/analytics_and_reports
+            - path: backend/expenses_and_funds
+            - path: backend/infrastructure
+    frontend/organization:
+        dir_name: Organizational Entity Management
+        title: Organizational Entity Management
+        scope:
+            - frontend/src/pages/Categories.jsx
+            - frontend/src/pages/Departments.jsx
+            - frontend/src/pages/Users.jsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/categories_and_departments
+            - path: backend/auth_and_users
+    frontend/system_admin:
+        dir_name: System Administration & Configuration
+        title: System Administration & Configuration
+        scope:
+            - frontend/src/pages/Settings.jsx
+            - frontend/src/pages/BackupRestore.jsx
+            - frontend/src/pages/Logs.jsx
+            - frontend/src/pages/Profile.jsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend/system_ops
+            - path: backend/auth_and_users

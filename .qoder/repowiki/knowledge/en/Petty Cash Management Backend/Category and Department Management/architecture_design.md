@@ -1,0 +1,4 @@
+- Two parallel controller-route pairs: `categoryController.js` + `categories.js` and `departmentController.js` + `departments.js`, each exporting an Express Router mounted at `/api/categories` and `/api/departments` respectively.
+- Controllers depend directly on a shared Knex-style DB client (`../config/db`) — no service or repository layer sits between routes and queries.
+- Both route modules apply the same middleware chain: `protect` for authentication, then `authorize('Super Admin', 'Accounting')` for write operations; reads require only `protect`.
+- Delete handlers enforce referential integrity by counting dependent rows in `expenses` (and `users` for departments) before allowing deletion, returning a 400 with a descriptive message when references exist.

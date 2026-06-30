@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: backend/system_ops
+title: System Operations & Administration
+scope:
+    - backend/src/controllers/backupController.js
+    - backend/src/controllers/logController.js
+    - backend/src/routes/backup.js
+    - backend/src/routes/logs.js
+    - backend/src/routes/settings.js
+    - backend/src/utils/logService.js
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend/system_admin
+    - path: backend/auth_and_users

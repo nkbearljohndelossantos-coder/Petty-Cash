@@ -1,0 +1,1 @@
+Handles user authentication via JWT tokens, role-based authorization, and CRUD operations for user accounts with password security.

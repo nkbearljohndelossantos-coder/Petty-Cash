@@ -1,0 +1,1 @@
+Shared use of `date-fns` for consistent date handling and `jspdf`/`jspdf-autotable` for cross-module reporting capabilities.

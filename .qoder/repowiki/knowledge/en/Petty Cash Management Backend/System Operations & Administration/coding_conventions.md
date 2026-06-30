@@ -1,0 +1,3 @@
+- All administrative routes require both `protect` authentication and `authorize('Super Admin')` authorization middleware.
+- Activity events are recorded via the shared `logActivity(userId, action, details, ip)` utility from `utils/logService.js`.
+- Route modules export an Express Router instance via `module.exports = router` pattern.

@@ -1,0 +1,4 @@
+- Follows a standard MVC pattern: `approval.js` defines Express routes with `protect`/`authorize` middleware; `approvalController.js` handles HTTP request/response mapping; `approvalService.js` contains core business logic.
+- Implements a token-based public interface (`/token/:token`, `/approve/:token`, `/decline/:token`) for email-driven approvals without requiring user login, alongside protected admin routes for configuration.
+- Integrates with external services for communication (`emailService`, `notificationDispatcher`) and real-time updates (`socketService`).
+- Includes a self-healing database utility (`approvalSchemaRepair.js`) executed at server startup to ensure required tables (`liquidation_approvers`, `liquidation_approval_tokens`, `liquidation_approval_audit`) and columns exist, bypassing strict migration dependencies.

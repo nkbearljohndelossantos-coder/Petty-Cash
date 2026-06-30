@@ -1,0 +1,3 @@
+- **Email**: `nodemailer` for SMTP transport with dynamic template compilation.
+- **Real-time**: `socket.io` for bidirectional event-based communication.
+- **Queuing**: `bullmq` backed by `ioredis`, with a custom database-backed fallback mechanism for environments without Redis.

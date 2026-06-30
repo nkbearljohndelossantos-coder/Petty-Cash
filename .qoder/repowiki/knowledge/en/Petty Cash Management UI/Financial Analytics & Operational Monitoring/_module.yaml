@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: frontend/dashboard_overview
+title: Financial Analytics & Operational Monitoring
+scope:
+    - frontend/src/pages/Dashboard.jsx
+    - frontend/src/pages/Analytics.jsx
+    - frontend/src/pages/Reports.jsx
+    - frontend/src/pages/QueueMonitor.jsx
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/analytics_and_reports
+    - path: backend/expenses_and_funds
+    - path: backend/infrastructure

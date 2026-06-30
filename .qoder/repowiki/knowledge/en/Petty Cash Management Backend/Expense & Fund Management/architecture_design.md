@@ -1,0 +1,5 @@
+- **Controller-Route Separation**: Logic is split into `expenseController.js`/`fundController.js` for business logic and `expenses.js`/`fundRoutes.js` for HTTP routing.
+- **Approval Workflow Integration**: The expense controller delegates high-value transaction handling to `approvalService.js`, which manages multi-level email approvals, token generation, and audit trails (`liquidation_approval_audit`).
+- **Real-time Synchronization**: Uses `socketService.broadcast` to push `balance_updated` events to clients whenever funds are added or expenses change status.
+- **Middleware Protection**: Routes are protected by `protect` (authentication) and `authorize` (RBAC) middleware, restricting sensitive actions like fund deletion to 'Super Admin' roles.
+- **File Handling**: Integrates `multer` for handling expense attachment uploads directly in the route definition before passing control to the controller.

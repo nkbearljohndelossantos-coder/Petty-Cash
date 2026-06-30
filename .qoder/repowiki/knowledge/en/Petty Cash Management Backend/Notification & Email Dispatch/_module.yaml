@@ -1,0 +1,17 @@
+schema_version: 1
+module_path: backend/notifications_and_email
+title: Notification & Email Dispatch
+scope:
+    - backend/src/controllers/notificationController.js
+    - backend/src/controllers/notificationCenterController.js
+    - backend/src/controllers/emailAutomationController.js
+    - backend/src/routes/notifications.js
+    - backend/src/routes/emailAutomation.js
+    - backend/src/services/emailService.js
+    - backend/src/services/notificationDispatcher.js
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/expenses_and_funds
+    - path: backend/approvals
+    - path: backend/infrastructure

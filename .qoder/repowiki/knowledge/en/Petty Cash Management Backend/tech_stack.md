@@ -1,0 +1,1 @@
+Express.js 5, MySQL (via Knex.js), Redis (BullMQ) with MySQL fallback, Socket.IO for real-time communication, Node-cron for scheduling.

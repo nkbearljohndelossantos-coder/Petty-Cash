@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: backend/infrastructure
+title: Application Infrastructure & Background Processing
+scope:
+    - backend/src/services/socketService.js
+    - backend/src/services/queueManager.js
+    - backend/src/services/scheduler.js
+    - backend/src/services/worker.js
+    - backend/src/utils/create_db.js
+    - backend/src/index.js
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/notifications_and_email
+    - path: frontend/dashboard_overview

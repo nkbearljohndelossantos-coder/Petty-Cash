@@ -1,0 +1,3 @@
+- Controllers delegate all business logic to the service layer and uniformly return JSON responses with `success`, `data`, and optional `message` fields.
+- Service methods consistently wrap database operations in try-catch blocks or rely on controller-level error handling to return standardized error JSON.
+- Audit trails are recorded for every state change (creation, submission, approval, decline) using a dedicated `recordAudit` helper that captures actor details and IP addresses.

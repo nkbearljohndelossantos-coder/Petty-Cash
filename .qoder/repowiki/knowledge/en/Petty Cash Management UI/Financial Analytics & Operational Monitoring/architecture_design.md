@@ -1,0 +1,5 @@
+- **Dashboard Overview**: `Dashboard.jsx` serves as the executive landing page, integrating real-time socket updates for balance changes and rendering high-level KPIs, trend area charts, and category allocation pies.
+- **Deep Analytics**: `Analytics.jsx` offers granular data exploration with stacked bar charts for date-range breakdowns and interactive category filtering, supporting both active and historical data views.
+- **Reporting Engine**: `Reports.jsx` implements a parameterized reporting system (date, category, department) with dual-format export support (Excel via blob download, PDF via client-side `html2canvas`/`jspdf` rendering).
+- **Queue Health**: `QueueMonitor.jsx` provides operational visibility into background tasks (Redis/BullMQ), displaying job state statistics and linking to an external technical dashboard.
+- **Shared Visualization**: All pages utilize `recharts` for responsive data visualization and `framer-motion` for layout transitions, consuming a centralized `api` service for backend communication.

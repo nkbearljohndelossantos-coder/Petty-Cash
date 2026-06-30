@@ -1,0 +1,1 @@
+Orchestrates a modular Express.js application for petty cash management, integrating real-time notifications, resilient background processing, and automated schema maintenance.

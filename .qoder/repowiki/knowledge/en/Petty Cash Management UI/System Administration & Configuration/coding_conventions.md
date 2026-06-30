@@ -1,0 +1,4 @@
+- Form inputs consistently use a 'label-above-input' pattern with uppercase, tracking-widest, 10px font-weight-black labels and rounded-2xl bordered containers.
+- API interactions are abstracted through a shared `api` service that automatically attaches Bearer tokens and handles global authentication errors.
+- Destructive or critical actions (e.g., data wipe, restore) are guarded by native `window.confirm` dialogs or custom modal overlays with explicit warning messaging.
+- Success and error states are communicated via animated toast-like banners or inline alerts using specific color codes (emerald for success, rose for error).

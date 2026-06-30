@@ -1,0 +1,4 @@
+- **Component Composition**: The module is anchored by `Settings.jsx`, which acts as a tabbed orchestrator for sub-domains (General, Users, Master Data, Approval, Notifications, Appearance, Security, System). It embeds external components like `Users` and `ApprovalSettingsPanel` to handle complex sub-tasks.
+- **State Management**: Utilizes local React state (`useState`) for form handling and tab navigation, synchronized with backend APIs via a centralized `api` service (Axios instance) that handles JWT injection and 401 redirects.
+- **Role-Based Access Control (RBAC)**: Implements conditional rendering based on user roles (e.g., `isSuperAdmin`) fetched from `AuthContext`, restricting destructive actions like database resets to privileged users.
+- **UI/UX Pattern**: Adopts a consistent "ERP" design language using `framer-motion` for transitions, `lucide-react` for iconography, and Tailwind CSS for a high-contrast, card-based layout with standardized input styling.

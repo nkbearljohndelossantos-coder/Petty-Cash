@@ -1,0 +1,1 @@
+BullMQ with IORedis for job queueing, falling back to MySQL via Knex; Socket.IO for WebSocket real-time communication; node-cron for scheduled tasks; @bull-board/express for queue monitoring UI at /admin/queues.

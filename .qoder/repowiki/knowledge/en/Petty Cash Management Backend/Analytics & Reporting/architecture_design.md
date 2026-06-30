@@ -1,0 +1,4 @@
+- Follows a standard Express.js MVC pattern where `analyticsController.js` handles business logic and data aggregation using Knex.js queries against the `expenses`, `categories`, and `departments` tables.
+- Routing is split into two distinct modules: `analytics.js` for JSON-based dashboard metrics (stats, trends, breakdowns) and `reports.js` for data export (Excel) and summary endpoints.
+- Both route modules enforce authentication via the `protect` middleware before exposing endpoints.
+- Data transformation logic, such as pivoting trend data for frontend charts and formatting Excel rows, is implemented directly within the controller and route handlers.

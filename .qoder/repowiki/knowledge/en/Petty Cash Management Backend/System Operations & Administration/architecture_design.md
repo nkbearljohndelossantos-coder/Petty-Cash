@@ -1,0 +1,5 @@
+- Route-controller separation: Express routers in `routes/` delegate to controllers in `controllers/` or inline handlers (`backup.js`, `logs.js`, `settings.js`).
+- Backup workflow uses ExcelJS to export/import all core tables via `.xlsx` files, with transactional restore logic in `backupController.js`.
+- Activity logging is centralized in `utils/logService.js` (`logActivity`) and consumed across the codebase for audit trails.
+- All endpoints are protected by `protect` and `authorize('Super Admin')` middleware, enforcing role-based access at the route layer.
+- Settings management supports key-value storage with JSON serialization for complex values like `expense_units`.

@@ -1,0 +1,1 @@
+Uses `multer` for multipart form data handling (expense attachments) and `crypto` for generating secure, hashed approval tokens for email-based workflows.

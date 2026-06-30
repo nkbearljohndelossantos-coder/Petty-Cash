@@ -1,0 +1,1 @@
+React with framer-motion for animations, lucide-react for iconography, and Tailwind CSS for styling.

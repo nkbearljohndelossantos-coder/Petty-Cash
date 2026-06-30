@@ -1,0 +1,3 @@
+- The backend serves as the primary deployment artifact, hosting both the API and the compiled frontend static assets via a `sync-dist` build step.
+- Real-time synchronization is achieved through a shared Socket.IO contract, where the backend broadcasts state changes and the frontend maintains a persistent connection via `SocketContext`.
+- Authentication is enforced across the boundary using JWTs, with the backend validating tokens in middleware and the frontend managing session state in `AuthContext`.

@@ -1,0 +1,1 @@
+Manages petty cash expenses with approval workflows and tracks fund replenishments to calculate real-time balances.

@@ -1,0 +1,3 @@
+- **Visualization**: `recharts` v3.8.1 for complex charting (Area, Bar, Pie, Composed) and `framer-motion` v12.38.0 for UI animations.
+- **Export Utilities**: Client-side PDF generation using `jspdf` and `html2canvas` (lazy-loaded in `Reports.jsx`).
+- **Real-time Communication**: WebSocket integration via `SocketContext` for live balance and notification updates.

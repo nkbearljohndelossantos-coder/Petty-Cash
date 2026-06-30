@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: frontend/system_admin
+title: System Administration & Configuration
+scope:
+    - frontend/src/pages/Settings.jsx
+    - frontend/src/pages/BackupRestore.jsx
+    - frontend/src/pages/Logs.jsx
+    - frontend/src/pages/Profile.jsx
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/system_ops
+    - path: backend/auth_and_users

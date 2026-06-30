@@ -1,0 +1,1 @@
+Orchestrates a unified full-stack financial application by integrating a React-based dashboard with an Express.js backend for real-time expense tracking and approval workflows.

@@ -1,0 +1,1 @@
+React 19 with Vite build system, Tailwind CSS for styling, Socket.IO for real-time bidirectional communication, and Framer Motion for layout transitions.

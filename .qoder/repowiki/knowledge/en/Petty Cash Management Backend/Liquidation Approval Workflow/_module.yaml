@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/approvals
+title: Liquidation Approval Workflow
+scope:
+    - backend/src/controllers/approvalController.js
+    - backend/src/routes/approval.js
+    - backend/src/services/approvalService.js
+    - backend/src/utils/approvalSchemaRepair.js
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/expenses_and_funds
+    - path: backend/notifications_and_email

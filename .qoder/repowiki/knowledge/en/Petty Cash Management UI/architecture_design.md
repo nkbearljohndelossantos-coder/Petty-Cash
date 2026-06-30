@@ -1,0 +1,4 @@
+- Centralized routing in `App.jsx` protects child module routes (Dashboard, Organization, System Admin) using a `ProtectedRoute` wrapper that enforces role-based access control (RBAC) derived from `AuthContext`.
+- Shared infrastructure is provided via nested React Context providers (`AuthProvider`, `SocketProvider`, `ThemeProvider`) in the root component, ensuring all child pages have access to global state, real-time alerts, and API clients.
+- A unified `DashboardLayout` serves as the shell for all authenticated modules, providing consistent navigation, sidebar filtering based on user roles, and a global notification/alarm system managed by `SocketContext`.
+- Cross-module communication is standardized through a singleton `axios` instance in `services/api.js`, which handles JWT injection and global 401 redirection, decoupling child components from raw HTTP management.

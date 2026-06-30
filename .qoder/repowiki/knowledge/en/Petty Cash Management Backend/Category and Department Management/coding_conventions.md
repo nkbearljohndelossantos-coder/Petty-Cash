@@ -1,0 +1,3 @@
+- Every controller handler wraps logic in try/catch and returns a JSON envelope with a boolean `success` field plus either `data` or `message`.
+- Write routes (POST, PUT, DELETE) are guarded by `authorize('Super Admin', 'Accounting')` while GET routes use only `protect`.
+- Update and delete handlers first fetch the target record and return 404 if it does not exist before proceeding with mutation.

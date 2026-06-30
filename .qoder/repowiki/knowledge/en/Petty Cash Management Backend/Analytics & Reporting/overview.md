@@ -1,0 +1,1 @@
+Provides dashboard statistics, expense trend analysis, and Excel report generation for petty cash management.

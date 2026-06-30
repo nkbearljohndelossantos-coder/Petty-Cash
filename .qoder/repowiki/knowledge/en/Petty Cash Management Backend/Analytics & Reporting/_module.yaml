@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: backend/analytics_and_reports
+title: Analytics & Reporting
+scope:
+    - backend/src/controllers/analyticsController.js
+    - backend/src/routes/analytics.js
+    - backend/src/routes/reports.js
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend/dashboard_overview
+    - path: backend/expenses_and_funds

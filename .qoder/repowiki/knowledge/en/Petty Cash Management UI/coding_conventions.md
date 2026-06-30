@@ -1,0 +1,3 @@
+- All page-level components are lazy-loaded using `React.lazy` and wrapped in `Suspense` boundaries to optimize initial bundle size.
+- Role-based visibility is enforced both at the route level in `App.jsx` and within the navigation sidebar in `DashboardLayout` using a `roles` allow-list.
+- Global API interactions are centralized through a configured `axios` instance with request/response interceptors for authentication and error handling.

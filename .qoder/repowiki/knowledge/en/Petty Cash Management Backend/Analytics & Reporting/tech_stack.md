@@ -1,0 +1,1 @@
+Uses `exceljs` for server-side Excel generation and `knex` for SQL query building and database interaction.

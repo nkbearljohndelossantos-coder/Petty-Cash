@@ -1,0 +1,4 @@
+- Standardized 'erp-card' styling pattern using white backgrounds, subtle borders, and heavy uppercase tracking for typography across all dashboard widgets.
+- Consistent SVG-to-PNG chart export implementation using `XMLSerializer`, base64 encoding, and high-resolution canvas rendering in `Dashboard.jsx` and `Analytics.jsx`.
+- Uniform loading states featuring centered spinners with uppercase, tracking-wide status text (e.g., 'Initializing Financial Analytics...').
+- Use of `motion.div` from `framer-motion` for entry animations (fade-in, slide-up) on primary content containers and stat cards.

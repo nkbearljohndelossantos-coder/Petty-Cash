@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: backend/auth_and_users
+title: Authentication and User Management
+scope:
+    - backend/src/controllers/authController.js
+    - backend/src/routes/auth.js
+    - backend/src/routes/users.js
+    - backend/src/routes/profile.js
+    - backend/src/middleware/auth.js
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend/organization
+    - path: backend/system_ops
+    - path: frontend/system_admin

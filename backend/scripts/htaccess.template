@@ -48,6 +48,8 @@
   RewriteBase /
   RewriteRule ^index\.html$ - [L]
   RewriteRule ^assets/ - [L]
+  # Redirect favicon.ico to favicon.png (browsers auto-request .ico even if not declared)
+  RewriteRule ^favicon\.ico$ /favicon.png [R=301,L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]

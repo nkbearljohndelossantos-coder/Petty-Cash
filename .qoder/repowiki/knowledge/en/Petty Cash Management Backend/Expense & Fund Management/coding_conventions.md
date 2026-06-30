@@ -1,0 +1,3 @@
+- Controllers consistently return JSON responses with a `success` boolean flag and a `data` or `message` payload.
+- Significant state changes (create, update, delete) trigger inserts into the `activity_logs` table for audit purposes.
+- Database queries use Knex.js query builder syntax with explicit `leftJoin` for fetching related entity names (e.g., category, department).

@@ -1,0 +1,1 @@
+JWT authentication with HS256 signing via `jsonwebtoken`; password hashing with `bcryptjs` (salt rounds = 10).

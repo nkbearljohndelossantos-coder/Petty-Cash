@@ -1,0 +1,5 @@
+- All pages implement a card-based grid layout for entity listing, featuring a header section with a title and a primary 'Add' button.
+- Create and Update operations are unified within a single animated modal component, toggled by a `showModal` state variable.
+- Form submissions handle both creation and updates by checking for the existence of a 'current' entity object (e.g., `currentCat`, `currentUser`).
+- Delete actions are protected by a native `window.confirm` dialog before executing the API call.
+- Each page includes a dedicated loading state that displays a spinner or text indicator while data is being fetched.

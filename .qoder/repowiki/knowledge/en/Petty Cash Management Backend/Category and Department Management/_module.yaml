@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/categories_and_departments
+title: Category and Department Management
+scope:
+    - backend/src/controllers/categoryController.js
+    - backend/src/controllers/departmentController.js
+    - backend/src/routes/categories.js
+    - backend/src/routes/departments.js
+source_files: []
+depends_on: []
+related_to:
+    - path: frontend/organization
+    - path: backend/expenses_and_funds

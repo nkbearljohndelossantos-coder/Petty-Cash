@@ -1,0 +1,2 @@
+- Boot process includes automatic migration execution and a custom 'Schema Repair Engine' to fix drift or missing tables before starting services.
+- `npm run build:web` orchestrates a cross-repo build, compiling the frontend and syncing artifacts into the backend's `dist/` folder for unified serving.

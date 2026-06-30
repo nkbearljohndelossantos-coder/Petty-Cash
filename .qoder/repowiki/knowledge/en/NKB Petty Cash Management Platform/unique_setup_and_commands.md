@@ -1,0 +1,1 @@
+The backend `package.json` defines a `build:web` script that triggers the frontend build and automatically syncs the resulting distribution files into the backend's `dist` directory for unified deployment.

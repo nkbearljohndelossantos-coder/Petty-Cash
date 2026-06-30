@@ -1,0 +1,1 @@
+Provides the application entry point, real-time WebSocket communication, resilient job queueing with Redis/MySQL fallback, cron-based scheduling, and automated database schema repair.

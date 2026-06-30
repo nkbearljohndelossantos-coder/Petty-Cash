@@ -1,0 +1,3 @@
+- All route handlers wrap async logic in try-catch blocks and return uniform JSON responses with a `success` boolean field.
+- Passwords are always hashed with bcrypt at 10 salt rounds before storage and compared via bcrypt during authentication.
+- Route-level middleware composition is used to enforce authentication and authorization guards before handler execution.

@@ -1,0 +1,4 @@
+- Controllers consistently use try-catch blocks to handle errors and return standardized JSON error responses with appropriate HTTP status codes.
+- Database interactions are performed directly within controllers and services using the Knex query builder, without a separate repository or ORM abstraction layer.
+- Administrative endpoints are explicitly secured using the `authorize` middleware with hardcoded role strings ('Super Admin', 'Accounting').
+- Services implement graceful degradation, such as skipping email dispatch if SMTP is unconfigured or falling back to a database queue if Redis is unavailable.

@@ -1,0 +1,1 @@
+Orchestrates a role-based financial dashboard by unifying authentication, real-time socket notifications, and lazy-loaded operational modules into a cohesive single-page application.

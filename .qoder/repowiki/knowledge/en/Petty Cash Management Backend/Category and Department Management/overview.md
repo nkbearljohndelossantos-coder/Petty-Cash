@@ -1,0 +1,1 @@
+Provides CRUD REST endpoints for expense categories and cost-center departments with role-based authorization and referential-integrity guards.

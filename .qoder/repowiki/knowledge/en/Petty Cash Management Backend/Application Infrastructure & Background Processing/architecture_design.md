@@ -1,0 +1,6 @@
+- Entry point (`src/index.js`) orchestrates service initialization: database connection with migration execution and schema repair, queue manager, workers, scheduler, and Socket.IO server.
+- Queue layer (`queueManager.js`) implements a dual-mode architecture using BullMQ with IORedis when available, falling back to a MySQL-backed `queue_fallback_jobs` table with polling-based processing when Redis is disabled or unreachable.
+- Worker layer (`worker.js`) adapts to the queue mode: instantiates BullMQ Workers for Redis or starts a 5-second interval poller for the database fallback, dispatching jobs to a processor map keyed by queue name.
+- Scheduler (`scheduler.js`) uses node-cron to trigger periodic tasks (daily/monthly reports, escalation checks, low-fund alerts, scheduled notification dispatch) by enqueueing jobs or directly executing logic.
+- Real-time layer (`socketService.js`) manages a Socket.IO server with optional JWT-based user identification, maintaining a userId-to-socket mapping for targeted message delivery and supporting broadcast events.
+- Database utility (`create_db.js`) is a standalone PostgreSQL bootstrap script, separate from the main MySQL runtime used by the application.

@@ -1,0 +1,4 @@
+- Set REDIS_ENABLED=false in .env to force database-backed queue fallback mode.
+- Run `npm run migrate` to execute Knex migrations; the application also auto-runs migrations and performs schema repair on startup.
+- Access Bull Board queue monitoring at /admin/queues when Redis is enabled.
+- The standalone `create_db.js` utility bootstraps a PostgreSQL database (separate from the app's MySQL runtime).

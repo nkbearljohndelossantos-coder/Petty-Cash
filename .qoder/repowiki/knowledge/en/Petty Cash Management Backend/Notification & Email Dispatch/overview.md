@@ -1,0 +1,1 @@
+Manages user notification preferences, real-time in-app alerts via WebSockets, and asynchronous email delivery with template support.

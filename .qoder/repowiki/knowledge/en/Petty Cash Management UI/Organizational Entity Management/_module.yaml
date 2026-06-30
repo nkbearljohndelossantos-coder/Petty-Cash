@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: frontend/organization
+title: Organizational Entity Management
+scope:
+    - frontend/src/pages/Categories.jsx
+    - frontend/src/pages/Departments.jsx
+    - frontend/src/pages/Users.jsx
+source_files: []
+depends_on: []
+related_to:
+    - path: backend/categories_and_departments
+    - path: backend/auth_and_users

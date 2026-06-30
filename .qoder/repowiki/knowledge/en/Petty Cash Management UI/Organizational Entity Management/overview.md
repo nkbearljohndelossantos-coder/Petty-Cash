@@ -1,0 +1,1 @@
+Manages financial categories, cost centers (departments), and user access profiles through standardized CRUD interfaces.

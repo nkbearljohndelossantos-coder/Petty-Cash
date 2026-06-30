@@ -1,0 +1,1 @@
+Uses SHA-256 hashing for secure one-time approval tokens stored in `liquidation_approval_tokens` table.

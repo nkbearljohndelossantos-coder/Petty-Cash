@@ -1,0 +1,1 @@
+Manages multi-level email-based approval workflows for petty cash liquidations, including tokenized actions, audit logging, and schema maintenance.

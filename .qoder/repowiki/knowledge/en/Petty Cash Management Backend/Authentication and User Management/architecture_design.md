@@ -1,0 +1,6 @@
+- Entry points are three Express route modules (`auth.js`, `users.js`, `profile.js`) that map HTTP endpoints to handler logic.
+- `authController.js` centralizes login and self-profile retrieval; `users.js` embeds admin-only CRUD handlers inline; `profile.js` handles self-service password changes.
+- `middleware/auth.js` provides two composable guards: `protect` validates Bearer JWTs and attaches decoded claims to `req.user`; `authorize(...roles)` enforces role-based access control.
+- Dependency direction flows from routes → controllers/middleware → external services (`bcryptjs`, `jsonwebtoken`, Knex `db`, `logService`).
+- The `users.js` route applies `protect` and `authorize('Super Admin')` at the router level, enforcing admin-only access for all user-management endpoints.
+- The `auth.js` route selectively applies `protect` only to the `/me` endpoint, leaving `/login` public.
