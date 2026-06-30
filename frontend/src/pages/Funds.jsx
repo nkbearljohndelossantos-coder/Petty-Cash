@@ -20,6 +20,14 @@ const Funds = () => {
 
   useEffect(() => {
     fetchData();
+
+    // Polling fallback to keep funds and balance updated even if socket fails/disconnects
+    const pollInterval = setInterval(() => {
+      console.log('Polling funds data (auto-refresh)...');
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const fetchData = async () => {

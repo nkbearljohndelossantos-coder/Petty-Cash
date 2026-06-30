@@ -310,6 +310,13 @@ if (fs.existsSync(frontendPath)) {
       if (filePath.includes(`${path.sep}assets${path.sep}`)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Surrogate-Control', 'no-store');
+        res.setHeader('X-LiteSpeed-Cache-Control', 'no-cache');
+      }
     }
   }));
   console.log('Serving frontend from:', frontendPath);
@@ -332,6 +339,8 @@ app.get(/.*/, (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    res.setHeader('X-LiteSpeed-Cache-Control', 'no-cache');
     res.sendFile(indexPath);
   } else {
     res.send('NKB Petty Cash API is running (Frontend not built yet)...');

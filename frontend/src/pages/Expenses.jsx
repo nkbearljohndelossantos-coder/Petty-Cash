@@ -152,7 +152,17 @@ const Expenses = () => {
   useEffect(() => {
     const onExpenseUpdated = () => fetchData(false);
     window.addEventListener('expense_updated', onExpenseUpdated);
-    return () => window.removeEventListener('expense_updated', onExpenseUpdated);
+
+    // Polling fallback to keep expenses ledger updated even if socket fails/disconnects
+    const pollInterval = setInterval(() => {
+      console.log('Polling expenses data (auto-refresh)...');
+      fetchData(false);
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('expense_updated', onExpenseUpdated);
+      clearInterval(pollInterval);
+    };
   }, [fetchData]);
 
   const handleBarcodeLookup = async (value) => {

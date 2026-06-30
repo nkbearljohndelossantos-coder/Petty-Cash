@@ -102,11 +102,18 @@ const Dashboard = () => {
       });
     }
 
+    // Polling fallback to keep dashboard updated even if socket fails/disconnects
+    const pollInterval = setInterval(() => {
+      console.log('Polling dashboard data (auto-refresh)...');
+      fetchData();
+    }, 30000);
+
     return () => {
       window.removeEventListener('balance_updated', handleBalanceUpdate);
       if (socket) {
         socket.off('balance_updated');
       }
+      clearInterval(pollInterval);
     };
   }, [socket]);
 
