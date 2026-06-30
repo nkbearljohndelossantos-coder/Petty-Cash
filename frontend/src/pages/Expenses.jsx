@@ -684,7 +684,7 @@ const Expenses = () => {
       {/* Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6">
+          <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -696,7 +696,7 @@ const Expenses = () => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
+              className="relative mx-auto my-0 flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
             >
               <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-8">
                 <div className="min-w-0">
@@ -707,7 +707,7 @@ const Expenses = () => {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleAddExpense} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:px-8">
+              <form onSubmit={handleAddExpense} className="space-y-6 px-5 py-6 sm:px-8">
                 <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
                   <Activity size={16} className="text-erp-blue" />
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Performance Matrix</span>
@@ -733,7 +733,6 @@ const Expenses = () => {
                           handleBarcodeLookup(e.target.value);
                         }
                       }}
-                      autoFocus
                     />
                     <button
                       type="button"
