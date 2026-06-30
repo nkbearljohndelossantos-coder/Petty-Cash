@@ -684,7 +684,7 @@ const Expenses = () => {
       {/* Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -696,34 +696,34 @@ const Expenses = () => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.1)] overflow-hidden border border-slate-200"
+              className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
             >
-              <div className="p-10 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">New Expenditure Request</h2>
+              <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-8">
+                <div className="min-w-0">
+                   <h2 className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl">New Expenditure Request</h2>
                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Petty Cash Voucher Entry</p>
                 </div>
-                <button onClick={() => setShowAddModal(false)} className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-slate-900 transition-colors">
+                <button onClick={() => setShowAddModal(false)} className="shrink-0 rounded-xl border border-slate-200 bg-white p-3 text-slate-500 transition-colors hover:text-slate-900">
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleAddExpense} className="p-10 space-y-8">
-                <div className="flex items-center gap-4 bg-white border border-slate-100 px-4 py-2 rounded-xl">
+              <form onSubmit={handleAddExpense} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:px-8">
+                <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
                   <Activity size={16} className="text-erp-blue" />
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Performance Matrix</span>
                 </div>
 
                 {/* Barcode / Employee ID Scanner */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div className="flex items-center justify-center gap-2 text-center">
                     <ScanLine size={16} className="text-erp-blue" />
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scan Barcode / Employee ID</span>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                     <input
                       ref={barcodeRef}
                       type="text"
-                      className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 placeholder:text-slate-300 focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all"
+                      className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:ring-4 focus:ring-erp-blue/10"
                       placeholder="Scan or type Employee ID / Barcode..."
                       value={barcodeInput}
                       onChange={(e) => setBarcodeInput(e.target.value)}
@@ -739,7 +739,7 @@ const Expenses = () => {
                       type="button"
                       onClick={() => handleBarcodeLookup()}
                       disabled={barcodeLoading || !barcodeInput.trim()}
-                      className="px-5 py-3 bg-erp-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-erp-blue px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {barcodeLoading ? <Loader2 size={14} className="animate-spin" /> : <ScanLine size={14} />}
                       {barcodeLoading ? 'Looking up...' : 'Lookup'}
@@ -751,7 +751,7 @@ const Expenses = () => {
                     </p>
                   )}
                   {formData.requested_by && !barcodeError && (
-                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                    <div className="flex items-center justify-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-center">
                       <Check size={14} className="text-green-600 flex-shrink-0" />
                       <div>
                         <p className="text-xs font-black text-green-800">{formData.requested_by}</p>
@@ -762,12 +762,12 @@ const Expenses = () => {
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Voucher Date</label>
                     <input 
                       type="date" 
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800" 
+                      className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                       required 
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -776,7 +776,7 @@ const Expenses = () => {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Expense Category</label>
                     <select 
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800" 
+                      className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                       required
                       value={formData.category_id}
                       onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
@@ -789,7 +789,7 @@ const Expenses = () => {
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Requester Full Name</label>
                     <input 
                       type="text" 
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" 
+                      className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 focus:ring-4 focus:ring-erp-blue/10" 
                       required 
                       placeholder="e.g. Juan Dela Cruz"
                       value={formData.requested_by}
@@ -799,7 +799,7 @@ const Expenses = () => {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Cost Center (Dept)</label>
                     <select 
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800" 
+                      className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                       required
                       value={formData.department_id}
                       onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
@@ -812,7 +812,7 @@ const Expenses = () => {
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Quantity</label>
                     <input 
                       type="number" min="1"
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800" 
+                      className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                       required 
                       value={formData.quantity}
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
@@ -821,7 +821,7 @@ const Expenses = () => {
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Unit of Measure</label>
                     <select 
-                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-bold text-slate-800" 
+                      className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 font-bold text-slate-800 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                       required
                       value={formData.unit}
                       onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
@@ -830,10 +830,10 @@ const Expenses = () => {
                         <option key={u} value={u}>{u}</option>
                       ))}
                     </select>
-                    <div className="flex gap-2 mt-2">
+                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                       <input
                         type="text"
-                        className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-800 placeholder:text-slate-300"
+                        className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-300"
                         placeholder="Add new unit if not listed..."
                         value={newUnit}
                         onChange={(e) => setNewUnit(e.target.value)}
@@ -848,7 +848,7 @@ const Expenses = () => {
                         type="button"
                         onClick={handleAddUnit}
                         disabled={!newUnit.trim()}
-                        className="px-4 py-3 bg-erp-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="rounded-xl bg-erp-blue px-4 py-3 text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Add Unit
                       </button>
@@ -861,7 +861,7 @@ const Expenses = () => {
                       <input 
                         type="number" 
                         step="0.01" 
-                        className="w-full pl-10 pr-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-black text-slate-900 text-lg" 
+                        className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white py-4 pl-10 pr-5 text-lg font-black text-slate-900 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                         required 
                         placeholder="0.00"
                         value={formData.amount}
@@ -870,18 +870,18 @@ const Expenses = () => {
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="mx-auto w-full max-w-3xl space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Detailed Remarks</label>
                   <textarea 
-                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-erp-blue/10 outline-none transition-all font-medium text-slate-800 h-28 resize-none" 
+                    className="h-28 w-full min-w-0 resize-none rounded-2xl border border-slate-200 bg-white px-5 py-4 font-medium text-slate-800 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                     placeholder="Enter justification or item details..."
                     value={formData.remarks}
                     onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
                   />
                 </div>
-                <div className="flex items-center gap-4 pt-4">
-                  <button type="button" onClick={() => setShowAddModal(false)} className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex-1">Discard Change</button>
-                  <button type="submit" className="px-8 py-4 bg-erp-blue text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-lg shadow-blue-600/30 hover:scale-[1.02] transition-all flex-1">Commit Voucher</button>
+                <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2">
+                  <button type="button" onClick={() => setShowAddModal(false)} className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black uppercase tracking-widest text-slate-600 transition-all hover:bg-slate-50">Discard Change</button>
+                  <button type="submit" className="rounded-2xl bg-erp-blue px-6 py-4 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.01]">Commit Voucher</button>
                 </div>
               </form>
             </motion.div>
