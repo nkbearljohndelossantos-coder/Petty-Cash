@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import { createPortal } from 'react-dom';
 import { exportExpensesToPDF } from '../utils/exportUtils';
 import { useAuth } from '../context/AuthContext';
 import ReceiptManager from '../components/ReceiptManager';
@@ -682,23 +683,25 @@ const Expenses = () => {
       </div>
 
       {/* Add Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-hidden px-4 py-4 sm:px-6">
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showAddModal && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAddModal(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative flex max-h-[calc(100svh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
             >
-              <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-8">
+              <motion.div
+                initial={{ scale: 0.97, opacity: 0, y: 16 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.97, opacity: 0, y: 16 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                onClick={(e) => e.stopPropagation()}
+                className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              >
+              <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-slate-100 bg-white px-5 py-5 sm:px-8">
                 <div className="min-w-0">
                    <h2 className="text-xl font-black text-slate-900 tracking-tight sm:text-2xl">New Expenditure Request</h2>
                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Petty Cash Voucher Entry</p>
@@ -886,9 +889,11 @@ const Expenses = () => {
                 </div>
               </form>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
       {/* View Modal */}
       <AnimatePresence>
         {showViewModal && selectedExpense && (
