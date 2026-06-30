@@ -684,7 +684,7 @@ const Expenses = () => {
       {/* Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-6">
+          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-hidden px-4 py-4 sm:px-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -696,7 +696,7 @@ const Expenses = () => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative mx-auto my-0 flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
+              className="relative flex max-h-[calc(100svh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.18)]"
             >
               <div className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-8">
                 <div className="min-w-0">
@@ -707,14 +707,14 @@ const Expenses = () => {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleAddExpense} className="space-y-6 px-5 py-6 sm:px-8">
-                <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
+              <form onSubmit={handleAddExpense} className="flex min-h-0 flex-1 flex-col gap-4 px-5 py-5 sm:px-8">
+                <div className="flex flex-shrink-0 items-center justify-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
                   <Activity size={16} className="text-erp-blue" />
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Performance Matrix</span>
                 </div>
 
                 {/* Barcode / Employee ID Scanner */}
-                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="flex-shrink-0 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
                   <div className="flex items-center justify-center gap-2 text-center">
                     <ScanLine size={16} className="text-erp-blue" />
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scan Barcode / Employee ID</span>
@@ -761,6 +761,7 @@ const Expenses = () => {
                     </div>
                   )}
                 </div>
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
                 <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Voucher Date</label>
@@ -881,6 +882,7 @@ const Expenses = () => {
                 <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2">
                   <button type="button" onClick={() => setShowAddModal(false)} className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black uppercase tracking-widest text-slate-600 transition-all hover:bg-slate-50">Discard Change</button>
                   <button type="submit" className="rounded-2xl bg-erp-blue px-6 py-4 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.01]">Commit Voucher</button>
+                </div>
                 </div>
               </form>
             </motion.div>
