@@ -24,12 +24,13 @@ const commands = [
   `cd ${NODEJS} && ${NODE} scripts/sync-dist.js 2>&1`,
   `rm -rf ${PUBLIC}/assets`,
   `cp -rv ${TEMP}/frontend/dist/* ${PUBLIC}/`,
-  `cp -v ${TEMP}/frontend/dist/.htaccess ${PUBLIC}/.htaccess`,
+  // SAFE .htaccess merge: preserve Hostinger Passenger/LiteSpeed directives that survive server restarts.
+  // Strategy: extract passenger lines from current file, overwrite with new, re-append passenger lines.
+  `HTACCESS_NEW="${TEMP}/frontend/dist/.htaccess"; HTACCESS_DEST="${PUBLIC}/.htaccess"; PASSENGER_LINES=$(grep -E "^(Passenger|SetEnv|RewriteRule \\^\\\\.builds)" "$HTACCESS_DEST" 2>/dev/null || true); cp -v "$HTACCESS_NEW" "$HTACCESS_DEST"; if [ -n "$PASSENGER_LINES" ]; then echo "$PASSENGER_LINES" >> "$HTACCESS_DEST"; echo "Passenger config preserved."; else echo "WARN: No Passenger lines found in old .htaccess — Hostinger may need to re-inject them via hPanel."; fi`,
   `cd ${NODEJS} && cat .env | grep PORT`,
-  `ps aux | grep "node.*index.js" | grep -v grep`,
-  `cd ${NODEJS} && kill $(pgrep -f "node.*src/index.js") 2>/dev/null; sleep 2; nohup ${NODE} src/index.js > console.log 2>&1 & echo "Backend restarted with PID $!"`,
-  `sleep 3 && ps aux | grep "node.*index.js" | grep -v grep`,
-  `echo "=== DEPLOYMENT COMPLETE ==="`
+  // Trigger Phusion Passenger / LiteSpeed Node restart via tmp/restart.txt (correct method for Hostinger)
+  `mkdir -p ${NODEJS}/tmp && touch ${NODEJS}/tmp/restart.txt && echo "Passenger/LiteSpeed Node restart triggered via restart.txt"`,
+  `echo "=== DEPLOYMENT COMPLETE ==="`,
 ];
 
 conn.on('ready', () => {
