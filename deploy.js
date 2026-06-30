@@ -24,6 +24,7 @@ const commands = [
   `cd ${NODEJS} && ${NODE} scripts/sync-dist.js 2>&1`,
   `rm -rf ${PUBLIC}/assets`,
   `cp -rv ${TEMP}/frontend/dist/* ${PUBLIC}/`,
+  `cp -v ${TEMP}/frontend/dist/.htaccess ${PUBLIC}/.htaccess`,
   `cd ${NODEJS} && cat .env | grep PORT`,
   `ps aux | grep "node.*index.js" | grep -v grep`,
   `cd ${NODEJS} && kill $(pgrep -f "node.*src/index.js") 2>/dev/null; sleep 2; nohup ${NODE} src/index.js > console.log 2>&1 & echo "Backend restarted with PID $!"`,
