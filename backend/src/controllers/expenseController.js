@@ -117,6 +117,10 @@ exports.getExpense = async (req, res) => {
 exports.createExpense = async (req, res) => {
   try {
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
+    
+    // Ensure amount is properly handled as decimal with 2 decimal places
+    const parsedAmount = parseFloat(amount);
+    const formattedAmount = isNaN(parsedAmount) ? 0 : parsedAmount.toFixed(2);
 
     const hasApprovalSchema = await db.schema.hasColumn('expenses', 'approval_context');
     const requiresApproval = hasApprovalSchema && await approvalService.shouldRequireApproval(amount);
@@ -137,7 +141,7 @@ exports.createExpense = async (req, res) => {
       remarks,
       requested_by,
       department_id: department_id || null,
-      amount,
+      amount: formattedAmount,
       quantity: quantity || 1,
       unit: unit || 'Piece',
       status: initialStatus,
@@ -267,6 +271,10 @@ exports.updateExpense = async (req, res) => {
   try {
     const { id } = req.params;
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
+    
+    // Ensure amount is properly handled as decimal with 2 decimal places
+    const parsedAmount = parseFloat(amount);
+    const formattedAmount = isNaN(parsedAmount) ? 0 : parsedAmount.toFixed(2);
 
     await db('expenses')
       .where({ id })
@@ -276,7 +284,7 @@ exports.updateExpense = async (req, res) => {
         remarks,
         requested_by,
         department_id: department_id || null,
-        amount,
+        amount: formattedAmount,
         quantity,
         unit,
         status,
