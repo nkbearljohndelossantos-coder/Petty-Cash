@@ -1,3 +1,4 @@
+// Notes Page with View Mode
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Trash2, Edit3, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,6 +41,8 @@ const Notes = () => {
   }, []);
 
   const handleOpenViewModal = (index) => {
+    console.log('handleOpenViewModal called with index:', index);
+    console.log('Current notes array:', notes);
     setViewingNoteIndex(index);
     setIsViewMode(true);
     setIsModalOpen(true);
@@ -158,7 +161,11 @@ const Notes = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-between border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => handleOpenViewModal(index)}
+              onClick={(e) => {
+                console.log('Note card clicked! Index:', index);
+                e.stopPropagation();
+                handleOpenViewModal(index);
+              }}
             >
               <div className="flex flex-col h-full justify-between">
                 <div className="details">
