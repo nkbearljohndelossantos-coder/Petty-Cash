@@ -106,13 +106,13 @@ const Notes = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-180px)]" style={{ backgroundColor: '#e9d5ff' }}>
+    <div className="min-h-[calc(100vh-180px)] bg-white">
       <div className="py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-purple-800 tracking-tight drop-shadow-sm">Notes</h1>
-            <p className="text-purple-700 font-medium mt-1">Keep track of important reminders and information.</p>
+            <h1 className="text-3xl font-extrabold text-black tracking-tight drop-shadow-sm">Notes</h1>
+            <p className="text-gray-700 font-medium mt-1">Keep track of important reminders and information.</p>
           </div>
         </div>
 
@@ -122,13 +122,13 @@ const Notes = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-center items-center cursor-pointer hover:shadow-lg transition-shadow"
+            className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-center items-center cursor-pointer hover:shadow-lg transition-shadow border border-gray-200"
             onClick={() => handleOpenModal()}
           >
-            <div className="w-[78px] h-[78px] rounded-full border-2 border-dashed flex items-center justify-center" style={{ borderColor: '#a78bfa' }}>
-              <Plus size={40} className="text-purple-500" />
+            <div className="w-[78px] h-[78px] rounded-full border-2 border-dashed flex items-center justify-center" style={{ borderColor: '#6b7280' }}>
+              <Plus size={40} className="text-gray-600" />
             </div>
-            <p className="mt-5 font-medium text-purple-600">Add new note</p>
+            <p className="mt-5 font-medium text-gray-700">Add new note</p>
           </motion.div>
 
           {/* Notes List */}
@@ -137,15 +137,15 @@ const Notes = () => {
               key={note.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-between"
+              className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-between border border-gray-200"
             >
               <div className="flex flex-col h-full justify-between">
                 <div className="details">
-                  <p className="text-2xl font-medium text-slate-900 leading-snug line-clamp-2">{note.title}</p>
-                  <span className="block mt-2 text-base text-[#575757] line-clamp-4">{note.description}</span>
+                  <p className="text-2xl font-medium text-black leading-snug line-clamp-2">{note.title}</p>
+                  <span className="block mt-2 text-base text-black line-clamp-4">{note.description}</span>
                 </div>
-                <div className="bottom-content flex flex-row justify-between items-center pt-4 mt-4 border-t border-[#ccc]">
-                  <span className="text-sm text-[#6d6d6d">{note.date}</span>
+                <div className="bottom-content flex flex-row justify-between items-center pt-4 mt-4 border-t border-gray-300">
+                  <span className="text-sm text-black">{note.date}</span>
                   <div className="settings relative" ref={index === openMenuIndex ? menuRef : null}>
                     <button
                       onClick={(e) => toggleMenu(index, e)}
@@ -222,30 +222,30 @@ const Notes = () => {
                 </div>
                 <form onSubmit={handleSaveNote} className="p-5 md:p-6 space-y-4">
                   <div className="row title">
-                    <label className="block mb-2 text-lg">Title</label>
+                    <label className="block mb-2 text-lg text-black">Title</label>
                     <input
                       type="text"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Enter note title..."
-                      className="w-full h-[50px] px-4 py-3 border border-[#999] rounded-md text-base outline-none focus:ring-2 focus:ring-purple-300"
+                      className="w-full h-[50px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none focus:ring-2 focus:ring-gray-400 text-black"
                       autoFocus
                     />
                   </div>
                   <div className="row description">
-                    <label className="block mb-2 text-lg">Description</label>
+                    <label className="block mb-2 text-lg text-black">Description</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Write your note here..."
                       rows={6}
-                      className="w-full h-[150px] px-4 py-3 border border-[#999] rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-purple-300"
+                      className="w-full h-[150px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-gray-400 text-black"
                     />
                   </div>
                   <button
                     type="submit"
                     className="w-full h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#8b5cf6' }}
+                    style={{ backgroundColor: '#1f2937' }}
                   >
                     {editingNoteIndex !== null ? 'Update Note' : 'Add Note'}
                   </button>
