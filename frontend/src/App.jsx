@@ -26,6 +26,7 @@ const EmailAutomation = lazy(() => import('./pages/EmailAutomation'));
 const QueueMonitor = lazy(() => import('./pages/QueueMonitor'));
 const ApprovalAction = lazy(() => import('./pages/ApprovalAction'));
 const UserManual = lazy(() => import('./pages/UserManual'));
+const Notes = lazy(() => import('./pages/Notes'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -121,6 +122,7 @@ function App() {
                       </ProtectedRoute>
                     } />
                     <Route path="profile" element={<Profile />} />
+                    <Route path="notes" element={<Notes />} />
                     <Route path="maintenance" element={
                       <ProtectedRoute allowedRoles={['Super Admin']}>
                         <BackupRestore />

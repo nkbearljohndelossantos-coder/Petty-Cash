@@ -21,7 +21,8 @@ import {
   Wallet,
   History,
   Database,
-  BookOpen
+  BookOpen,
+  StickyNote
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -99,6 +100,7 @@ const DashboardLayout = () => {
     { icon: FileText, label: 'Reports', to: '/reports' },
     { icon: Tag, label: 'Categories', to: '/categories' },
     { icon: Building2, label: 'Cost Centers', to: '/departments', roles: ['Super Admin', 'Accounting'] },
+    { icon: StickyNote, label: 'Notes', to: '/notes' },
     { icon: Bell, label: 'Notification Center', to: '/email-automation', roles: ['Super Admin', 'Accounting'] },
     { icon: History, label: 'Audit Logs', to: '/logs', roles: ['Super Admin'] },
     { icon: Database, label: 'Maintenance', to: '/maintenance', roles: ['Super Admin'] },
