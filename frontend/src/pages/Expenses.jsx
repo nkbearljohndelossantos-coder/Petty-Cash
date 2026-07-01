@@ -267,9 +267,7 @@ const Expenses = () => {
     files.forEach(file => data.append('attachments', file));
 
     try {
-      const res = await api.post('/expenses', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await api.post('/expenses', data);
       // res = { success, data: {expense}, emailStatus } — interceptor already unwrapped response.data
       const created = res.data || res;
       const emailStatus = typeof res.emailStatus === 'object' && res.emailStatus !== null
