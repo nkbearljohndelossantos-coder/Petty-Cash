@@ -16,6 +16,7 @@ const Notes = () => {
   const [description, setDescription] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const menuRef = useRef(null);
 
   // Load notes from API on mount
@@ -27,9 +28,11 @@ const Notes = () => {
     try {
       setLoading(true);
       const response = await api.get('/notes');
-      setNotes(response.data.data || []);
+      setNotes(response.data || response || []);
+      setErrorMessage('');
     } catch (err) {
       console.error('Failed to load notes:', err);
+      setErrorMessage(err.message || 'Failed to load notes. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -53,6 +56,7 @@ const Notes = () => {
 
   const handleOpenViewModal = (note) => {
     setViewingNote(note);
+    setOpenMenuId(null);
     setIsViewMode(true);
     setIsModalOpen(true);
   };
@@ -87,6 +91,7 @@ const Notes = () => {
     setViewingNote(null);
     setTitle('');
     setDescription('');
+    setErrorMessage('');
   };
 
   const handleSaveNote = async (e) => {
@@ -95,17 +100,19 @@ const Notes = () => {
 
     try {
       setIsSaving(true);
+      setErrorMessage('');
       if (editingNoteId) {
         // Update existing note
-        await api.put(`/notes/${editingNoteId}`, { title, description });
+        await api.put(`/notes/${editingNoteId}`, { title: title.trim(), description });
       } else {
         // Create new note
-        await api.post('/notes', { title, description });
+        await api.post('/notes', { title: title.trim(), description });
       }
       await loadNotes();
       handleCloseModal();
     } catch (err) {
       console.error('Failed to save note:', err);
+      setErrorMessage(err.message || 'Failed to save note. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -151,6 +158,11 @@ const Notes = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            {errorMessage && (
+              <div className="col-span-full rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-600">
+                {errorMessage}
+              </div>
+            )}
             {/* Add Note Box */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -187,17 +199,12 @@ const Notes = () => {
                 className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-between border-2 border-transparent hover:border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-all relative"
                 style={{ cursor: 'pointer', zIndex: 1 }}
                 onClick={(e) => {
-                  console.log('Note card clicked (outer):', note, e.target);
                   handleOpenViewModal(note);
                 }}
               >
                 {/* Main content area - clickable */}
                 <div 
                   className="flex-1 overflow-hidden"
-                  onClick={(e) => {
-                    console.log('Note card clicked (inner):', note, e.target);
-                    handleOpenViewModal(note);
-                  }}
                   style={{ cursor: 'pointer' }}
                 >
                   <p className="text-2xl font-bold text-gray-900 leading-snug line-clamp-2">{note.title}</p>
@@ -211,7 +218,6 @@ const Notes = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        console.log('Settings button clicked');
                         toggleMenu(note.id, e);
                       }}
                       className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors z-20"
@@ -363,6 +369,9 @@ const Notes = () => {
                         className="w-full min-h-[300px] px-6 py-4 border border-gray-300 rounded-2xl text-base outline-none resize-y focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
                       />
                     </div>
+                    {errorMessage && (
+                      <p className="text-sm font-bold text-rose-600">{errorMessage}</p>
+                    )}
                     <div className="flex gap-4 pt-2">
                       <button
                         type="submit"
