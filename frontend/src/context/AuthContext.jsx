@@ -41,6 +41,18 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password) => {
+    // Clear browser caches on login
+    if (caches) {
+      const cacheKeys = await caches.keys();
+      for (const key of cacheKeys) {
+        await caches.delete(key);
+      }
+    }
+    
+    // Clear localStorage except for token (we'll reset it later)
+    const oldToken = localStorage.getItem('token');
+    localStorage.clear();
+    
     const res = await api.post('/auth/login', { username, password });
     if (!res?.token || !res?.user) {
       throw new Error(res?.message || 'Login failed');

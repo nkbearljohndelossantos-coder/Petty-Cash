@@ -258,22 +258,29 @@ const Notes = () => {
               style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 40 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 40 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] max-w-[550px] w-full px-4"
+              className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-full px-4 ${isViewMode ? 'max-w-5xl' : 'max-w-2xl'}`}
             >
-              <div className="bg-white rounded-xl overflow-hidden shadow-2xl">
-                <div className="border-b border-gray-200 flex justify-between items-center p-5 md:p-7">
-                  <p className="text-xl font-medium text-gray-900">
-                    {isViewMode ? 'View note' : (editingNoteId ? 'Edit note' : 'Add a new note')}
-                  </p>
+              <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+                <div className="border-b border-gray-200 flex justify-between items-center p-6 md:p-8">
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {isViewMode ? viewingNote?.title : (editingNoteId ? 'Edit note' : 'Add a new note')}
+                    </p>
+                    {isViewMode && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Last updated: {formatDate(viewingNote?.updated_at)}
+                      </p>
+                    )}
+                  </div>
                   <button
                     onClick={handleCloseModal}
-                    className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="p-3 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
                   >
-                    <X size={23} />
+                    <X size={24} />
                   </button>
                 </div>
                 
@@ -282,40 +289,30 @@ const Notes = () => {
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="p-6 md:p-8 space-y-5"
+                    className="p-8 md:p-10"
                   >
-                    <div className="row title">
-                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Title</label>
-                      <p className="text-2xl font-bold text-gray-900 p-5 bg-gray-50 rounded-xl">
-                        {viewingNote.title}
-                      </p>
-                    </div>
-                    <div className="row description">
-                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Description</label>
-                      <p className="text-base text-gray-800 p-5 bg-gray-50 rounded-xl whitespace-pre-wrap min-h-[180px] leading-relaxed">
-                        {viewingNote.description}
-                      </p>
-                    </div>
-                    <div className="row date">
-                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Last Updated</label>
-                      <p className="text-base text-gray-600 p-5 bg-gray-50 rounded-xl font-medium">
-                        {formatDate(viewingNote.updated_at)}
-                      </p>
-                    </div>
-                    <div className="flex gap-3 pt-3">
-                      <button
-                        onClick={handleOpenEditModalFromView}
-                        className="flex-1 h-[52px] text-white text-base font-semibold rounded-xl cursor-pointer hover:opacity-90 transition-all hover:shadow-lg"
-                        style={{ backgroundColor: '#1f2937' }}
-                      >
-                        <Edit3 size={18} className="inline mr-2" /> Edit Note
-                      </button>
-                      <button
-                        onClick={handleCloseModal}
-                        className="flex-1 h-[52px] text-gray-700 text-base font-semibold rounded-xl cursor-pointer hover:bg-gray-100 transition-all border border-gray-200 bg-white"
-                      >
-                        Close
-                      </button>
+                    <div className="space-y-6">
+                      <div className="bg-gray-50 rounded-2xl p-8 min-h-[400px]">
+                        <p className="text-lg text-gray-800 whitespace-pre-wrap leading-relaxed">
+                          {viewingNote.description || <span className="text-gray-400 italic">No description</span>}
+                        </p>
+                      </div>
+                      <div className="flex gap-4 pt-2">
+                        <button
+                          onClick={handleOpenEditModalFromView}
+                          className="flex-1 h-[56px] text-white text-base font-semibold rounded-xl cursor-pointer hover:opacity-90 transition-all hover:shadow-lg flex items-center justify-center gap-2"
+                          style={{ backgroundColor: '#1f2937' }}
+                        >
+                          <Edit3 size={20} />
+                          Edit Note
+                        </button>
+                        <button
+                          onClick={handleCloseModal}
+                          className="h-[56px] px-8 text-gray-700 text-base font-semibold rounded-xl cursor-pointer hover:bg-gray-100 transition-all border border-gray-200 bg-white"
+                        >
+                          Close
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -326,44 +323,53 @@ const Notes = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     onSubmit={handleSaveNote} 
-                    className="p-6 md:p-8 space-y-5"
+                    className="p-8 md:p-10 space-y-6"
                   >
                     <div className="row title">
-                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Title</label>
+                      <label className="block mb-3 text-sm font-bold text-gray-600 uppercase tracking-wide">Title</label>
                       <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter note title..."
-                        className="w-full h-[52px] px-5 py-4 border border-gray-300 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 font-medium"
+                        className="w-full h-[56px] px-6 py-4 border border-gray-300 rounded-2xl text-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 font-medium"
                         autoFocus
                       />
                     </div>
                     <div className="row description">
-                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Description</label>
+                      <label className="block mb-3 text-sm font-bold text-gray-600 uppercase tracking-wide">Description</label>
                       <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Write your note here..."
-                        rows={6}
-                        className="w-full h-[180px] px-5 py-4 border border-gray-300 rounded-xl text-base outline-none resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
+                        rows={10}
+                        className="w-full min-h-[300px] px-6 py-4 border border-gray-300 rounded-2xl text-base outline-none resize-y focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
                       />
                     </div>
-                    <button
-                      type="submit"
-                      disabled={isSaving}
-                      className="w-full h-[52px] text-white text-base font-semibold rounded-xl cursor-pointer hover:opacity-90 transition-all hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                      style={{ backgroundColor: '#1f2937' }}
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 size={18} className="animate-spin" />
-                          {editingNoteId ? 'Updating...' : 'Adding...'}
-                        </>
-                      ) : (
-                        editingNoteId ? 'Update Note' : 'Add Note'
-                      )}
-                    </button>
+                    <div className="flex gap-4 pt-2">
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="flex-1 h-[56px] text-white text-base font-semibold rounded-2xl cursor-pointer hover:opacity-90 transition-all hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                        style={{ backgroundColor: '#1f2937' }}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" />
+                            {editingNoteId ? 'Updating...' : 'Adding...'}
+                          </>
+                        ) : (
+                          editingNoteId ? 'Update Note' : 'Add Note'
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCloseModal}
+                        className="h-[56px] px-8 text-gray-700 text-base font-semibold rounded-2xl cursor-pointer hover:bg-gray-100 transition-all border border-gray-200 bg-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </motion.form>
                 )}
               </div>
