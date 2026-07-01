@@ -9,13 +9,21 @@ $requestBody = file_get_contents('php://input');
 
 function startPettyCashApi(): void
 {
+    if (!function_exists('shell_exec')) {
+        return;
+    }
+
     $nodeRoot = '/home/u335953510/domains/pc.nkbmanufacturing.com/nodejs';
     $nodeBin = '/opt/alt/alt-nodejs20/root/bin/node';
     $cmd = 'cd ' . escapeshellarg($nodeRoot)
         . ' && if ! ps -u u335953510 -o args= | grep -q "[n]ode src/index.js"; then '
         . 'nohup ' . escapeshellarg($nodeBin) . ' src/index.js > console.log 2>&1 & '
         . 'fi';
-    @shell_exec($cmd);
+    try {
+        @shell_exec($cmd);
+    } catch (Throwable $e) {
+        return;
+    }
 
     $deadline = microtime(true) + 8;
     while (microtime(true) < $deadline) {
