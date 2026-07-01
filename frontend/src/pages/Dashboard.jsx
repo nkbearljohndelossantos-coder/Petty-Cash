@@ -292,8 +292,8 @@ const Dashboard = () => {
                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Real-time Data</span>
             </div>
           </div>
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={400}>
+          <div className="h-[400px] min-h-[400px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height={400} minWidth={300} minHeight={400}>
               <AreaChart data={trends} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <defs>
                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -340,12 +340,12 @@ const Dashboard = () => {
               <Download size={16} />
             </button>
           </div>
-          <div className="flex-1 flex items-center justify-center relative">
+          <div className="relative flex h-[300px] min-h-[300px] w-full min-w-0 items-center justify-center">
              <div className="absolute flex flex-col items-center">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Total</span>
                 <span className="text-2xl font-black text-slate-800 leading-none mt-1">₱{stats?.totalExpenses?.toLocaleString() || '0'}</span>
              </div>
-            <ResponsiveContainer width="100%" height={300} minHeight={300}>
+            <ResponsiveContainer width="100%" height={300} minWidth={260} minHeight={300}>
               <PieChart>
                 <Pie
                   data={categories.slice(0, 8)}
