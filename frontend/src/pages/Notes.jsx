@@ -106,13 +106,13 @@ const Notes = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-180px)]" style={{ backgroundColor: '#88abff' }}>
+    <div className="min-h-[calc(100vh-180px)]" style={{ backgroundColor: '#e9d5ff' }}>
       <div className="py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">Notes</h1>
-            <p className="text-blue-100 font-medium mt-1">Keep track of important reminders and information.</p>
+            <h1 className="text-3xl font-extrabold text-purple-800 tracking-tight drop-shadow-sm">Notes</h1>
+            <p className="text-purple-700 font-medium mt-1">Keep track of important reminders and information.</p>
           </div>
         </div>
 
@@ -125,10 +125,10 @@ const Notes = () => {
             className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-center items-center cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => handleOpenModal()}
           >
-            <div className="w-[78px] h-[78px] rounded-full border-2 border-dashed flex items-center justify-center" style={{ borderColor: 'powderblue' }}>
-              <Plus size={40} className="text-[#88abff]" />
+            <div className="w-[78px] h-[78px] rounded-full border-2 border-dashed flex items-center justify-center" style={{ borderColor: '#a78bfa' }}>
+              <Plus size={40} className="text-purple-500" />
             </div>
-            <p className="mt-5 font-medium" style={{ color: '#88abff' }}>Add new note</p>
+            <p className="mt-5 font-medium text-purple-600">Add new note</p>
           </motion.div>
 
           {/* Notes List */}
@@ -228,7 +228,7 @@ const Notes = () => {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Enter note title..."
-                      className="w-full h-[50px] px-4 py-3 border border-[#999] rounded-md text-base outline-none focus:ring-2 focus:ring-blue-300"
+                      className="w-full h-[50px] px-4 py-3 border border-[#999] rounded-md text-base outline-none focus:ring-2 focus:ring-purple-300"
                       autoFocus
                     />
                   </div>
@@ -239,13 +239,13 @@ const Notes = () => {
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Write your note here..."
                       rows={6}
-                      className="w-full h-[150px] px-4 py-3 border border-[#999] rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-blue-300"
+                      className="w-full h-[150px] px-4 py-3 border border-[#999] rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-purple-300"
                     />
                   </div>
                   <button
                     type="submit"
                     className="w-full h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#6a93f8' }}
+                    style={{ backgroundColor: '#8b5cf6' }}
                   >
                     {editingNoteIndex !== null ? 'Update Note' : 'Add Note'}
                   </button>
