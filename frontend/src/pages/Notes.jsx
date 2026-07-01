@@ -7,7 +7,9 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const Notes = () => {
   const [notes, setNotes] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [editingNoteIndex, setEditingNoteIndex] = useState(null);
+  const [viewingNoteIndex, setViewingNoteIndex] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
@@ -37,6 +39,21 @@ const Notes = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleOpenViewModal = (index) => {
+    setViewingNoteIndex(index);
+    setIsViewMode(true);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModalFromView = () => {
+    if (viewingNoteIndex !== null) {
+      setTitle(notes[viewingNoteIndex].title);
+      setDescription(notes[viewingNoteIndex].description);
+      setEditingNoteIndex(viewingNoteIndex);
+      setIsViewMode(false);
+    }
+  };
+
   const handleOpenModal = (index = null) => {
     if (index !== null) {
       setEditingNoteIndex(index);
@@ -47,12 +64,15 @@ const Notes = () => {
       setTitle('');
       setDescription('');
     }
+    setIsViewMode(false);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setIsViewMode(false);
     setEditingNoteIndex(null);
+    setViewingNoteIndex(null);
     setTitle('');
     setDescription('');
   };
@@ -137,7 +157,8 @@ const Notes = () => {
               key={note.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-between border border-gray-200"
+              className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-between border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleOpenViewModal(index)}
             >
               <div className="flex flex-col h-full justify-between">
                 <div className="details">
@@ -167,14 +188,20 @@ const Notes = () => {
                         >
                           <li
                             className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-[#f5f5f5] text-sm"
-                            onClick={() => handleEditNote(index)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditNote(index);
+                            }}
                           >
                             <Edit3 size={14} />
                             Edit
                           </li>
                           <li
                             className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-[#f5f5f5] text-sm"
-                            onClick={() => handleDeleteNote(index)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteNote(index);
+                            }}
                           >
                             <Trash2 size={14} />
                             Delete
@@ -206,12 +233,12 @@ const Notes = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] max-w-[400px] w-full px-4"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] max-w-[500px] w-full px-4"
             >
               <div className="bg-white rounded-md overflow-hidden shadow-2xl">
                 <div className="border-b border-[#ccc] flex justify-between items-center p-4 md:p-6">
                   <p className="text-xl font-medium text-slate-900">
-                    {editingNoteIndex !== null ? 'Edit note' : 'Add a new note'}
+                    {isViewMode ? 'View note' : (editingNoteIndex !== null ? 'Edit note' : 'Add a new note')}
                   </p>
                   <button
                     onClick={handleCloseModal}
@@ -220,36 +247,79 @@ const Notes = () => {
                     <X size={23} />
                   </button>
                 </div>
-                <form onSubmit={handleSaveNote} className="p-5 md:p-6 space-y-4">
-                  <div className="row title">
-                    <label className="block mb-2 text-lg text-black">Title</label>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter note title..."
-                      className="w-full h-[50px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none focus:ring-2 focus:ring-gray-400 text-black"
-                      autoFocus
-                    />
+                
+                {/* View Mode */}
+                {isViewMode && viewingNoteIndex !== null && (
+                  <div className="p-5 md:p-6 space-y-4">
+                    <div className="row title">
+                      <label className="block mb-2 text-lg text-black font-medium">Title</label>
+                      <p className="text-xl font-medium text-black p-4 bg-gray-50 rounded-md">
+                        {notes[viewingNoteIndex].title}
+                      </p>
+                    </div>
+                    <div className="row description">
+                      <label className="block mb-2 text-lg text-black font-medium">Description</label>
+                      <p className="text-base text-black p-4 bg-gray-50 rounded-md whitespace-pre-wrap min-h-[150px]">
+                        {notes[viewingNoteIndex].description}
+                      </p>
+                    </div>
+                    <div className="row date">
+                      <label className="block mb-2 text-lg text-black font-medium">Date Created</label>
+                      <p className="text-base text-gray-700 p-4 bg-gray-50 rounded-md">
+                        {notes[viewingNoteIndex].date}
+                      </p>
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={handleOpenEditModalFromView}
+                        className="flex-1 h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: '#1f2937' }}
+                      >
+                        <Edit3 size={18} className="inline mr-2" /> Edit Note
+                      </button>
+                      <button
+                        onClick={handleCloseModal}
+                        className="flex-1 h-[50px] text-slate-700 text-base rounded-md cursor-pointer hover:bg-gray-100 transition-colors border border-gray-300 bg-white"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </div>
-                  <div className="row description">
-                    <label className="block mb-2 text-lg text-black">Description</label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Write your note here..."
-                      rows={6}
-                      className="w-full h-[150px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-gray-400 text-black"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#1f2937' }}
-                  >
-                    {editingNoteIndex !== null ? 'Update Note' : 'Add Note'}
-                  </button>
-                </form>
+                )}
+
+                {/* Edit/Add Mode */}
+                {!isViewMode && (
+                  <form onSubmit={handleSaveNote} className="p-5 md:p-6 space-y-4">
+                    <div className="row title">
+                      <label className="block mb-2 text-lg text-black">Title</label>
+                      <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter note title..."
+                        className="w-full h-[50px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none focus:ring-2 focus:ring-gray-400 text-black"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="row description">
+                      <label className="block mb-2 text-lg text-black">Description</label>
+                      <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Write your note here..."
+                        rows={6}
+                        className="w-full h-[150px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-gray-400 text-black"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: '#1f2937' }}
+                    >
+                      {editingNoteIndex !== null ? 'Update Note' : 'Add Note'}
+                    </button>
+                  </form>
+                )}
               </div>
             </motion.div>
           </>
