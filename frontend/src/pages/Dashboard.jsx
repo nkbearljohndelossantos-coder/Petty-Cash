@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { 
@@ -85,37 +85,64 @@ const Dashboard = () => {
   const trendRef = useRef(null);
   const allocationRef = useRef(null);
 
+  const fetchData = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const [statsRes, trendsRes, catsRes] = await Promise.all([
+        api.get('/analytics/stats'),
+        api.get('/analytics/trends'),
+        api.get('/analytics/categories')
+      ]);
+      setStats(statsRes.data);
+      setTrends(trendsRes.data);
+      setCategories(catsRes.data);
+    } catch (err) {
+      console.error('Dashboard refresh failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchData();
+    fetchData(true);
 
     const handleBalanceUpdate = () => {
       console.log('Real-time balance update received via window event');
-      fetchData();
+      fetchData(false);
+    };
+
+    const handleFocus = () => fetchData(false);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchData(false);
     };
 
     window.addEventListener('balance_updated', handleBalanceUpdate);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     if (socket) {
       socket.on('balance_updated', (data) => {
         console.log('Real-time balance update received:', data);
-        fetchData();
+        fetchData(false);
       });
     }
 
     // Polling fallback to keep dashboard updated even if socket fails/disconnects
     const pollInterval = setInterval(() => {
       console.log('Polling dashboard data (auto-refresh)...');
-      fetchData();
+      fetchData(false);
     }, 30000);
 
     return () => {
       window.removeEventListener('balance_updated', handleBalanceUpdate);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (socket) {
         socket.off('balance_updated');
       }
       clearInterval(pollInterval);
     };
-  }, [socket]);
+  }, [socket, fetchData]);
 
   const downloadChart = async (ref, filename) => {
     if (!ref.current) return;
@@ -163,23 +190,6 @@ const Dashboard = () => {
       img.src = `data:image/svg+xml;base64,${svgBase64}`;
     } catch (err) {
       console.error('Download failed:', err);
-    }
-  };
-
-  const fetchData = async () => {
-    try {
-      const [statsRes, trendsRes, catsRes] = await Promise.all([
-        api.get('/analytics/stats'),
-        api.get('/analytics/trends'),
-        api.get('/analytics/categories')
-      ]);
-      setStats(statsRes.data);
-      setTrends(trendsRes.data);
-      setCategories(catsRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 

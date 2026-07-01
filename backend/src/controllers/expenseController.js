@@ -4,6 +4,12 @@ const { dispatchNotification } = require('../services/notificationDispatcher');
 const { broadcast } = require('../services/socketService');
 const approvalService = require('../services/approvalService');
 
+const getPublicFileUrl = (filePath) => {
+  const normalized = String(filePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
+  const baseUrl = (process.env.FRONTEND_URL || process.env.APP_URL || '').replace(/\/+$/, '');
+  return baseUrl ? `${baseUrl}/${normalized}` : `/${normalized}`;
+};
+
 exports.getExpenses = async (req, res) => {
   const { 
     page = 1, 
@@ -118,6 +124,13 @@ exports.createExpense = async (req, res) => {
     // At or above the threshold, the request remains with the email approver.
     const initialStatus = requiresApproval ? 'For Approval' : 'Approved';
 
+    if (requiresApproval && (!req.files || req.files.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quotation or supporting attachment is required before submitting a petty cash request for approval.'
+      });
+    }
+
     const insertData = {
       date,
       category_id: category_id || null,
@@ -185,6 +198,13 @@ exports.createExpense = async (req, res) => {
         .select('expenses.*', 'categories.name as category_name', 'departments.name as department_name')
         .where('expenses.id', expense.id)
         .first();
+      expenseDetails.attachments = await db('expense_attachments')
+        .where({ expense_id: expense.id })
+        .select('id', 'file_name', 'file_path', 'file_type')
+        .then((rows) => rows.map((row) => ({
+          ...row,
+          url: getPublicFileUrl(row.file_path)
+        })));
 
       emailResult = { sent: false, reason: 'Email service error — check server logs' };
       try {

@@ -91,6 +91,8 @@ exports.up = async function (knex) {
             <p><strong>Category:</strong> {{category}}</p>
             <p><strong>Amount:</strong> ₱{{amount}}</p>
             <p><strong>Remarks:</strong> {{remarks}}</p>
+            <p><strong>Quotation / Supporting Attachments:</strong></p>
+            {{attachments}}
           </div>
           <div style="margin: 30px 0; text-align: center;">
             <a href="{{approve_link}}" style="display: inline-block; padding: 14px 32px; background: #059669; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; margin-right: 12px;">Approve</a>

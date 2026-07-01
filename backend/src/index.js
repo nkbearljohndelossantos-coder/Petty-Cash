@@ -183,6 +183,19 @@ const PORT = process.env.PORT || 5000;
           await seedModule.seed(db);
           console.log('TEMPLATE SEED: All email templates synced successfully');
         }
+
+        const approvalTemplate = await db('email_templates').where({ name: 'liquidation_approval_request' }).first();
+        if (approvalTemplate && !String(approvalTemplate.body || '').includes('{{attachments}}')) {
+          const nextBody = String(approvalTemplate.body || '').replace(
+            '<p><strong>Remarks:</strong> {{remarks}}</p>',
+            '<p><strong>Remarks:</strong> {{remarks}}</p><p><strong>Quotation / Supporting Attachments:</strong></p>{{attachments}}'
+          );
+          await db('email_templates').where({ name: 'liquidation_approval_request' }).update({
+            body: nextBody,
+            updated_at: db.fn.now()
+          });
+          console.log('TEMPLATE REPAIR: Added approval attachment links to liquidation approval email template.');
+        }
       }
     } catch (tplErr) {
       console.warn('Template auto-seed skipped:', tplErr.message);

@@ -1,5 +1,7 @@
 const approvalService = require('../services/approvalService');
 const { isEmailConfigured, verifyConnection, sendApprovalEmail, getSmtpConfig } = require('../services/emailService');
+const path = require('path');
+const fs = require('fs');
 
 exports.getSettings = async (req, res) => {
   try {
@@ -95,6 +97,27 @@ exports.declineByToken = async (req, res) => {
     res.json({ success: true, data: result, message: 'Liquidation declined' });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.viewTokenAttachment = async (req, res) => {
+  try {
+    const attachment = await approvalService.getTokenAttachment(req.params.token, req.params.attachmentId);
+    if (!attachment) {
+      return res.status(404).json({ success: false, message: 'Attachment not found or link expired' });
+    }
+
+    const uploadsRoot = path.resolve(process.cwd(), 'uploads');
+    const filePath = path.resolve(process.cwd(), attachment.file_path || '');
+    if (!filePath.startsWith(uploadsRoot) || !fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'Attachment file is no longer available' });
+    }
+
+    res.setHeader('Content-Type', attachment.file_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${String(attachment.file_name || 'attachment').replace(/"/g, '')}"`);
+    res.sendFile(filePath);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

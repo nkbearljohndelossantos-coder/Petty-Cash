@@ -11,6 +11,7 @@ const {
   verifyToken,
   approveByToken,
   declineByToken,
+  viewTokenAttachment,
   getAuditTrail,
   getEmailHealth,
   sendApprovalEmailHandler,
@@ -19,6 +20,7 @@ const {
 
 // Public token-based routes (no login required)
 router.get('/token/:token', verifyToken);
+router.get('/token/:token/attachments/:attachmentId/view', viewTokenAttachment);
 router.post('/approve/:token', approveByToken);
 router.post('/decline/:token', declineByToken);
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle2, XCircle, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Loader2, ShieldCheck, FileText, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const apiBase = import.meta.env.VITE_API_URL || '/api';
@@ -15,7 +15,6 @@ const ApprovalAction = ({ mode }) => {
   const [result, setResult] = useState(null);
   const [expense, setExpense] = useState(null);
   const [declineReason, setDeclineReason] = useState('');
-  const approveStarted = useRef(false);
 
   useEffect(() => {
     const verify = async () => {
@@ -40,13 +39,6 @@ const ApprovalAction = ({ mode }) => {
     };
     verify();
   }, [token, mode]);
-
-  useEffect(() => {
-    if (mode === 'approve' && expense && !result && !error && !approveStarted.current) {
-      approveStarted.current = true;
-      handleApprove();
-    }
-  }, [mode, expense, result, error]);
 
   const handleApprove = async () => {
     setSubmitting(true);
@@ -82,6 +74,53 @@ const ApprovalAction = ({ mode }) => {
 
   const formatAmount = (amount) =>
     `₱${parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+  const attachments = Array.isArray(expense?.attachments) ? expense.attachments : [];
+
+  const ExpenseSummary = () => (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <p><strong>Reference:</strong> {expense.reference_number || `PCV-${expense.id}`}</p>
+          <p><strong>Amount:</strong> {formatAmount(expense.amount)}</p>
+          <p><strong>Requester:</strong> {expense.requested_by}</p>
+          <p><strong>Department:</strong> {expense.department_name || 'N/A'}</p>
+          <p><strong>Category:</strong> {expense.category_name || 'N/A'}</p>
+          <p><strong>Status:</strong> {expense.status}</p>
+        </div>
+        <p className="mt-3"><strong>Remarks:</strong> {expense.remarks || 'None'}</p>
+      </div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Quotation / Supporting Files</h3>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{attachments.length} file(s)</span>
+        </div>
+        {attachments.length === 0 ? (
+          <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">
+            No supporting attachment found. Please contact Finance before approving.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {attachments.map((file) => (
+              <a
+                key={file.id || file.url}
+                href={file.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 hover:border-erp-blue hover:bg-blue-50/40"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <FileText size={18} className="shrink-0 text-erp-blue" />
+                  <span className="truncate">{file.file_name || file.original_filename || 'Attachment'}</span>
+                </span>
+                <Download size={16} className="shrink-0 text-slate-400" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -136,16 +175,26 @@ const ApprovalAction = ({ mode }) => {
             </div>
           )}
 
+          {!loading && !result && expense && mode === 'approve' && (
+            <div className="space-y-6">
+              <ExpenseSummary />
+              {error && (
+                <p className="text-sm text-rose-600 font-medium">{error}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={submitting || attachments.length === 0}
+                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-emerald-700 disabled:opacity-50 transition-all"
+              >
+                {submitting ? 'Processing...' : 'Approve Request'}
+              </button>
+            </div>
+          )}
+
           {!loading && !result && expense && mode === 'decline' && (
             <form onSubmit={handleDecline} className="space-y-6">
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-2 text-sm">
-                <p><strong>Reference:</strong> {expense.reference_number}</p>
-                <p><strong>Requester:</strong> {expense.requested_by}</p>
-                <p><strong>Department:</strong> {expense.department_name || 'N/A'}</p>
-                <p><strong>Category:</strong> {expense.category_name || 'N/A'}</p>
-                <p><strong>Amount:</strong> {formatAmount(expense.amount)}</p>
-                <p><strong>Remarks:</strong> {expense.remarks || 'None'}</p>
-              </div>
+              <ExpenseSummary />
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -172,13 +221,6 @@ const ApprovalAction = ({ mode }) => {
                 {submitting ? 'Submitting...' : 'Submit Decline'}
               </button>
             </form>
-          )}
-
-          {!loading && !result && expense && mode === 'approve' && submitting && (
-            <div className="flex flex-col items-center gap-4 py-10">
-              <Loader2 className="animate-spin text-emerald-500" size={40} />
-              <p className="text-sm font-bold text-slate-500">Processing approval...</p>
-            </div>
           )}
 
           {(result || error) && (

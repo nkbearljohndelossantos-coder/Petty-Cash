@@ -20,6 +20,40 @@ const getClientIp = (req) =>
 const getFrontendUrl = () =>
   process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
 
+const getPublicFileUrl = (filePath) => {
+  const normalized = String(filePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
+  return `${getFrontendUrl().replace(/\/+$/, '')}/${normalized}`;
+};
+
+const getExpenseAttachments = async (expenseId) => {
+  if (!(await db.schema.hasTable('expense_attachments'))) return [];
+  const rows = await db('expense_attachments')
+    .where({ expense_id: expenseId })
+    .select('id', 'file_name', 'file_path', 'file_type');
+  return rows.map((row) => ({
+    ...row,
+    url: getPublicFileUrl(row.file_path)
+  }));
+};
+
+const renderAttachmentLinks = (attachments) => {
+  if (!attachments.length) {
+    return '<p style="color:#dc2626;font-weight:bold;">No quotation/supporting attachment was provided.</p>';
+  }
+  const items = attachments.map((file) => (
+    `<li style="margin:6px 0;"><span style="font-weight:bold;">${file.file_name}</span></li>`
+  )).join('');
+  return `<ul style="padding-left:18px;margin:8px 0;">${items}</ul>`;
+};
+
+const toEmailAttachments = (attachments) => attachments
+  .filter((file) => file.file_path)
+  .map((file) => ({
+    filename: file.file_name,
+    path: file.file_path,
+    contentType: file.file_type
+  }));
+
 exports.getApprovalSettings = async () => {
   const rows = await db('settings')
     .whereIn('key', [
@@ -284,10 +318,12 @@ exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
 
     const { approveToken, declineToken } = await createApprovalTokens(expense.id, approvalLevel);
     const baseUrl = getFrontendUrl();
+    const attachments = Array.isArray(expense.attachments) ? expense.attachments : await getExpenseAttachments(expense.id);
 
     const result = await sendEmail({
       templateName: 'liquidation_approval_request',
       recipient: approver.email,
+      attachments: toEmailAttachments(attachments),
       data: {
         reference_number: formatReference(expense.id),
         requested_by: expense.requested_by,
@@ -295,6 +331,7 @@ exports.sendApprovalEmail = async (expense, approvalLevel = 1) => {
         category: expense.category_name || 'N/A',
         amount: parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }),
         remarks: expense.remarks || 'No remarks provided',
+        attachments: renderAttachmentLinks(attachments),
         approve_link: `${baseUrl}/approval/approve/${approveToken}`,
         decline_link: `${baseUrl}/approval/decline/${declineToken}`
       }
@@ -493,6 +530,11 @@ exports.verifyToken = async (token) => {
 
   const expense = await getExpenseDetails(record.expense_id);
   if (!expense || expense.status !== 'For Approval') return null;
+  const baseUrl = getFrontendUrl().replace(/\/+$/, '');
+  const attachments = (await getExpenseAttachments(expense.id)).map((file) => ({
+    ...file,
+    url: `${baseUrl}/api/approval/token/${token}/attachments/${file.id}/view`
+  }));
 
   return {
     action_type: record.action_type,
@@ -505,9 +547,27 @@ exports.verifyToken = async (token) => {
       category_name: expense.category_name,
       amount: expense.amount,
       remarks: expense.remarks,
-      status: expense.status
+      status: expense.status,
+      attachments
     }
   };
+};
+
+exports.getTokenAttachment = async (token, attachmentId) => {
+  const tokenHash = hashToken(token);
+  const record = await db('liquidation_approval_tokens')
+    .where({ token_hash: tokenHash })
+    .whereNull('used_at')
+    .where('expires_at', '>', new Date())
+    .first();
+
+  if (!record) return null;
+
+  const attachment = await db('expense_attachments')
+    .where({ id: attachmentId, expense_id: record.expense_id })
+    .first();
+
+  return attachment || null;
 };
 
 exports.processApproval = async (token, ipAddress, approverEmail = null) => {

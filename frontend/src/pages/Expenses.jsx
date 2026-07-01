@@ -83,12 +83,22 @@ const Expenses = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remindingExpenseId, setRemindingExpenseId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [approvalThreshold, setApprovalThreshold] = useState(10000);
   const [barcodeInput, setBarcodeInput] = useState('');
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [barcodeError, setBarcodeError] = useState('');
   const barcodeRef = useRef(null);
   const filtersRef = useRef(filters);
   const fetchAbortRef = useRef(null);
+  const allowedAttachmentExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'jpg', 'jpeg', 'png'];
+  const approvalAmount = Number(formData.amount) || 0;
+  const requiresApproval = approvalAmount >= approvalThreshold;
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 KB';
+    if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -231,6 +241,8 @@ const Expenses = () => {
       setCategories(catRes.data || catRes || []);
       setDepartments(deptRes.data || deptRes || []);
       const settings = settingsRes.data || settingsRes || {};
+      const threshold = Number(settings.liquidation_approval_threshold);
+      if (Number.isFinite(threshold) && threshold > 0) setApprovalThreshold(threshold);
       if (settings.expense_units) {
         try {
           const parsed = JSON.parse(settings.expense_units);
@@ -244,6 +256,10 @@ const Expenses = () => {
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
+    if (requiresApproval && files.length === 0) {
+      alert(`Supporting quotation is required for requests at or above ₱${approvalThreshold.toLocaleString()}. Please attach PDF, Word, Excel, JPG, or PNG before submitting.`);
+      return;
+    }
     const data = new FormData();
     Object.keys(formData).forEach(key => {
       if (key !== 'status') data.append(key, formData[key]);
@@ -285,6 +301,27 @@ const Expenses = () => {
     } catch (err) {
       alert(err.message);
     }
+  };
+
+  const handleAttachmentChange = (event) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    const invalidFile = selectedFiles.find((file) => {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      return !allowedAttachmentExtensions.includes(ext) || file.size > 10 * 1024 * 1024;
+    });
+
+    if (invalidFile) {
+      alert('Allowed attachments: PDF, Word, Excel, CSV, JPG, and PNG only. Each file must be 10MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    const nextFiles = [...files, ...selectedFiles].slice(0, 5);
+    if (files.length + selectedFiles.length > 5) {
+      alert('Maximum of 5 attachments only.');
+    }
+    setFiles(nextFiles);
+    event.target.value = '';
   };
   
   const handleView = async (id) => {
@@ -882,6 +919,50 @@ const Expenses = () => {
                       />
                     </div>
                   </div>
+                </div>
+                <div className={`mx-auto w-full max-w-3xl rounded-2xl border p-4 ${requiresApproval ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-slate-50'}`}>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Quotation / Supporting Files</label>
+                      <p className="mt-1 text-xs font-bold text-slate-500">
+                        {requiresApproval
+                          ? `Required for approval at or above ₱${approvalThreshold.toLocaleString()}.`
+                          : `Optional below ₱${approvalThreshold.toLocaleString()}.`}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Max 5 files, 10MB each</span>
+                  </div>
+                  <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-white px-4 py-6 text-center transition-colors hover:border-erp-blue hover:bg-blue-50/30">
+                    <FileText size={24} className="mb-2 text-erp-blue" />
+                    <span className="text-sm font-black text-slate-700">Attach quotation or supporting document</span>
+                    <span className="mt-1 text-xs font-bold text-slate-400">PDF, Word, Excel, CSV, JPG, PNG</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
+                      onChange={handleAttachmentChange}
+                    />
+                  </label>
+                  {files.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {files.map((file, index) => (
+                        <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-black text-slate-700">{file.name}</p>
+                            <p className="text-xs font-bold text-slate-400">{formatFileSize(file.size)}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index))}
+                            className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="mx-auto w-full max-w-3xl space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Detailed Remarks</label>
