@@ -290,6 +290,7 @@ app.use('/api/email-automation', require('./routes/emailAutomation'));
 app.use('/api/approval', require('./routes/approval'));
 app.use('/api/integration', require('./routes/integration'));
 app.use('/api/petty-cash/receipts', require('./routes/pettyCashReceipts'));
+app.use('/api/notes', require('./routes/notes'));
 
 // Health check route
 app.get('/health', (req, res) => {
