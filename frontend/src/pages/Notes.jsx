@@ -143,24 +143,38 @@ const Notes = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
           {/* Add Note Box */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-center items-center cursor-pointer hover:shadow-lg transition-shadow border border-gray-200"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            whileHover={{ 
+              scale: 1.03, 
+              boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+              transition: { duration: 0.2 }
+            }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-center items-center cursor-pointer border-2 border-dashed border-gray-300"
             onClick={() => handleOpenModal()}
           >
-            <div className="w-[78px] h-[78px] rounded-full border-2 border-dashed flex items-center justify-center" style={{ borderColor: '#6b7280' }}>
-              <Plus size={40} className="text-gray-600" />
+            <div className="w-[80px] h-[80px] rounded-full bg-gray-50 flex items-center justify-center border-2 border-gray-300">
+              <Plus size={42} className="text-gray-500" />
             </div>
-            <p className="mt-5 font-medium text-gray-700">Add new note</p>
+            <p className="mt-5 font-semibold text-gray-700">Add new note</p>
           </motion.div>
 
           {/* Notes List */}
           {notes.map((note, index) => (
             <motion.div
               key={note.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-md p-5 h-[250px] flex flex-col justify-between border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              whileHover={{ 
+                scale: 1.03, 
+                boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+                transition: { duration: 0.2 }
+              }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-between border border-gray-200 cursor-pointer"
               onClick={(e) => {
                 console.log('Note card clicked! Index:', index);
                 e.stopPropagation();
@@ -169,48 +183,47 @@ const Notes = () => {
             >
               <div className="flex flex-col h-full justify-between">
                 <div className="details">
-                  <p className="text-2xl font-medium text-black leading-snug line-clamp-2">{note.title}</p>
-                  <span className="block mt-2 text-base text-black line-clamp-4">{note.description}</span>
+                  <p className="text-2xl font-bold text-gray-900 leading-snug line-clamp-2">{note.title}</p>
+                  <span className="block mt-3 text-base text-gray-700 line-clamp-4 leading-relaxed">{note.description}</span>
                 </div>
-                <div className="bottom-content flex flex-row justify-between items-center pt-4 mt-4 border-t border-gray-300">
-                  <span className="text-sm text-black">{note.date}</span>
+                <div className="bottom-content flex flex-row justify-between items-center pt-4 mt-4 border-t border-gray-200">
+                  <span className="text-sm font-medium text-gray-500">{note.date}</span>
                   <div className="settings relative" ref={index === openMenuIndex ? menuRef : null}>
                     <button
                       onClick={(e) => toggleMenu(index, e)}
-                      className="p-1 text-[#6d6d6d] hover:text-slate-800 transition-colors"
+                      className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors"
                     >
-                      <MoreHorizontal size={18} />
+                      <MoreHorizontal size={20} />
                     </button>
                     <AnimatePresence>
                       {openMenuIndex === index && (
                         <motion.ul
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          className="menu absolute bottom-full mb-2 right-0 bg-white shadow-md rounded-md py-1 z-50"
+                          initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                          className="menu absolute bottom-full mb-3 right-0 bg-white shadow-xl rounded-xl py-2 z-50 min-w-[140px]"
                           style={{
-                            transformOrigin: 'bottom right',
-                            boxShadow: '0 0 6px rgba(0,0,0,0.15)'
+                            transformOrigin: 'bottom right'
                           }}
                         >
                           <li
-                            className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-[#f5f5f5] text-sm"
+                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditNote(index);
                             }}
                           >
-                            <Edit3 size={14} />
+                            <Edit3 size={16} className="text-blue-500" />
                             Edit
                           </li>
                           <li
-                            className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-[#f5f5f5] text-sm"
+                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm font-medium text-red-600 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteNote(index);
                             }}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} />
                             Delete
                           </li>
                         </motion.ul>
@@ -225,25 +238,27 @@ const Notes = () => {
       </div>
 
       {/* Modal */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isModalOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               onClick={handleCloseModal}
-              className="popup-box fixed top-0 left-0 w-full h-full z-50"
-              style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+              className="popup-box fixed inset-0 z-50"
+              style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.8, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] max-w-[500px] w-full px-4"
+              exit={{ opacity: 0, scale: 0.8, y: 40 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] max-w-[550px] w-full px-4"
             >
-              <div className="bg-white rounded-md overflow-hidden shadow-2xl">
-                <div className="border-b border-[#ccc] flex justify-between items-center p-4 md:p-6">
+              <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+                <div className="border-b border-gray-200 flex justify-between items-center p-5 md:p-7">
                   <p className="text-xl font-medium text-slate-900">
                     {isViewMode ? 'View note' : (editingNoteIndex !== null ? 'Edit note' : 'Add a new note')}
                   </p>
@@ -257,75 +272,84 @@ const Notes = () => {
                 
                 {/* View Mode */}
                 {isViewMode && viewingNoteIndex !== null && (
-                  <div className="p-5 md:p-6 space-y-4">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-6 md:p-8 space-y-5"
+                  >
                     <div className="row title">
-                      <label className="block mb-2 text-lg text-black font-medium">Title</label>
-                      <p className="text-xl font-medium text-black p-4 bg-gray-50 rounded-md">
+                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Title</label>
+                      <p className="text-2xl font-bold text-gray-900 p-5 bg-gray-50 rounded-xl">
                         {notes[viewingNoteIndex].title}
                       </p>
                     </div>
                     <div className="row description">
-                      <label className="block mb-2 text-lg text-black font-medium">Description</label>
-                      <p className="text-base text-black p-4 bg-gray-50 rounded-md whitespace-pre-wrap min-h-[150px]">
+                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Description</label>
+                      <p className="text-base text-gray-800 p-5 bg-gray-50 rounded-xl whitespace-pre-wrap min-h-[180px] leading-relaxed">
                         {notes[viewingNoteIndex].description}
                       </p>
                     </div>
                     <div className="row date">
-                      <label className="block mb-2 text-lg text-black font-medium">Date Created</label>
-                      <p className="text-base text-gray-700 p-4 bg-gray-50 rounded-md">
+                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Date Created</label>
+                      <p className="text-base text-gray-600 p-5 bg-gray-50 rounded-xl font-medium">
                         {notes[viewingNoteIndex].date}
                       </p>
                     </div>
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-3 pt-3">
                       <button
                         onClick={handleOpenEditModalFromView}
-                        className="flex-1 h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                        className="flex-1 h-[52px] text-white text-base font-semibold rounded-xl cursor-pointer hover:opacity-90 transition-all hover:shadow-lg"
                         style={{ backgroundColor: '#1f2937' }}
                       >
                         <Edit3 size={18} className="inline mr-2" /> Edit Note
                       </button>
                       <button
                         onClick={handleCloseModal}
-                        className="flex-1 h-[50px] text-slate-700 text-base rounded-md cursor-pointer hover:bg-gray-100 transition-colors border border-gray-300 bg-white"
+                        className="flex-1 h-[52px] text-gray-700 text-base font-semibold rounded-xl cursor-pointer hover:bg-gray-100 transition-all border border-gray-200 bg-white"
                       >
                         Close
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Edit/Add Mode */}
                 {!isViewMode && (
-                  <form onSubmit={handleSaveNote} className="p-5 md:p-6 space-y-4">
+                  <motion.form 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    onSubmit={handleSaveNote} 
+                    className="p-6 md:p-8 space-y-5"
+                  >
                     <div className="row title">
-                      <label className="block mb-2 text-lg text-black">Title</label>
+                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Title</label>
                       <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter note title..."
-                        className="w-full h-[50px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none focus:ring-2 focus:ring-gray-400 text-black"
+                        className="w-full h-[52px] px-5 py-4 border border-gray-300 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900 font-medium"
                         autoFocus
                       />
                     </div>
                     <div className="row description">
-                      <label className="block mb-2 text-lg text-black">Description</label>
+                      <label className="block mb-2 text-sm font-bold text-gray-500 uppercase tracking-wide">Description</label>
                       <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Write your note here..."
                         rows={6}
-                        className="w-full h-[150px] px-4 py-3 border border-gray-400 rounded-md text-base outline-none resize-none focus:ring-2 focus:ring-gray-400 text-black"
+                        className="w-full h-[180px] px-5 py-4 border border-gray-300 rounded-xl text-base outline-none resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-900"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full h-[50px] text-white text-base rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                      className="w-full h-[52px] text-white text-base font-semibold rounded-xl cursor-pointer hover:opacity-90 transition-all hover:shadow-lg"
                       style={{ backgroundColor: '#1f2937' }}
                     >
                       {editingNoteIndex !== null ? 'Update Note' : 'Add Note'}
                     </button>
-                  </form>
+                  </motion.form>
                 )}
               </div>
             </motion.div>
