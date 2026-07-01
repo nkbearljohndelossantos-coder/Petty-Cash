@@ -184,17 +184,21 @@ const Notes = () => {
                 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-between border border-gray-200 cursor-pointer"
-                onClick={() => handleOpenViewModal(note)}
+                className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-between border-2 border-transparent hover:border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-all"
+                onClick={() => {
+                  console.log('Note card clicked:', note);
+                  handleOpenViewModal(note);
+                }}
+                style={{ pointerEvents: 'auto' }}
               >
-                <div className="flex flex-col h-full justify-between">
+                <div className="flex flex-col h-full justify-between" style={{ pointerEvents: 'none' }}>
                   <div className="details">
                     <p className="text-2xl font-bold text-gray-900 leading-snug line-clamp-2">{note.title}</p>
                     <span className="block mt-3 text-base text-gray-700 line-clamp-4 leading-relaxed">{note.description}</span>
                   </div>
                   <div className="bottom-content flex flex-row justify-between items-center pt-4 mt-4 border-t border-gray-200">
                     <span className="text-sm font-medium text-gray-500">{formatDate(note.updated_at)}</span>
-                    <div className="settings relative" ref={note.id === openMenuId ? menuRef : null}>
+                    <div className="settings relative" ref={note.id === openMenuId ? menuRef : null} style={{ pointerEvents: 'auto' }}>
                       <button
                         onClick={(e) => toggleMenu(note.id, e)}
                         className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors"
