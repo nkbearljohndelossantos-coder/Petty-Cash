@@ -43,6 +43,20 @@ async function lookupEmployeeById(idOrBarcode) {
   }
 }
 
+const formatAmount = (amount) => {
+  const rawAmount = String(amount ?? '').trim();
+  const parsedAmount = Number(rawAmount);
+  if (!Number.isFinite(parsedAmount)) return '0.00';
+
+  const decimalPart = rawAmount.includes('.') ? rawAmount.split('.')[1].replace(/0+$/, '') : '';
+  const fractionDigits = Math.max(2, Math.min(decimalPart.length, 6));
+
+  return parsedAmount.toLocaleString(undefined, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits
+  });
+};
+
 const Expenses = () => {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState([]);
@@ -386,7 +400,7 @@ const Expenses = () => {
 
   const handleDelete = async (expense) => {
     const ref = `PCV-${String(expense.id).padStart(4, '0')}`;
-    if (!window.confirm(`Permanently delete ${ref} (₱${parseFloat(expense.amount).toLocaleString()})? This cannot be undone.`)) {
+    if (!window.confirm(`Permanently delete ${ref} (₱${formatAmount(expense.amount)})? This cannot be undone.`)) {
       return;
     }
     try {
@@ -613,7 +627,7 @@ const Expenses = () => {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="text-base font-black text-slate-900 tracking-tight">
-                        ₱{parseFloat(expense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ₱{formatAmount(expense.amount)}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-center">
@@ -908,7 +922,7 @@ const Expenses = () => {
                       <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-400">₱</span>
                       <input 
                         type="number" 
-                        step="0.01" 
+                        step="any" 
                         className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white py-4 pl-10 pr-5 text-lg font-black text-slate-900 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                         required 
                         placeholder="0.00"
@@ -1001,7 +1015,7 @@ const Expenses = () => {
                      </div>
                      <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</p>
-                        <p className="text-lg font-black text-erp-blue">₱{parseFloat(selectedExpense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        <p className="text-lg font-black text-erp-blue">₱{formatAmount(selectedExpense.amount)}</p>
                      </div>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -1103,7 +1117,7 @@ const Expenses = () => {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount</label>
-                      <input type="number" step="0.01" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-erp-blue" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+                      <input type="number" step="any" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-erp-blue" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
                     </div>
                   </div>
                   <div className="space-y-1">

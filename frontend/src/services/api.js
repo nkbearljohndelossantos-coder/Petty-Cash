@@ -34,7 +34,7 @@ api.interceptors.response.use(
   async (error) => {
     const status = error.response?.status;
     const method = (error.config?.method || 'get').toLowerCase();
-    const canRetry = transientStatuses.includes(status)
+    const canRetry = (transientStatuses.includes(status) || error.code === 'ERR_NETWORK')
       && method === 'get'
       && !error.config?._retryAfterTransient;
 

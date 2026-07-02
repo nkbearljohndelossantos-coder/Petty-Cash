@@ -294,6 +294,9 @@ app.use('/api/notes', require('./routes/notes'));
 
 // Health check route
 app.get('/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.status(200).send('OK');
 });
 
@@ -345,6 +348,11 @@ app.get(/.*/, (req, res) => {
 
   // Missing static assets must NOT return index.html (causes MIME type errors)
   if (req.originalUrl.startsWith('/assets/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    res.setHeader('X-LiteSpeed-Cache-Control', 'no-cache');
     return res.status(404).type('text/plain').send('Asset not found');
   }
   
