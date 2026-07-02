@@ -69,6 +69,7 @@ exports.getExpenses = async (req, res) => {
 
     const expenses = await query
       .orderBy('expenses.date', 'desc')
+      .orderBy('expenses.id', 'desc')
       .limit(limitNum)
       .offset(offset);
 

@@ -133,7 +133,7 @@ const Expenses = () => {
     fetchData();
   }, [filters]);
 
-  const fetchData = useCallback(async (showSpinner = true) => {
+  const fetchData = useCallback(async (showSpinner = true, paramsOverride = null) => {
     if (fetchAbortRef.current) {
       fetchAbortRef.current.abort();
     }
@@ -143,7 +143,7 @@ const Expenses = () => {
     if (showSpinner) setLoading(true);
     try {
       const res = await api.get('/expenses', {
-        params: filtersRef.current,
+        params: paramsOverride || filtersRef.current,
         signal: controller.signal
       });
       if (controller.signal.aborted) return;
@@ -309,7 +309,10 @@ const Expenses = () => {
         status: 'Pending'
       });
       setFiles([]);
-      fetchData(false);
+      const firstPageFilters = { ...filtersRef.current, page: 1 };
+      filtersRef.current = firstPageFilters;
+      setFilters(firstPageFilters);
+      await fetchData(false, firstPageFilters);
     } catch (err) {
       alert(err.message);
     }
