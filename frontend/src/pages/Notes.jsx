@@ -174,13 +174,17 @@ const Notes = () => {
               }}
               whileTap={{ scale: 0.97 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-center items-center cursor-pointer border-2 border-dashed border-gray-300"
+              className="uiverse-note-card uiverse-note-card-add cursor-pointer"
               onClick={() => handleOpenModal()}
             >
-              <div className="w-[80px] h-[80px] rounded-full bg-gray-50 flex items-center justify-center border-2 border-gray-300">
-                <Plus size={42} className="text-gray-500" />
+              <div className="uiverse-note-bg"></div>
+              <div className="uiverse-note-blob"></div>
+              <div className="uiverse-note-content flex h-full flex-col items-center justify-center text-center">
+                <div className="w-[80px] h-[80px] rounded-full bg-gray-50 flex items-center justify-center border-2 border-gray-300">
+                  <Plus size={42} className="text-gray-500" />
+                </div>
+                <p className="mt-5 font-semibold text-gray-700">Add new note</p>
               </div>
-              <p className="mt-5 font-semibold text-gray-700">Add new note</p>
             </motion.div>
 
             {/* Notes List */}
@@ -196,69 +200,73 @@ const Notes = () => {
                 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-white rounded-xl p-5 h-[250px] flex flex-col justify-between border-2 border-transparent hover:border-gray-300 cursor-pointer shadow-sm hover:shadow-md transition-all relative"
+                className="uiverse-note-card cursor-pointer"
                 style={{ cursor: 'pointer', zIndex: 1 }}
                 onClick={(e) => {
                   handleOpenViewModal(note);
                 }}
               >
-                {/* Main content area - clickable */}
-                <div 
-                  className="flex-1 overflow-hidden"
-                  style={{ cursor: 'pointer' }}
-                >
-                  <p className="text-2xl font-bold text-gray-900 leading-snug line-clamp-2">{note.title}</p>
-                  <p className="mt-3 text-base text-gray-700 line-clamp-4 leading-relaxed">{note.description}</p>
-                </div>
+                <div className="uiverse-note-bg"></div>
+                <div className="uiverse-note-blob"></div>
+                <div className="uiverse-note-content flex h-full flex-col justify-between">
+                  {/* Main content area - clickable */}
+                  <div
+                    className="flex-1 overflow-hidden"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <p className="text-2xl font-bold text-gray-900 leading-snug line-clamp-2">{note.title}</p>
+                    <p className="mt-3 text-base text-gray-700 line-clamp-4 leading-relaxed">{note.description}</p>
+                  </div>
 
-                {/* Bottom bar */}
-                <div className="flex flex-row justify-between items-center pt-4 mt-4 border-t border-gray-200">
-                  <span className="text-sm font-medium text-gray-500">{formatDate(note.updated_at)}</span>
-                  <div className="settings relative" ref={note.id === openMenuId ? menuRef : null}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMenu(note.id, e);
-                      }}
-                      className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors z-20"
-                      style={{ cursor: 'pointer', position: 'relative' }}
-                    >
-                      <MoreHorizontal size={20} />
-                    </button>
-                    <AnimatePresence>
-                      {openMenuId === note.id && (
-                        <motion.ul
-                          initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  {/* Bottom bar */}
+                  <div className="flex flex-row justify-between items-center pt-4 mt-4 border-t border-gray-200">
+                    <span className="text-sm font-medium text-gray-500">{formatDate(note.updated_at)}</span>
+                    <div className="settings relative" ref={note.id === openMenuId ? menuRef : null}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMenu(note.id, e);
+                        }}
+                        className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-gray-700 transition-colors z-20"
+                        style={{ cursor: 'pointer', position: 'relative' }}
+                      >
+                        <MoreHorizontal size={20} />
+                      </button>
+                      <AnimatePresence>
+                        {openMenuId === note.id && (
+                          <motion.ul
+                            initial={{ opacity: 0, scale: 0.8, y: 10 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                          className="menu absolute bottom-full mb-3 right-0 bg-white shadow-xl rounded-xl py-2 z-50 min-w-[140px]"
-                          style={{
-                            transformOrigin: 'bottom right'
-                          }}
-                        >
-                          <li
-                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditNote(note);
+                            className="menu absolute bottom-12 right-0 bg-white shadow-xl rounded-xl py-2 z-50 min-w-[140px]"
+                            style={{
+                              transformOrigin: 'bottom right'
                             }}
                           >
-                            <Edit3 size={16} className="text-blue-500" />
-                            Edit
-                          </li>
-                          <li
-                            className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm font-medium text-red-600 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteNote(note.id);
-                            }}
-                          >
-                            <Trash2 size={16} />
-                            Delete
-                          </li>
-                        </motion.ul>
-                      )}
-                    </AnimatePresence>
+                            <li
+                              className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditNote(note);
+                              }}
+                            >
+                              <Edit3 size={16} className="text-blue-500" />
+                              Edit
+                            </li>
+                            <li
+                              className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 text-sm font-medium text-red-600 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteNote(note.id);
+                              }}
+                            >
+                              <Trash2 size={16} />
+                              Delete
+                            </li>
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </div>
               </motion.div>
