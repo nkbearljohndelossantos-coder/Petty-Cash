@@ -346,6 +346,13 @@ app.get(/.*/, (req, res) => {
     return res.status(404).json({ success: false, message: 'API Route Not Found' });
   }
 
+  if (req.originalUrl.startsWith('/socket.io')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    return res.status(503).type('text/plain').send('Socket service warming up');
+  }
+
   // Missing static assets must NOT return index.html (causes MIME type errors)
   if (req.originalUrl.startsWith('/assets/')) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
