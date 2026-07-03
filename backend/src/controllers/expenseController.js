@@ -11,9 +11,10 @@ const getPublicFileUrl = (filePath) => {
 };
 
 const normalizeAmount = (amount) => {
-  const value = String(amount ?? '').trim();
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? value : '0';
+  let value = String(amount ?? '').trim().replace(/,/g, '');
+  if (value.startsWith('.')) value = `0${value}`;
+  if (!/^\d+(\.\d{1,6})?$/.test(value)) return null;
+  return value;
 };
 
 exports.getExpenses = async (req, res) => {
@@ -125,9 +126,12 @@ exports.createExpense = async (req, res) => {
   try {
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
     const normalizedAmount = normalizeAmount(amount);
+    if (!normalizedAmount) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid amount with up to 6 decimal places.' });
+    }
 
     const hasApprovalSchema = await db.schema.hasColumn('expenses', 'approval_context');
-    const requiresApproval = hasApprovalSchema && await approvalService.shouldRequireApproval(amount);
+    const requiresApproval = hasApprovalSchema && await approvalService.shouldRequireApproval(normalizedAmount);
     // Requests below the configured approval threshold are approved immediately.
     // At or above the threshold, the request remains with the email approver.
     const initialStatus = requiresApproval ? 'For Approval' : 'Approved';
@@ -243,7 +247,7 @@ exports.createExpense = async (req, res) => {
       for (const admin of admins) {
         await dispatchNotification(admin.id, {
           title: 'New Expense Request',
-          message: `A new expense request for ₱${amount} has been submitted by ${requested_by}.`,
+          message: `A new expense request for ₱${normalizedAmount} has been submitted by ${requested_by}.`,
           type: 'approval',
           link: `/expenses?id=${expense.id}`,
           templateName: 'expense_request_admin'
@@ -252,12 +256,12 @@ exports.createExpense = async (req, res) => {
 
       await dispatchNotification(expense.created_by, {
         title: 'Expense Automatically Approved',
-        message: `Your expense request for ₱${amount} was automatically approved and is ready for handover.`,
+        message: `Your expense request for ₱${normalizedAmount} was automatically approved and is ready for handover.`,
         type: 'success',
         link: `/expenses?id=${expense.id}`,
         templateName: 'expense_status_update'
       });
-      broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount, status: initialStatus });
+      broadcast('balance_updated', { type: 'EXPENSE_CREATED', amount: normalizedAmount, status: initialStatus });
     }
 
     expense = await db('expenses').where({ id: expenseId }).first();
@@ -276,6 +280,9 @@ exports.updateExpense = async (req, res) => {
     const { id } = req.params;
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
     const normalizedAmount = normalizeAmount(amount);
+    if (!normalizedAmount) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid amount with up to 6 decimal places.' });
+    }
 
     await db('expenses')
       .where({ id })

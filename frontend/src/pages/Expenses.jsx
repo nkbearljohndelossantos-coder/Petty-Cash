@@ -57,6 +57,14 @@ const formatAmount = (amount) => {
   });
 };
 
+const normalizeAmountInput = (value) => {
+  const normalized = String(value || '').replace(/,/g, '').replace(/[^\d.]/g, '');
+  const parts = normalized.split('.');
+  const whole = parts[0] || (normalized.startsWith('.') ? '0' : '');
+  if (parts.length === 1) return whole;
+  return `${whole}.${parts.slice(1).join('').slice(0, 6)}`;
+};
+
 const Expenses = () => {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState([]);
@@ -924,13 +932,13 @@ const Expenses = () => {
                     <div className="relative">
                       <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-400">₱</span>
                       <input 
-                        type="number" 
-                        step="any" 
+                        type="text"
+                        inputMode="decimal"
                         className="w-full min-w-0 rounded-2xl border border-slate-200 bg-white py-4 pl-10 pr-5 text-lg font-black text-slate-900 outline-none transition-all focus:ring-4 focus:ring-erp-blue/10" 
                         required 
                         placeholder="0.00"
                         value={formData.amount}
-                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, amount: normalizeAmountInput(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -1120,7 +1128,7 @@ const Expenses = () => {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount</label>
-                      <input type="number" step="any" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-erp-blue" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+                      <input type="text" inputMode="decimal" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-erp-blue" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: normalizeAmountInput(e.target.value) })} required />
                     </div>
                   </div>
                   <div className="space-y-1">
