@@ -243,17 +243,7 @@ exports.createExpense = async (req, res) => {
 
       broadcast('expense_updated', { expenseId: expense.id, status: 'For Approval', emailSent: emailResult.sent });
     } else {
-      const admins = await db('users').whereIn('role', ['Super Admin', 'Accounting']).select('id');
-      for (const admin of admins) {
-        await dispatchNotification(admin.id, {
-          title: 'New Expense Request',
-          message: `A new expense request for ₱${normalizedAmount} has been submitted by ${requested_by}.`,
-          type: 'approval',
-          link: `/expenses?id=${expense.id}`,
-          templateName: 'expense_request_admin'
-        });
-      }
-
+      // Below threshold: auto-approved — notify requester only, not approvers/admins
       await dispatchNotification(expense.created_by, {
         title: 'Expense Automatically Approved',
         message: `Your expense request for ₱${normalizedAmount} was automatically approved and is ready for handover.`,
