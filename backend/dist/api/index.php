@@ -7,32 +7,69 @@ $requestUri = $_SERVER['REQUEST_URI'] ?? '/api';
 $url = 'http://127.0.0.1:5000' . $requestUri;
 $requestBody = file_get_contents('php://input');
 
+const PETTYCASH_NODE_ROOT = '/home/u335953510/domains/pc.nkbmanufacturing.com/nodejs';
+const PETTYCASH_NODE_BIN = '/opt/alt/alt-nodejs20/root/bin/node';
+const PETTYCASH_API_PORT = 5000;
+
+function isApiPortOpen(): bool
+{
+    $socket = @fsockopen('127.0.0.1', PETTYCASH_API_PORT, $errno, $errstr, 1);
+    if ($socket) {
+        fclose($socket);
+        return true;
+    }
+    return false;
+}
+
+function isApiHealthy(): bool
+{
+    if (!isApiPortOpen()) {
+        return false;
+    }
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 2,
+            'ignore_errors' => true,
+        ],
+    ]);
+
+    $health = @file_get_contents('http://127.0.0.1:' . PETTYCASH_API_PORT . '/health', false, $context);
+    return is_string($health) && str_contains($health, 'OK');
+}
+
 function startPettyCashApi(): void
 {
     if (!function_exists('shell_exec')) {
         return;
     }
 
-    $nodeRoot = '/home/u335953510/domains/pc.nkbmanufacturing.com/nodejs';
-    $nodeBin = '/opt/alt/alt-nodejs20/root/bin/node';
-    $cmd = 'cd ' . escapeshellarg($nodeRoot)
-        . ' && if ! ps -u u335953510 -o args= | grep -q "[n]ode src/index.js"; then '
-        . 'nohup ' . escapeshellarg($nodeBin) . ' src/index.js > console.log 2>&1 & '
-        . 'fi';
+    if (isApiHealthy()) {
+        return;
+    }
+
+    $nodeRoot = PETTYCASH_NODE_ROOT;
+    $nodeBin = PETTYCASH_NODE_BIN;
+
+    $cmd = 'pkill -u u335953510 -f ' . escapeshellarg($nodeRoot . '/src/index.js') . ' 2>/dev/null; '
+        . 'pkill -u u335953510 -f ' . escapeshellarg($nodeRoot . '/index.js') . ' 2>/dev/null; '
+        . 'sleep 1; '
+        . 'cd ' . escapeshellarg($nodeRoot) . ' && '
+        . 'nohup ' . escapeshellarg($nodeBin) . ' src/index.js >> console.log 2>&1 &';
+
     try {
         @shell_exec($cmd);
     } catch (Throwable $e) {
         return;
     }
 
-    $deadline = microtime(true) + 8;
+    $deadline = microtime(true) + 25;
     while (microtime(true) < $deadline) {
-        $socket = @fsockopen('127.0.0.1', 5000, $errno, $errstr, 1);
-        if ($socket) {
-            fclose($socket);
+        if (isApiHealthy()) {
             return;
         }
-        usleep(300000);
+        usleep(500000);
     }
 }
 
@@ -74,19 +111,23 @@ function proxyApiRequest(string $url, array $headers, string $requestBody): arra
     return [$body, $status, $responseHeaders, $error];
 }
 
+if (!isApiHealthy()) {
+    startPettyCashApi();
+}
+
 [$body, $status, $responseHeaders, $curlError] = proxyApiRequest($url, $headers, $requestBody);
-if ($body === false) {
+if ($body === false || $status === 0) {
     startPettyCashApi();
     [$body, $status, $responseHeaders, $curlError] = proxyApiRequest($url, $headers, $requestBody);
 }
 
-if ($body === false) {
-    http_response_code(502);
+if ($body === false || $status === 0) {
+    http_response_code(503);
     header('Content-Type: application/json; charset=utf-8');
     header('Retry-After: 5');
     echo json_encode([
         'success' => false,
-        'message' => 'Petty Cash API is temporarily unavailable. The server attempted an automatic restart.',
+        'message' => 'Petty Cash API is starting up. Please wait a few seconds and try again.',
         'error' => $curlError ?: 'Connection to Node API failed'
     ]);
     exit;

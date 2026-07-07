@@ -31,7 +31,11 @@ const Login = () => {
         navigate('/', { replace: true });
       }
     } catch (err) {
-      setError(err.message || 'Access Denied. Please verify your corporate credentials.');
+      if (err?.status === 502 || err?.status === 503 || err?.status === 504) {
+        setError('The server is starting up. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Access Denied. Please verify your corporate credentials.');
+      }
     } finally {
       setLoading(false);
     }

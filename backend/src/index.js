@@ -292,12 +292,17 @@ app.use('/api/integration', require('./routes/integration'));
 app.use('/api/petty-cash/receipts', require('./routes/pettyCashReceipts'));
 app.use('/api/notes', require('./routes/notes'));
 
-// Health check route
+// Health check routes (used by Hostinger PHP proxy and uptime checks)
 app.get('/health', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.status(200).send('OK');
+});
+
+app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.status(200).json({ success: true, status: 'ok' });
 });
 
 // Serve Frontend in Production
@@ -383,6 +388,15 @@ app.use((err, req, res, next) => {
     success: false,
     message: err.message || 'Internal Server Error'
   });
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Another Petty Cash instance is likely running.`);
+    process.exit(0);
+  }
+  console.error('Server failed to start:', err.message);
+  process.exit(1);
 });
 
 server.listen(PORT, () => {

@@ -34,13 +34,14 @@ api.interceptors.response.use(
   async (error) => {
     const status = error.response?.status;
     const method = (error.config?.method || 'get').toLowerCase();
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
     const canRetry = (transientStatuses.includes(status) || error.code === 'ERR_NETWORK')
-      && method === 'get'
-      && !error.config?._retryAfterTransient;
+      && !error.config?._retryAfterTransient
+      && (method === 'get' || isLoginRequest);
 
     if (canRetry) {
       error.config._retryAfterTransient = true;
-      await delay(1200);
+      await delay(isLoginRequest ? 2000 : 1200);
       return api(error.config);
     }
 
