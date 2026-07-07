@@ -6,6 +6,7 @@ const NODEJS = '/home/u335953510/domains/pc.nkbmanufacturing.com/nodejs';
 const PUBLIC = '/home/u335953510/domains/pc.nkbmanufacturing.com/public_html';
 const NODE = '/opt/alt/alt-nodejs20/root/bin/node';
 const NPM = '/opt/alt/alt-nodejs20/root/bin/npm';
+const NODE_PATH_PREFIX = 'PATH=/opt/alt/alt-nodejs20/root/bin:$PATH';
 
 const commands = [
   `cd ${TEMP} && git pull origin main 2>&1`,
@@ -20,8 +21,8 @@ const commands = [
   `mkdir -p ${NODEJS}/src/utils/emailTemplates`,
   `cp -v ${TEMP}/backend/src/utils/emailTemplates/approvalReminder.js ${NODEJS}/src/utils/emailTemplates/approvalReminder.js`,
   `cp -v ${TEMP}/backend/src/db/migrations/20260618000001_update_approval_reminder_template.js ${NODEJS}/src/db/migrations/20260618000001_update_approval_reminder_template.js`,
-  `cd ${TEMP}/frontend && ${NPM} install 2>&1 | tail -5`,
-  `cd ${TEMP}/frontend && ${NPM} run build 2>&1 | tail -15`,
+  `cd ${TEMP}/frontend && ${NODE_PATH_PREFIX} ${NPM} install 2>&1 | tail -5`,
+  `cd ${TEMP}/frontend && ${NODE_PATH_PREFIX} ${NPM} run build 2>&1 | tail -15`,
   `cd ${NODEJS} && ${NODE} scripts/sync-dist.js 2>&1`,
   `rm -rf ${PUBLIC}/assets`,
   `cp -rv ${TEMP}/frontend/dist/* ${PUBLIC}/`,
