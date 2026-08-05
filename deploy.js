@@ -45,7 +45,7 @@ conn.on('ready', () => {
     const cmd = commands[i++];
     console.log(`\n>>> ${cmd}`);
     conn.exec(cmd, (err, stream) => {
-      if (err) { console.error('Error:', err.message); runNext(); return; }
+      if (err) { console.error('Error:', err.message); conn.end(); return; }
       stream.on('data', (d) => process.stdout.write(d.toString()))
             .on('stderr', (d) => process.stderr.write(d.toString()))
             .on('close', (code) => { console.log(`[exit: ${code}]`); runNext(); });
