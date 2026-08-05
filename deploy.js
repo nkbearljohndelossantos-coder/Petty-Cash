@@ -13,6 +13,7 @@ const commands = [
   `cd ${TEMP} && git pull origin main 2>&1`,
   `cd ${TEMP} && git log --oneline -3`,
   `cp -v ${TEMP}/backend/src/controllers/expenseController.js ${NODEJS}/src/controllers/expenseController.js`,
+  `cp -v ${TEMP}/backend/src/routes/expenses.js ${NODEJS}/src/routes/expenses.js`,
   `cp -v ${TEMP}/backend/src/controllers/authController.js ${NODEJS}/src/controllers/authController.js`,
   `cp -v ${TEMP}/backend/src/index.js ${NODEJS}/src/index.js`,
   `cp -v ${TEMP}/backend/src/controllers/approvalController.js ${NODEJS}/src/controllers/approvalController.js`,
