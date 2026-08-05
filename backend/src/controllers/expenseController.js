@@ -269,7 +269,16 @@ exports.updateExpense = async (req, res) => {
   try {
     const { id } = req.params;
     const { date, category_id, remarks, requested_by, department_id, amount, status, quantity, unit } = req.body;
-    const normalizedAmount = normalizeAmount(amount);
+    
+    const existingExpense = await db('expenses').where({ id }).first();
+    if (!existingExpense) {
+      return res.status(404).json({ success: false, message: 'Expense not found' });
+    }
+
+    const normalizedAmount = amount !== undefined && amount !== null && String(amount).trim() !== '' 
+      ? normalizeAmount(amount) 
+      : existingExpense.amount;
+
     if (!normalizedAmount) {
       return res.status(400).json({ success: false, message: 'Please enter a valid amount with up to 6 decimal places.' });
     }
@@ -277,23 +286,19 @@ exports.updateExpense = async (req, res) => {
     await db('expenses')
       .where({ id })
       .update({
-        date,
-        category_id: category_id || null,
-        remarks,
-        requested_by,
-        department_id: department_id || null,
+        date: date || existingExpense.date,
+        category_id: category_id || existingExpense.category_id,
+        remarks: remarks !== undefined ? remarks : existingExpense.remarks,
+        requested_by: requested_by || existingExpense.requested_by,
+        department_id: department_id || existingExpense.department_id,
         amount: normalizedAmount,
-        quantity,
-        unit,
-        status,
+        quantity: quantity !== undefined ? quantity : existingExpense.quantity,
+        unit: unit || existingExpense.unit,
+        status: status || existingExpense.status,
         updated_at: db.fn.now()
       });
 
     const updatedExpense = await db('expenses').where({ id }).first();
-
-    if (!updatedExpense) {
-      return res.status(404).json({ success: false, message: 'Expense not found' });
-    }
 
     await db('activity_logs').insert({
       user_id: req.user.id,
