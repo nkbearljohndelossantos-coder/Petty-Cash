@@ -355,7 +355,7 @@ exports.deleteExpense = async (req, res) => {
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, decline_reason } = req.body;
 
     const currentExpense = await db('expenses').where({ id }).first();
     if (!currentExpense) {
@@ -374,6 +374,33 @@ exports.updateStatus = async (req, res) => {
 
     const updatedExpense = await db('expenses').where({ id }).first();
 
+    // If approval tokens exist for this expense, invalidate them so email link cannot be used after in-app approval
+    if (await db.schema.hasTable('liquidation_approval_tokens')) {
+      await db('liquidation_approval_tokens')
+        .where({ expense_id: id })
+        .whereNull('used_at')
+        .update({ used_at: db.fn.now() });
+    }
+
+    // Record audit entry if audit table exists
+    if (await db.schema.hasTable('liquidation_approval_audit')) {
+      try {
+        const auditAction = status === 'Approved' ? 'approved' : (['Rejected', 'Declined'].includes(status) ? 'declined' : 'status_change');
+        await approvalService.recordAudit({
+          expenseId: id,
+          action: auditAction,
+          actorType: 'user',
+          actorUserId: req.user.id,
+          actorName: req.user.full_name || req.user.username || 'In-App Approver',
+          declineReason: decline_reason || null,
+          ipAddress: req.ip,
+          approvalLevel: currentExpense.current_approval_level || 1
+        });
+      } catch (auditErr) {
+        console.warn('In-app approval audit record error:', auditErr.message);
+      }
+    }
+
     await db('activity_logs').insert({
       user_id: req.user.id,
       action: 'UPDATE_STATUS',
@@ -391,7 +418,7 @@ exports.updateStatus = async (req, res) => {
       });
     }
 
-    if (['Approved', 'Rejected', 'Liquidated'].includes(status)) {
+    if (['Approved', 'Rejected', 'Liquidated', 'Declined'].includes(status)) {
       broadcast('balance_updated', { type: 'STATUS_UPDATED', status });
     }
 

@@ -658,7 +658,7 @@ const Expenses = () => {
                             <Bell size={18} className={remindingExpenseId === expense.id ? 'animate-pulse' : ''} />
                           </button>
                         )}
-                        {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Accounting') && expense.status === 'Pending' && (
+                        {(user?.role === 'Super Admin' || user?.role === 'Manager' || user?.role === 'Accounting') && ['Pending', 'For Approval'].includes(expense.status) && (
                           <>
                             <button 
                               onClick={() => handleStatusUpdate(expense.id, 'Approved')}
@@ -1091,8 +1091,32 @@ const Expenses = () => {
                     </div>
                   )}
                </div>
-               <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end">
-                  <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest">Close Preview</button>
+               <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                  {['Super Admin', 'Manager', 'Accounting'].includes(user?.role) && ['Pending', 'For Approval'].includes(selectedExpense.status) ? (
+                    <div className="flex items-center gap-3">
+                       <button 
+                         onClick={async () => {
+                           setShowViewModal(false);
+                           await handleStatusUpdate(selectedExpense.id, 'Approved');
+                         }}
+                         className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition-all"
+                         title="Approve Request Directly"
+                       >
+                         <Check size={16} /> Approve Request
+                       </button>
+                       <button 
+                         onClick={async () => {
+                           setShowViewModal(false);
+                           await handleStatusUpdate(selectedExpense.id, 'Rejected');
+                         }}
+                         className="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-sm transition-all"
+                         title="Reject Request"
+                       >
+                         <X size={16} /> Reject Request
+                       </button>
+                    </div>
+                  ) : <div />}
+                  <button onClick={() => setShowViewModal(false)} className="px-8 py-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-black uppercase tracking-widest transition-colors">Close Preview</button>
                </div>
             </motion.div>
           </div>
