@@ -1060,7 +1060,7 @@ const Expenses = () => {
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Attachments ({selectedExpense.attachments.length})</p>
                        <div className="grid grid-cols-2 gap-3">
                           {selectedExpense.attachments.map((file, i) => (
-                             <a key={i} href={`${import.meta.env.VITE_API_URL || ''}/${file.file_path.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:border-erp-blue transition-colors group">
+                             <a key={i} href={file.url || (file.file_path ? `${import.meta.env.VITE_API_URL || ''}/${file.file_path.replace(/\\/g, '/')}` : '#')} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:border-erp-blue transition-colors group">
                                 <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-erp-blue"><FileText size={16} /></div>
                                 <span className="text-[10px] font-bold text-slate-600 truncate">{file.file_name}</span>
                              </a>
