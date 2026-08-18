@@ -99,7 +99,7 @@ router.use(protect);
 router.get('/', getExpenses);
 router.get('/:id', getExpense);
 router.post('/', uploadAttachments, createExpense);
-router.put('/:id', authorize('Super Admin', 'Accounting', 'Manager', 'Staff'), updateExpense);
+router.put('/:id', authorize('Super Admin', 'Accounting', 'Manager', 'Staff'), uploadAttachments, updateExpense);
 router.patch('/:id/status', authorize('Super Admin', 'Accounting', 'Manager'), updateStatus);
 router.delete('/:id', authorize('Super Admin'), deleteExpense);
 

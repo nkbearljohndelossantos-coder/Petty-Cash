@@ -298,6 +298,23 @@ exports.updateExpense = async (req, res) => {
         updated_at: db.fn.now()
       });
 
+    if (req.files && req.files.length > 0) {
+      const attachments = req.files.map(file => ({
+        expense_id: id,
+        file_path: file.path,
+        file_name: file.originalname,
+        file_type: file.mimetype
+      }));
+      await db('expense_attachments').insert(attachments);
+    }
+
+    if (req.body.delete_attachment_ids) {
+      const idsToDelete = Array.isArray(req.body.delete_attachment_ids) 
+        ? req.body.delete_attachment_ids 
+        : String(req.body.delete_attachment_ids).split(',').map(n => n.trim());
+      await db('expense_attachments').whereIn('id', idsToDelete).andWhere({ expense_id: id }).del();
+    }
+
     const updatedExpense = await db('expenses').where({ id }).first();
 
     await db('activity_logs').insert({

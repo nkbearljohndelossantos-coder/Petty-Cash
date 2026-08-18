@@ -363,6 +363,7 @@ const Expenses = () => {
   const handleEdit = (expense) => {
     console.log('Editing expense:', expense);
     setSelectedExpense(expense);
+    setFiles([]);
     setFormData({
       date: format(new Date(expense.date), 'yyyy-MM-dd'),
       category_id: expense.category_id || '',
@@ -381,12 +382,31 @@ const Expenses = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await api.put(`/expenses/${selectedExpense.id}`, formData);
+      const editData = new FormData();
+      editData.append('date', formData.date);
+      editData.append('category_id', formData.category_id);
+      editData.append('remarks', formData.remarks || '');
+      editData.append('requested_by', formData.requested_by);
+      editData.append('department_id', formData.department_id);
+      editData.append('amount', formData.amount);
+      editData.append('quantity', formData.quantity);
+      editData.append('unit', formData.unit);
+
+      files.forEach((file) => {
+        editData.append('attachments', file);
+      });
+
+      await api.put(`/expenses/${selectedExpense.id}`, editData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
       setShowEditModal(false);
+      setFiles([]);
       fetchData(false);
+      showToast('Expense record updated successfully!', 'success');
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      showToast(err.response?.data?.message || err.message || 'Failed to update expense', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -1133,8 +1153,7 @@ const Expenses = () => {
                   <h2 className="text-xl font-black text-slate-900">Edit Expense Record</h2>
                   <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-colors"><X size={20} /></button>
                </div>
-               <form onSubmit={handleUpdateExpense} className="p-8 space-y-6">
-                  {/* Reuse fields from Add Modal but mapped to handleUpdateExpense */}
+               <form onSubmit={handleUpdateExpense} className="p-8 space-y-6 max-h-[85vh] overflow-y-auto">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Voucher Date</label>
@@ -1151,12 +1170,59 @@ const Expenses = () => {
                       <input type="text" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold" value={formData.requested_by} onChange={(e) => setFormData({ ...formData, requested_by: e.target.value })} required />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Department</label>
+                      <select className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold" value={formData.department_id} onChange={(e) => setFormData({ ...formData, department_id: e.target.value })} required>
+                        <option value="">Select Department</option>
+                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Quantity</label>
+                      <input type="number" min="1" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} required />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount (PHP)</label>
                       <input type="text" inputMode="decimal" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-erp-blue" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: normalizeAmountInput(e.target.value) })} required />
                     </div>
                   </div>
+
+                  {/* Supporting File Attachment Uploader */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-600">Attach New Supporting Files / Quotation</label>
+                      <span className="text-[10px] font-bold text-slate-400">PDF, Word, Excel, JPG, PNG</span>
+                    </div>
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-white px-4 py-4 text-center transition-colors hover:border-erp-blue hover:bg-blue-50/30">
+                      <FileText size={20} className="mb-1 text-erp-blue" />
+                      <span className="text-xs font-black text-slate-700">Click to upload supporting documents</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
+                        onChange={handleAttachmentChange}
+                      />
+                    </label>
+                    {files.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {files.map((file, index) => (
+                          <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                            <span className="truncate text-xs font-bold text-slate-700">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index))}
+                              className="shrink-0 text-[10px] font-black text-rose-500 hover:underline uppercase"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Remarks</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Remarks / Justification</label>
                     <textarea className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-medium h-24" value={formData.remarks} onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
                   </div>
                   <div className="flex gap-4 pt-4">
