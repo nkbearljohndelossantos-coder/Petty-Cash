@@ -210,7 +210,7 @@ export const SocketProvider = ({ children }) => {
     if (user && token) {
       const newSocket = io(import.meta.env.VITE_API_URL || window.location.origin, {
         auth: { token },
-        transports: ['polling', 'websocket'],
+        transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,

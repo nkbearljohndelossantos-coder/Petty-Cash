@@ -276,12 +276,13 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/departments', require('./routes/departments'));
+app.use('/api/users/profile', require('./routes/profile'));
+app.use('/api/profile', require('./routes/profile'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/logs', require('./routes/logs'));
-app.use('/api/users/profile', require('./routes/profile'));
 app.use('/api/funds', require('./routes/fundRoutes'));
 app.use('/api/backup', require('./routes/backup'));
 
