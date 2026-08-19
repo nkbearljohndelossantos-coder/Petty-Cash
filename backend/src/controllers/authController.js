@@ -38,7 +38,15 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const user = await db('users').where({ username }).first();
+    const loginIdentifier = username.toLowerCase();
+    const user = await db('users')
+      .where(function() {
+        this.where('username', username)
+            .orWhere('email', username)
+            .orWhereRaw('LOWER(username) = ?', [loginIdentifier])
+            .orWhereRaw('LOWER(email) = ?', [loginIdentifier]);
+      })
+      .first();
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
