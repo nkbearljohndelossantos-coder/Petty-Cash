@@ -280,20 +280,22 @@ const Users = ({ isEmbedded = false }) => {
                       </div>
                    </div>
 
-                   {!currentUser && (
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Initial Authorization Key</label>
-                         <div className="relative">
-                            <input 
-                              type="password" required
-                              className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-erp-blue/10 font-black tracking-widest text-slate-900"
-                              value={formData.password}
-                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
-                            <Lock size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300" />
-                         </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                        {currentUser ? 'Reset Password (Leave blank to keep current)' : 'Initial Authorization Key (Password)'}
+                      </label>
+                      <div className="relative">
+                         <input 
+                           type="password" 
+                           required={!currentUser}
+                           placeholder={currentUser ? 'Enter new password to change...' : 'Enter initial password'}
+                           className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-erp-blue/10 font-black tracking-widest text-slate-900"
+                           value={formData.password}
+                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                         />
+                         <Lock size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300" />
                       </div>
-                   )}
+                   </div>
                    
                    <div className="flex gap-4 pt-8">
                       <button type="button" onClick={() => setShowModal(false)} className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex-1">Discard</button>
