@@ -637,42 +637,46 @@ const Payables = () => {
       {/* ========================================================================= */}
       {/* EXACT PAYABLE REQUEST FORM MODAL (MATCHING USER IMAGES) */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* EXACT PAYABLE REQUEST FORM MODAL (PROFESSIONAL RESPONSIVE ERP LAYOUT) */}
+      {/* ========================================================================= */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-5xl w-full border border-slate-200 shadow-2xl my-6 relative overflow-hidden"
+              exit={{ opacity: 0, scale: 0.97 }}
+              className="bg-white rounded-2xl p-6 sm:p-8 max-w-6xl w-full border border-slate-200 shadow-2xl my-auto relative max-h-[92vh] flex flex-col"
             >
               {/* Top Header */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-5 shrink-0">
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Payable Request Form</h2>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <button 
                     type="button" 
                     onClick={() => window.print()}
                     title="Print Form"
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                   >
                     <Printer size={20} />
                   </button>
                   <button 
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     <X size={20} />
                   </button>
                 </div>
               </div>
 
-              <form onSubmit={handleCreateSubmit} className="space-y-6">
+              {/* Scrollable Form Body */}
+              <form onSubmit={handleCreateSubmit} className="space-y-5 overflow-y-auto pr-1 flex-1">
                 {/* TOP GRID: 4 Columns per Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Row 1 - Col 1: Company */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-700">Company</label>
                       <button 
@@ -684,7 +688,7 @@ const Payables = () => {
                       </button>
                     </div>
                     <select 
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={formState.company}
                       onChange={(e) => setFormState({ ...formState, company: e.target.value })}
                     >
@@ -695,11 +699,11 @@ const Payables = () => {
                   </div>
 
                   {/* Row 1 - Col 2: Invoice Number */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Invoice Number</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Invoice Number</label>
                     <input 
                       type="text"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
                       placeholder="e.g. 239683"
                       value={formState.invoice_number}
                       onChange={(e) => setFormState({ ...formState, invoice_number: e.target.value })}
@@ -707,44 +711,44 @@ const Payables = () => {
                   </div>
 
                   {/* Row 1 - Col 3: Date Created */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Date Created</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Date Created</label>
                     <input 
                       type="text"
                       readOnly
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 text-sm cursor-not-allowed"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm cursor-not-allowed"
                       value={formState.date_created}
                     />
                   </div>
 
                   {/* Row 1 - Col 4: Payable Number */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-blue-600">Payable Number</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-blue-600 block">Payable Number</label>
                     <input 
                       type="text"
                       readOnly
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-800 text-sm cursor-not-allowed"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-black text-slate-800 text-sm cursor-not-allowed"
                       value={formState.payable_number}
                     />
                   </div>
 
                   {/* Row 2 - Col 1: Payable Category */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Payable Category</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Payable Category</label>
                     <input 
                       type="text"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={formState.payable_category}
                       onChange={(e) => setFormState({ ...formState, payable_category: e.target.value })}
                     />
                   </div>
 
                   {/* Row 2 - Col 2: Invoice Date */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Invoice Date</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Invoice Date</label>
                     <input 
                       type="date"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={formState.invoice_date}
                       onChange={(e) => {
                         const newInvDate = e.target.value;
@@ -758,22 +762,22 @@ const Payables = () => {
                   </div>
 
                   {/* Row 2 - Col 3: Created By */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Created By</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Created By</label>
                     <input 
                       type="text"
                       readOnly
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 text-sm cursor-not-allowed"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm cursor-not-allowed"
                       value={formState.created_by}
                     />
                   </div>
 
                   {/* Row 2 - Col 4: Control Number */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Control Number</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Control Number</label>
                     <input 
                       type="text"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
                       placeholder="e.g. 1993"
                       value={formState.control_number}
                       onChange={(e) => setFormState({ ...formState, control_number: e.target.value })}
@@ -781,12 +785,12 @@ const Payables = () => {
                   </div>
 
                   {/* Row 3 - Col 1: Vendor * */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Vendor *</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Vendor *</label>
                     <input 
                       type="text"
                       required
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
                       placeholder="e.g. MARK JOSEPH Q. REALUYO"
                       value={formState.vendor}
                       onChange={(e) => setFormState({ ...formState, vendor: e.target.value })}
@@ -794,10 +798,10 @@ const Payables = () => {
                   </div>
 
                   {/* Row 3 - Col 2: Term */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Term</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Term</label>
                     <select 
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={formState.term}
                       onChange={(e) => {
                         const newTerm = e.target.value;
@@ -818,23 +822,23 @@ const Payables = () => {
                   </div>
 
                   {/* Row 3 - Col 3: Due Date */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Due Date</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Due Date</label>
                     <input 
                       type="date"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={formState.due_date}
                       onChange={(e) => setFormState({ ...formState, due_date: e.target.value })}
                     />
                   </div>
 
                   {/* Row 3 - Col 4: Status */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Status</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Status</label>
                     <input 
                       type="text"
                       readOnly
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 text-sm cursor-not-allowed"
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-700 text-sm cursor-not-allowed"
                       value={formState.status}
                     />
                   </div>
@@ -842,22 +846,22 @@ const Payables = () => {
 
                 {/* MIDDLE ROW: Description & Bank to use for check */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Description</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Description</label>
                     <input 
                       type="text"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
                       placeholder="e.g. RAW MATERIALS"
                       value={formState.description}
                       onChange={(e) => setFormState({ ...formState, description: e.target.value })}
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Bank to use for check *</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700 block">Bank to use for check *</label>
                     <select 
                       required
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       value={formState.bank_to_use}
                       onChange={(e) => setFormState({ ...formState, bank_to_use: e.target.value })}
                     >
@@ -869,136 +873,123 @@ const Payables = () => {
                   </div>
                 </div>
 
-                {/* ITEMIZED TABLE (Description, Expense Category, Quantity, Cost, Subtotal, Action) */}
-                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-                  <div className="hidden sm:grid sm:grid-cols-12 gap-3 text-xs font-bold text-slate-700 px-2">
-                    <div className="col-span-5">Description</div>
-                    <div className="col-span-3">Expense Category</div>
-                    <div className="col-span-1 text-center">Quantity</div>
-                    <div className="col-span-1 text-center">Cost</div>
-                    <div className="col-span-1 text-center">Subtotal</div>
-                    <div className="col-span-1 text-right">
-                      <button 
-                        type="button" 
-                        onClick={addItemRow}
-                        className="px-3 py-1 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-colors"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-
-                  {formState.items.map((item, idx) => (
-                    <div key={item.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-white p-3 sm:p-2 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="col-span-5">
-                        <span className="sm:hidden text-[10px] font-bold text-slate-400 block mb-1">Description</span>
-                        <input 
-                          type="text"
-                          className="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-sm text-slate-900 font-medium outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400"
-                          placeholder="e.g. RAW MATERIALS"
-                          value={item.description}
-                          onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="col-span-3">
-                        <span className="sm:hidden text-[10px] font-bold text-slate-400 block mb-1">Expense Category</span>
-                        <select 
-                          className="w-full px-3 py-2 bg-slate-50/60 border border-slate-200 rounded-lg text-sm text-slate-900 font-medium outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                          value={item.expense_category}
-                          onChange={(e) => handleItemChange(item.id, 'expense_category', e.target.value)}
-                        >
-                          {EXPENSE_CATEGORIES.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="col-span-1">
-                        <span className="sm:hidden text-[10px] font-bold text-slate-400 block mb-1">Quantity</span>
-                        <input 
-                          type="number"
-                          min="1"
-                          step="1"
-                          className="w-full px-2 py-2 text-center bg-slate-50/60 border border-slate-200 rounded-lg text-sm text-slate-900 font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="col-span-1">
-                        <span className="sm:hidden text-[10px] font-bold text-slate-400 block mb-1">Cost</span>
-                        <input 
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          className="w-full px-2 py-2 text-right sm:text-center bg-slate-50/60 border border-slate-200 rounded-lg text-sm text-slate-900 font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                          placeholder="0.00"
-                          value={item.cost || ''}
-                          onChange={(e) => handleItemChange(item.id, 'cost', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="col-span-1">
-                        <span className="sm:hidden text-[10px] font-bold text-slate-400 block mb-1">Subtotal</span>
-                        <div className="px-2 py-2 text-center font-mono font-bold text-sm text-slate-900 bg-slate-100/70 rounded-lg border border-slate-200">
-                          {parseFloat(item.subtotal || 0).toFixed(2)}
-                        </div>
-                      </div>
-
-                      <div className="col-span-1 flex justify-end">
-                        <button 
-                          type="button" 
-                          onClick={() => removeItemRow(item.id)}
-                          className="w-full sm:w-auto px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="sm:hidden pt-2">
-                    <button 
-                      type="button" 
-                      onClick={addItemRow}
-                      className="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold"
-                    >
-                      + Add Item Row
-                    </button>
+                {/* ITEMIZED TABLE (PROPER TABULAR LAYOUT - NO OVERLAPPING) */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm border-collapse min-w-[760px]">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700">
+                        <tr>
+                          <th className="py-2.5 px-3">Description</th>
+                          <th className="py-2.5 px-3 w-56">Expense Category</th>
+                          <th className="py-2.5 px-3 w-24 text-center">Quantity</th>
+                          <th className="py-2.5 px-3 w-32 text-center">Cost</th>
+                          <th className="py-2.5 px-3 w-32 text-center">Subtotal</th>
+                          <th className="py-2.5 px-3 w-20 text-right">
+                            <button 
+                              type="button" 
+                              onClick={addItemRow}
+                              className="px-3 py-1 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-md transition-colors shadow-sm"
+                            >
+                              Add
+                            </button>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {formState.items.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50/50">
+                            <td className="p-2.5">
+                              <input 
+                                type="text"
+                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                                placeholder="e.g. RAW MATERIALS"
+                                value={item.description}
+                                onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                              />
+                            </td>
+                            <td className="p-2.5">
+                              <select 
+                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                value={item.expense_category}
+                                onChange={(e) => handleItemChange(item.id, 'expense_category', e.target.value)}
+                              >
+                                {EXPENSE_CATEGORIES.map(cat => (
+                                  <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="p-2.5">
+                              <input 
+                                type="number"
+                                min="1"
+                                step="1"
+                                className="w-full px-2 py-2 text-center bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                value={item.quantity}
+                                onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
+                              />
+                            </td>
+                            <td className="p-2.5">
+                              <input 
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="w-full px-3 py-2 text-right bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                placeholder="0.00"
+                                value={item.cost || ''}
+                                onChange={(e) => handleItemChange(item.id, 'cost', e.target.value)}
+                              />
+                            </td>
+                            <td className="p-2.5">
+                              <div className="w-full px-3 py-2 text-right font-mono font-bold text-sm text-slate-900 bg-slate-50 rounded-lg border border-slate-200">
+                                {parseFloat(item.subtotal || 0).toFixed(2)}
+                              </div>
+                            </td>
+                            <td className="p-2.5 text-right">
+                              <button 
+                                type="button" 
+                                onClick={() => removeItemRow(item.id)}
+                                className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
                 {/* BOTTOM SECTION: Comments + Files (Left) & Summary (Right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                  {/* Left (7 cols) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
+                  {/* Left (8 cols): Comments and Files */}
                   <div className="lg:col-span-8 space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Comments</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Comments</label>
                       <textarea 
                         rows="3"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 font-mono text-xs uppercase"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-mono text-xs text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 uppercase"
                         placeholder="NKB MANUFACTURING CORPORATION CHECK DETAILS..."
                         value={formState.comments}
                         onChange={(e) => setFormState({ ...formState, comments: e.target.value })}
                       ></textarea>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">Files</label>
-                      <div className="p-2 border border-slate-200 rounded-xl bg-white">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Files</label>
+                      <div className="p-2 border border-slate-300 rounded-lg bg-white">
                         <input 
                           type="file"
                           multiple
-                          className="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                          className="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
                           onChange={(e) => setFormState({ ...formState, attachments: e.target.files })}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Right (4 cols) - Calculation Summary */}
-                  <div className="lg:col-span-4 border border-slate-200 rounded-2xl p-5 bg-white space-y-3">
+                  {/* Right (4 cols): Calculation Summary Card */}
+                  <div className="lg:col-span-4 border border-slate-200 rounded-xl p-5 bg-white shadow-sm space-y-3">
                     <div className="flex items-center justify-between text-sm text-slate-600 font-medium">
                       <span>Subtotal:</span>
                       <span className="font-mono font-bold text-slate-900">₱{subtotal.toFixed(2)}</span>
@@ -1017,18 +1008,18 @@ const Payables = () => {
                 </div>
 
                 {/* FOOTER BUTTONS: Save (Blue) & Cancel (Red) */}
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-3 pt-4 border-t border-slate-200 shrink-0">
                   <button 
                     type="submit" 
                     disabled={submitting}
-                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+                    className="px-7 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95 disabled:opacity-50"
                   >
                     {submitting ? 'Saving...' : 'Save'}
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setShowCreateModal(false)}
-                    className="px-8 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-rose-500/20 active:scale-95"
+                    className="px-7 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95"
                   >
                     Cancel
                   </button>
