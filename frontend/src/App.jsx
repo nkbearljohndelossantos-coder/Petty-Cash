@@ -27,6 +27,7 @@ const QueueMonitor = lazy(() => import('./pages/QueueMonitor'));
 const ApprovalAction = lazy(() => import('./pages/ApprovalAction'));
 const UserManual = lazy(() => import('./pages/UserManual'));
 const Notes = lazy(() => import('./pages/Notes'));
+const Payables = lazy(() => import('./pages/Payables'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -83,6 +84,7 @@ function App() {
                   }>
                     <Route index element={<Dashboard />} />
                     <Route path="expenses" element={<Expenses />} />
+                    <Route path="payables" element={<Payables />} />
                     <Route path="analytics" element={<Analytics />} />
                     <Route path="funds" element={
                       <ProtectedRoute allowedRoles={['Super Admin']}>

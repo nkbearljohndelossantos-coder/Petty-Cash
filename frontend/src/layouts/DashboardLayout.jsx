@@ -22,7 +22,8 @@ import {
   History,
   Database,
   BookOpen,
-  StickyNote
+  StickyNote,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -95,6 +96,7 @@ const DashboardLayout = () => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
     { icon: Receipt, label: 'Expenses', to: '/expenses' },
+    { icon: CreditCard, label: 'Cheque Payables', to: '/payables' },
     { icon: Wallet, label: 'Funds', to: '/funds', roles: ['Super Admin'] },
     { icon: PieChart, label: 'Analytics', to: '/analytics' },
     { icon: FileText, label: 'Reports', to: '/reports' },

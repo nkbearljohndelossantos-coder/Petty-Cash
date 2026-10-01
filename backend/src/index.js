@@ -293,6 +293,7 @@ app.use('/api/approval', require('./routes/approval'));
 app.use('/api/integration', require('./routes/integration'));
 app.use('/api/petty-cash/receipts', require('./routes/pettyCashReceipts'));
 app.use('/api/notes', require('./routes/notes'));
+app.use('/api/payables', require('./routes/payables'));
 
 // Health check routes (used by Hostinger PHP proxy and uptime checks)
 app.get('/health', (req, res) => {
