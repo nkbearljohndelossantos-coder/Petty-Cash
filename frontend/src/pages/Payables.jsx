@@ -5,7 +5,7 @@ import {
   Plus, Search, Filter, Eye, CheckCircle2, XCircle, 
   FileText, Check, AlertCircle, Clock, DollarSign, 
   Building2, Calendar, Paperclip, Download, Printer, 
-  Share2, ShieldCheck, CreditCard, ArrowRight, RefreshCw,
+  Share2, ShieldCheck, CreditCard, ArrowRight, ArrowLeft, RefreshCw,
   ExternalLink, Copy, CheckCheck, Trash2, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,8 +53,10 @@ const Payables = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [departmentFilter, setDepartmentFilter] = useState('');
 
+  // View Mode: 'list' or 'create'
+  const [viewMode, setViewMode] = useState('list');
+
   // Modals
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showChequeModal, setShowChequeModal] = useState(false);
@@ -244,7 +246,7 @@ const Payables = () => {
       });
 
       if (res.data?.success) {
-        setShowCreateModal(false);
+        setViewMode('list');
         // Reset form
         setFormState({
           company: 'NKB Manufacturing Corporation',
@@ -404,6 +406,417 @@ const Payables = () => {
   const isAccounting = user?.role === 'Super Admin' || user?.role === 'Accounting';
   const isManager = user?.role === 'Manager' || user?.role === 'Super Admin' || user?.role === 'COO';
 
+  // =========================================================================
+  // FULL PAGE VIEW: PAYABLE REQUEST FORM (NOT INSIDE A MODAL BOX)
+  // =========================================================================
+  if (viewMode === 'create') {
+    return (
+      <div className="space-y-6 fade-in pb-20 max-w-7xl mx-auto">
+        {/* Top Header & Breadcrumb Navigation */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-4">
+            <button 
+              type="button" 
+              onClick={() => setViewMode('list')}
+              className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
+              title="Back to Payables Ledger"
+            >
+              <ArrowLeft size={18} />
+              <span>Back to Ledger</span>
+            </button>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Payable Request Form</h1>
+              <p className="text-slate-500 text-xs font-medium mt-0.5">Submit supplier payable requisition with complete breakdown & accounting details.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button" 
+              onClick={() => window.print()}
+              title="Print Form"
+              className="px-4 py-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors"
+            >
+              <Printer size={16} />
+              <span>Print Form</span>
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setViewMode('list')}
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              onClick={handleCreateSubmit}
+              disabled={submitting}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+            >
+              {submitting ? 'Saving...' : 'Save & Submit'}
+            </button>
+          </div>
+        </div>
+
+        {/* Main Form Body Container (Full Page - NOT trapped in a popup box) */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+          <form onSubmit={handleCreateSubmit} className="space-y-6">
+            {/* TOP GRID: 4 Columns per Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Row 1 - Col 1: Company */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">Company</label>
+                  <button 
+                    type="button" 
+                    onClick={handleAddCompany}
+                    className="text-xs font-bold text-blue-600 hover:underline"
+                  >
+                    + Add
+                  </button>
+                </div>
+                <select 
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formState.company}
+                  onChange={(e) => setFormState({ ...formState, company: e.target.value })}
+                >
+                  {companies.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Row 1 - Col 2: Invoice Number */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Invoice Number</label>
+                <input 
+                  type="text"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
+                  placeholder="e.g. 239683"
+                  value={formState.invoice_number}
+                  onChange={(e) => setFormState({ ...formState, invoice_number: e.target.value })}
+                />
+              </div>
+
+              {/* Row 1 - Col 3: Date Created */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Date Created</label>
+                <input 
+                  type="text"
+                  readOnly
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm cursor-not-allowed"
+                  value={formState.date_created}
+                />
+              </div>
+
+              {/* Row 1 - Col 4: Payable Number */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-blue-600 block">Payable Number</label>
+                <input 
+                  type="text"
+                  readOnly
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-black text-slate-800 text-sm cursor-not-allowed"
+                  value={formState.payable_number}
+                />
+              </div>
+
+              {/* Row 2 - Col 1: Payable Category */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Payable Category</label>
+                <input 
+                  type="text"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formState.payable_category}
+                  onChange={(e) => setFormState({ ...formState, payable_category: e.target.value })}
+                />
+              </div>
+
+              {/* Row 2 - Col 2: Invoice Date */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Invoice Date</label>
+                <input 
+                  type="date"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formState.invoice_date}
+                  onChange={(e) => {
+                    const newInvDate = e.target.value;
+                    setFormState({ 
+                      ...formState, 
+                      invoice_date: newInvDate,
+                      due_date: calculateDueDate(newInvDate, formState.term)
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Row 2 - Col 3: Created By */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Created By</label>
+                <input 
+                  type="text"
+                  readOnly
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm cursor-not-allowed"
+                  value={formState.created_by}
+                />
+              </div>
+
+              {/* Row 2 - Col 4: Control Number */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Control Number</label>
+                <input 
+                  type="text"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
+                  placeholder="e.g. 1993"
+                  value={formState.control_number}
+                  onChange={(e) => setFormState({ ...formState, control_number: e.target.value })}
+                />
+              </div>
+
+              {/* Row 3 - Col 1: Vendor * */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Vendor *</label>
+                <input 
+                  type="text"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
+                  placeholder="e.g. MARK JOSEPH Q. REALUYO"
+                  value={formState.vendor}
+                  onChange={(e) => setFormState({ ...formState, vendor: e.target.value })}
+                />
+              </div>
+
+              {/* Row 3 - Col 2: Term */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Term</label>
+                <select 
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formState.term}
+                  onChange={(e) => {
+                    const newTerm = e.target.value;
+                    setFormState({ 
+                      ...formState, 
+                      term: newTerm,
+                      due_date: calculateDueDate(formState.invoice_date, newTerm)
+                    });
+                  }}
+                >
+                  <option value="Net 30">Net 30</option>
+                  <option value="Net 15">Net 15</option>
+                  <option value="Net 45">Net 45</option>
+                  <option value="Net 60">Net 60</option>
+                  <option value="COD">COD</option>
+                  <option value="Immediate">Immediate</option>
+                </select>
+              </div>
+
+              {/* Row 3 - Col 3: Due Date */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Due Date</label>
+                <input 
+                  type="date"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formState.due_date}
+                  onChange={(e) => setFormState({ ...formState, due_date: e.target.value })}
+                />
+              </div>
+
+              {/* Row 3 - Col 4: Status */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Status</label>
+                <input 
+                  type="text"
+                  readOnly
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-700 text-sm cursor-not-allowed"
+                  value={formState.status}
+                />
+              </div>
+            </div>
+
+            {/* MIDDLE ROW: Description & Bank to use for check */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Description</label>
+                <input 
+                  type="text"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
+                  placeholder="e.g. RAW MATERIALS"
+                  value={formState.description}
+                  onChange={(e) => setFormState({ ...formState, description: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">Bank to use for check *</label>
+                <select 
+                  required
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={formState.bank_to_use}
+                  onChange={(e) => setFormState({ ...formState, bank_to_use: e.target.value })}
+                >
+                  <option value="">Select Bank Account...</option>
+                  {BANK_ACCOUNTS.map(acc => (
+                    <option key={acc.value} value={acc.value}>{acc.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* ITEMIZED TABLE */}
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse min-w-[760px]">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700">
+                    <tr>
+                      <th className="py-3 px-4">Description</th>
+                      <th className="py-3 px-4 w-60">Expense Category</th>
+                      <th className="py-3 px-4 w-28 text-center">Quantity</th>
+                      <th className="py-3 px-4 w-36 text-center">Cost</th>
+                      <th className="py-3 px-4 w-36 text-center">Subtotal</th>
+                      <th className="py-3 px-4 w-24 text-right">
+                        <button 
+                          type="button" 
+                          onClick={addItemRow}
+                          className="px-3.5 py-1.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                        >
+                          Add
+                        </button>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {formState.items.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50/50">
+                        <td className="p-3">
+                          <input 
+                            type="text"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+                            placeholder="e.g. RAW MATERIALS"
+                            value={item.description}
+                            onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                          />
+                        </td>
+                        <td className="p-3">
+                          <select 
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            value={item.expense_category}
+                            onChange={(e) => handleItemChange(item.id, 'expense_category', e.target.value)}
+                          >
+                            {EXPENSE_CATEGORIES.map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-3">
+                          <input 
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="w-full px-2 py-2 text-center bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input 
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="w-full px-3 py-2 text-right bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            placeholder="0.00"
+                            value={item.cost || ''}
+                            onChange={(e) => handleItemChange(item.id, 'cost', e.target.value)}
+                          />
+                        </td>
+                        <td className="p-3">
+                          <div className="w-full px-3 py-2 text-right font-mono font-bold text-sm text-slate-900 bg-slate-50 rounded-lg border border-slate-200">
+                            {parseFloat(item.subtotal || 0).toFixed(2)}
+                          </div>
+                        </td>
+                        <td className="p-3 text-right">
+                          <button 
+                            type="button" 
+                            onClick={() => removeItemRow(item.id)}
+                            className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* BOTTOM SECTION: Comments + Files (Left) & Summary (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
+              {/* Left (8 cols): Comments and Files */}
+              <div className="lg:col-span-8 space-y-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 block">Comments</label>
+                  <textarea 
+                    rows="3"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-mono text-xs text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 uppercase"
+                    placeholder="NKB MANUFACTURING CORPORATION CHECK DETAILS..."
+                    value={formState.comments}
+                    onChange={(e) => setFormState({ ...formState, comments: e.target.value })}
+                  ></textarea>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 block">Files</label>
+                  <div className="p-3 border border-slate-300 rounded-lg bg-white">
+                    <input 
+                      type="file"
+                      multiple
+                      className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                      onChange={(e) => setFormState({ ...formState, attachments: e.target.files })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right (4 cols): Calculation Summary Card */}
+              <div className="lg:col-span-4 border border-slate-200 rounded-xl p-6 bg-slate-50/50 shadow-sm space-y-4">
+                <div className="flex items-center justify-between text-sm text-slate-600 font-medium">
+                  <span>Subtotal:</span>
+                  <span className="font-mono font-bold text-slate-900">₱{subtotal.toFixed(2)}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-slate-600 font-medium pt-3 border-t border-slate-200">
+                  <span>Total:</span>
+                  <span className="font-mono font-bold text-slate-900">₱{totalAmount.toFixed(2)}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-base font-black text-slate-900 pt-3 border-t border-slate-200">
+                  <span>Amount Due:</span>
+                  <span className="font-mono text-xl text-blue-600">₱{amountDue.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER BUTTONS: Save (Blue) & Cancel (Red) */}
+            <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+              <button 
+                type="button" 
+                onClick={() => setViewMode('list')}
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={submitting}
+                className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+              >
+                {submitting ? 'Saving...' : 'Save & Submit Request'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 fade-in pb-20">
       {/* Header */}
@@ -413,7 +826,7 @@ const Payables = () => {
           <p className="text-slate-500 font-medium mt-1">Manage supplier payable requests, approval relays, COO authorizations, and cheque disbursements.</p>
         </div>
         <button 
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setViewMode('create')}
           className="btn-erp btn-erp-primary flex items-center gap-2 shadow-lg shadow-blue-500/20"
         >
           <Plus size={20} strokeWidth={2.5} />
@@ -634,401 +1047,7 @@ const Payables = () => {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* EXACT PAYABLE REQUEST FORM MODAL (MATCHING USER IMAGES) */}
-      {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* EXACT PAYABLE REQUEST FORM MODAL (PROFESSIONAL RESPONSIVE ERP LAYOUT) */}
-      {/* ========================================================================= */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              className="bg-white rounded-2xl p-6 sm:p-8 max-w-6xl w-full border border-slate-200 shadow-2xl my-auto relative max-h-[92vh] flex flex-col"
-            >
-              {/* Top Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-5 shrink-0">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Payable Request Form</h2>
-                <div className="flex items-center gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => window.print()}
-                    title="Print Form"
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <Printer size={20} />
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
 
-              {/* Scrollable Form Body */}
-              <form onSubmit={handleCreateSubmit} className="space-y-5 overflow-y-auto pr-1 flex-1">
-                {/* TOP GRID: 4 Columns per Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Row 1 - Col 1: Company */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-700">Company</label>
-                      <button 
-                        type="button" 
-                        onClick={handleAddCompany}
-                        className="text-xs font-bold text-blue-600 hover:underline"
-                      >
-                        + Add
-                      </button>
-                    </div>
-                    <select 
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      value={formState.company}
-                      onChange={(e) => setFormState({ ...formState, company: e.target.value })}
-                    >
-                      {companies.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Row 1 - Col 2: Invoice Number */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Invoice Number</label>
-                    <input 
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
-                      placeholder="e.g. 239683"
-                      value={formState.invoice_number}
-                      onChange={(e) => setFormState({ ...formState, invoice_number: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Row 1 - Col 3: Date Created */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Date Created</label>
-                    <input 
-                      type="text"
-                      readOnly
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm cursor-not-allowed"
-                      value={formState.date_created}
-                    />
-                  </div>
-
-                  {/* Row 1 - Col 4: Payable Number */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-black text-blue-600 block">Payable Number</label>
-                    <input 
-                      type="text"
-                      readOnly
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-black text-slate-800 text-sm cursor-not-allowed"
-                      value={formState.payable_number}
-                    />
-                  </div>
-
-                  {/* Row 2 - Col 1: Payable Category */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Payable Category</label>
-                    <input 
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      value={formState.payable_category}
-                      onChange={(e) => setFormState({ ...formState, payable_category: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Row 2 - Col 2: Invoice Date */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Invoice Date</label>
-                    <input 
-                      type="date"
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      value={formState.invoice_date}
-                      onChange={(e) => {
-                        const newInvDate = e.target.value;
-                        setFormState({ 
-                          ...formState, 
-                          invoice_date: newInvDate,
-                          due_date: calculateDueDate(newInvDate, formState.term)
-                        });
-                      }}
-                    />
-                  </div>
-
-                  {/* Row 2 - Col 3: Created By */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Created By</label>
-                    <input 
-                      type="text"
-                      readOnly
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 text-sm cursor-not-allowed"
-                      value={formState.created_by}
-                    />
-                  </div>
-
-                  {/* Row 2 - Col 4: Control Number */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Control Number</label>
-                    <input 
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
-                      placeholder="e.g. 1993"
-                      value={formState.control_number}
-                      onChange={(e) => setFormState({ ...formState, control_number: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Row 3 - Col 1: Vendor * */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Vendor *</label>
-                    <input 
-                      type="text"
-                      required
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
-                      placeholder="e.g. MARK JOSEPH Q. REALUYO"
-                      value={formState.vendor}
-                      onChange={(e) => setFormState({ ...formState, vendor: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Row 3 - Col 2: Term */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Term</label>
-                    <select 
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      value={formState.term}
-                      onChange={(e) => {
-                        const newTerm = e.target.value;
-                        setFormState({ 
-                          ...formState, 
-                          term: newTerm,
-                          due_date: calculateDueDate(formState.invoice_date, newTerm)
-                        });
-                      }}
-                    >
-                      <option value="Net 30">Net 30</option>
-                      <option value="Net 15">Net 15</option>
-                      <option value="Net 45">Net 45</option>
-                      <option value="Net 60">Net 60</option>
-                      <option value="COD">COD</option>
-                      <option value="Immediate">Immediate</option>
-                    </select>
-                  </div>
-
-                  {/* Row 3 - Col 3: Due Date */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Due Date</label>
-                    <input 
-                      type="date"
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      value={formState.due_date}
-                      onChange={(e) => setFormState({ ...formState, due_date: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Row 3 - Col 4: Status */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Status</label>
-                    <input 
-                      type="text"
-                      readOnly
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-700 text-sm cursor-not-allowed"
-                      value={formState.status}
-                    />
-                  </div>
-                </div>
-
-                {/* MIDDLE ROW: Description & Bank to use for check */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Description</label>
-                    <input 
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 transition-all"
-                      placeholder="e.g. RAW MATERIALS"
-                      value={formState.description}
-                      onChange={(e) => setFormState({ ...formState, description: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Bank to use for check *</label>
-                    <select 
-                      required
-                      className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg font-medium text-slate-900 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                      value={formState.bank_to_use}
-                      onChange={(e) => setFormState({ ...formState, bank_to_use: e.target.value })}
-                    >
-                      <option value="">Select Bank Account...</option>
-                      {BANK_ACCOUNTS.map(acc => (
-                        <option key={acc.value} value={acc.value}>{acc.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* ITEMIZED TABLE (PROPER TABULAR LAYOUT - NO OVERLAPPING) */}
-                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm border-collapse min-w-[760px]">
-                      <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700">
-                        <tr>
-                          <th className="py-2.5 px-3">Description</th>
-                          <th className="py-2.5 px-3 w-56">Expense Category</th>
-                          <th className="py-2.5 px-3 w-24 text-center">Quantity</th>
-                          <th className="py-2.5 px-3 w-32 text-center">Cost</th>
-                          <th className="py-2.5 px-3 w-32 text-center">Subtotal</th>
-                          <th className="py-2.5 px-3 w-20 text-right">
-                            <button 
-                              type="button" 
-                              onClick={addItemRow}
-                              className="px-3 py-1 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-md transition-colors shadow-sm"
-                            >
-                              Add
-                            </button>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        {formState.items.map((item) => (
-                          <tr key={item.id} className="hover:bg-slate-50/50">
-                            <td className="p-2.5">
-                              <input 
-                                type="text"
-                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
-                                placeholder="e.g. RAW MATERIALS"
-                                value={item.description}
-                                onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                              />
-                            </td>
-                            <td className="p-2.5">
-                              <select 
-                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                value={item.expense_category}
-                                onChange={(e) => handleItemChange(item.id, 'expense_category', e.target.value)}
-                              >
-                                {EXPENSE_CATEGORIES.map(cat => (
-                                  <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="p-2.5">
-                              <input 
-                                type="number"
-                                min="1"
-                                step="1"
-                                className="w-full px-2 py-2 text-center bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                value={item.quantity}
-                                onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
-                              />
-                            </td>
-                            <td className="p-2.5">
-                              <input 
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                className="w-full px-3 py-2 text-right bg-white border border-slate-300 rounded-lg text-sm text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                placeholder="0.00"
-                                value={item.cost || ''}
-                                onChange={(e) => handleItemChange(item.id, 'cost', e.target.value)}
-                              />
-                            </td>
-                            <td className="p-2.5">
-                              <div className="w-full px-3 py-2 text-right font-mono font-bold text-sm text-slate-900 bg-slate-50 rounded-lg border border-slate-200">
-                                {parseFloat(item.subtotal || 0).toFixed(2)}
-                              </div>
-                            </td>
-                            <td className="p-2.5 text-right">
-                              <button 
-                                type="button" 
-                                onClick={() => removeItemRow(item.id)}
-                                className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* BOTTOM SECTION: Comments + Files (Left) & Summary (Right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pt-2">
-                  {/* Left (8 cols): Comments and Files */}
-                  <div className="lg:col-span-8 space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">Comments</label>
-                      <textarea 
-                        rows="3"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg font-mono text-xs text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 uppercase"
-                        placeholder="NKB MANUFACTURING CORPORATION CHECK DETAILS..."
-                        value={formState.comments}
-                        onChange={(e) => setFormState({ ...formState, comments: e.target.value })}
-                      ></textarea>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700 block">Files</label>
-                      <div className="p-2 border border-slate-300 rounded-lg bg-white">
-                        <input 
-                          type="file"
-                          multiple
-                          className="w-full text-xs text-slate-500 file:mr-4 file:py-1.5 file:px-3.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
-                          onChange={(e) => setFormState({ ...formState, attachments: e.target.files })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right (4 cols): Calculation Summary Card */}
-                  <div className="lg:col-span-4 border border-slate-200 rounded-xl p-5 bg-white shadow-sm space-y-3">
-                    <div className="flex items-center justify-between text-sm text-slate-600 font-medium">
-                      <span>Subtotal:</span>
-                      <span className="font-mono font-bold text-slate-900">₱{subtotal.toFixed(2)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm text-slate-600 font-medium pt-2 border-t border-slate-100">
-                      <span>Total:</span>
-                      <span className="font-mono font-bold text-slate-900">₱{totalAmount.toFixed(2)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-base font-black text-slate-900 pt-3 border-t border-slate-200">
-                      <span>Amount Due:</span>
-                      <span className="font-mono text-lg text-slate-900">₱{amountDue.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* FOOTER BUTTONS: Save (Blue) & Cancel (Red) */}
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-200 shrink-0">
-                  <button 
-                    type="submit" 
-                    disabled={submitting}
-                    className="px-7 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                  >
-                    {submitting ? 'Saving...' : 'Save'}
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-7 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* ========================================================================= */}
       {/* DETAILS MODAL */}
