@@ -51,6 +51,7 @@ graph TD
 | 16 | `/manual` | `UserManual.jsx` | All Roles | Interactive documentation, standard operating procedures, role-based workflows. |
 | 17 | `/profile` | `Profile.jsx` | All Roles | Personal information update (Name & Email), secret authentication password change. |
 | 18 | `/approval-action` | `ApprovalAction.jsx` | Public (Tokenized) | One-click email approval/rejection handler for external managers with token validation. |
+| 19 | `/payables` | `Payables.jsx` | Super Admin, COO, Accounting, Manager | Cheque payables ledger, requisition submission, COO clearing, cheque issuance tracking. |
 
 ---
 
@@ -74,6 +75,9 @@ graph TD
 6. **Web Audio Alarm Synthesizer Engine**:
    - Direct browser `AudioContext` oscillator synthesis (Sine, Triangle, Sawtooth waveforms).
    - Cross-tab lock using `localStorage` heartbeat (`nkb_active_alarm_tab`) preventing audio duplication across multiple open browser tabs.
+7. **`PayableRequisitionModal.jsx` & `ChequeClearingDrawer.jsx`**:
+   - Management modal for submitting large supplier cheque requisitions with attached invoices.
+   - Drawer for COO Clearing confirmation, cheque number assignment, and bank release tracking.
 
 ---
 
@@ -100,6 +104,14 @@ graph TD
 - `Print Slip (Printer Icon)`: Generates formal printable Petty Cash Voucher (PCV) slip.
 - `Export to CSV / Excel`: Downloads filtered voucher table into spreadsheet format.
 - `Batch Selection Checkboxes`: Select multiple vouchers for bulk approval or export.
+
+### Cheque Payables Page (`Payables.jsx`) Controls
+- `+ New Payable Requisition`: Opens the requisition creation modal (`payables:write`).
+- `COO Confirm & Clear (Stamp Icon)`: Confirms payable and authorizes cheque preparation (`payables:confirm`).
+- `Issue Cheque (Checkbook Icon)`: Assigns bank account, cheque number, and release date (`payables:confirm`, `Accounting`).
+- `Mark Cleared (Bank Check Icon)`: Marks cheque as negotiated/cleared with bank statement reconciliation (`payables:confirm`).
+- `Print Cheque Voucher (CV Printer Icon)`: Generates printable Cheque Voucher with breakdown and BIR 2307 withholding fields.
+- `Export Payables Ledger`: Exports pending/cleared cheque payables to CSV/Excel (`payables:read`).
 
 ### Funds Management (`Funds.jsx`) Controls
 - `+ Add Cash Replenishment`: Opens allocation modal (Amount, Source, Reference No, Notes).
@@ -161,6 +173,20 @@ graph TD
   - `Escalation Timeout Hours`: Number (Default: `24` hours).
   - `Test Recipient Email`: Action input to trigger live test dispatch.
 
+### 5. Cheque Payable Requisition & Clearing Form
+- **Fields**:
+  - `Supplier / Payee Entity`: Text (Required).
+  - `Billing / Sales Invoice No`: Text (Required for matching).
+  - `Payable Category / Cost Center`: Select Dropdown (Required).
+  - `Gross Amount`: Decimal Currency (Required, min: `0.01`).
+  - `Withholding Tax (EWT / BIR 2307)`: Percent / Decimal (0%, 1%, 2%, 5%).
+  - `Net Payable Amount`: Decimal Currency (Auto-computed: $\text{Gross} - \text{EWT}$).
+  - `Due Date`: Date Picker (Required).
+  - `Supporting Invoice / Quotation / PO`: Multi-file Upload (`.pdf`, `.png`, `.jpg`).
+  - `Bank Account`: Select Dropdown (e.g. BDO, BPI, Metrobank).
+  - `Cheque Number`: Text (Assigned on issuance).
+  - `COO Confirmation Status`: State (`Pending`, `Confirmed`, `Cleared`, `Cancelled`).
+
 ---
 
 ## 6. End-to-End Business Workflows
@@ -191,7 +217,25 @@ sequenceDiagram
     end
 ```
 
-### 2. Low-Balance & Replenishment Alarm Workflow
+### 2. Cheque Payables & Requisitions Lifecycle (COO Clearing)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Staff as Requestor / Procurement
+    actor COO as Chief Operating Officer (COO)
+    actor Acct as Accounting / Treasury
+    participant Sys as ERP Server & Database
+
+    Staff->>Sys: Submit Payable Requisition (Invoice, PO, Gross & Net Amount) [payables:write]
+    Sys->>COO: Push Real-Time Payable Notification & Queue Flag [payables:read]
+    COO->>Sys: Execute COO Confirmation & Clearing [payables:confirm]
+    Sys->>Acct: Forward Cleared Requisition for Cheque Preparation
+    Acct->>Sys: Print Cheque Voucher, assign Cheque No & Release Date
+    Acct->>Sys: Mark Cheque as Released / Issued to Supplier
+    Acct->>Sys: Mark Bank Cleared upon monthly bank statement reconciliation
+```
+
+### 3. Low-Balance & Replenishment Alarm Workflow
 1. Every time a voucher is disbursed or fund updated, the system evaluates:
    $$\text{Current Balance} \le \text{Minimum Safe Threshold}$$
 2. If true:
@@ -458,6 +502,52 @@ erDiagram
 | `setting_key` | `VARCHAR(100)` | No | `UNIQUE` key (e.g. `min_balance_threshold`, `currency`) |
 | `setting_value` | `TEXT` | No | Serialized configuration string / JSON |
 | `updated_at` | `TIMESTAMP` | Yes | Timestamp of last modification |
+
+### Table 11: `payables`
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | `INT AUTO_INCREMENT` | No | `PRIMARY KEY` |
+| `requisition_no` | `VARCHAR(50)` | No | `UNIQUE` requisition tracking number (e.g., `PR-2026-001`) |
+| `supplier_name` | `VARCHAR(150)` | No | Supplier / Vendor legal entity |
+| `invoice_no` | `VARCHAR(100)` | Yes | Sales Invoice / Billing Reference |
+| `department_id` | `INT` | No | `FOREIGN KEY` $\to$ `departments.id` |
+| `user_id` | `INT` | No | `FOREIGN KEY` $\to$ `users.id` (Requestor) |
+| `gross_amount` | `DECIMAL(12,2)` | No | Total invoice gross amount |
+| `ewt_rate` | `DECIMAL(5,2)` | No | Default `0.00` (E.g. 1%, 2%, 5% Withholding Tax) |
+| `ewt_amount` | `DECIMAL(12,2)` | No | Computed tax withheld |
+| `net_amount` | `DECIMAL(12,2)` | No | Net cheque payable amount |
+| `due_date` | `DATE` | No | Payment deadline |
+| `status` | `VARCHAR(50)` | No | `Pending`, `Confirmed`, `Cheque Issued`, `Cleared`, `Cancelled` |
+| `coo_confirmed_by` | `INT` | Yes | `FOREIGN KEY` $\to$ `users.id` (COO user) |
+| `coo_confirmed_at` | `DATETIME` | Yes | Timestamp of COO Clearing |
+| `remarks` | `TEXT` | Yes | Requisition notes / justification |
+| `created_at` | `TIMESTAMP` | No | Default: `CURRENT_TIMESTAMP` |
+| `updated_at` | `TIMESTAMP` | Yes | On update timestamp |
+
+### Table 12: `payable_attachments`
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | `INT AUTO_INCREMENT` | No | `PRIMARY KEY` |
+| `payable_id` | `INT` | No | `FOREIGN KEY` $\to$ `payables.id` (`ON DELETE CASCADE`) |
+| `file_name` | `VARCHAR(255)` | No | Original filename |
+| `file_path` | `VARCHAR(255)` | No | File location in `uploads/` |
+| `file_size` | `INT` | Yes | File size |
+| `file_type` | `VARCHAR(100)` | Yes | MIME type |
+| `created_at` | `TIMESTAMP` | No | Default: `CURRENT_TIMESTAMP` |
+
+### Table 13: `cheque_issuances`
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | `INT AUTO_INCREMENT` | No | `PRIMARY KEY` |
+| `payable_id` | `INT` | No | `FOREIGN KEY` $\to$ `payables.id` |
+| `bank_name` | `VARCHAR(100)` | No | Bank Account (BDO, BPI, Metrobank, etc.) |
+| `cheque_number` | `VARCHAR(100)` | No | Official cheque booklet serial number |
+| `cheque_date` | `DATE` | No | Date printed on cheque |
+| `released_to` | `VARCHAR(150)` | Yes | Representative or courier name |
+| `released_at` | `DATETIME` | Yes | Date/time released |
+| `cleared_at` | `DATETIME` | Yes | Bank statement clearing timestamp |
+| `issued_by` | `INT` | No | `FOREIGN KEY` $\to$ `users.id` (Treasury/Accounting) |
+| `created_at` | `TIMESTAMP` | No | Default: `CURRENT_TIMESTAMP` |
 
 ---
 
