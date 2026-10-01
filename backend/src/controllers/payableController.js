@@ -2,11 +2,12 @@ const db = require('../config/db');
 const crypto = require('crypto');
 const { logActivity } = require('../utils/logService');
 
-// Helper to generate sequential requisition number PR-YYYY-XXXX
+// Helper to generate sequential requisition number PB-YYYYMM-XXXX
 async function generateRequisitionNo() {
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
   const latest = await db('payables')
-    .whereRaw('requisition_no LIKE ?', [`PR-${currentYear}-%`])
+    .whereRaw('requisition_no LIKE ?', [`PB-${yearMonth}-%`])
     .orderBy('id', 'desc')
     .first();
 
@@ -20,7 +21,7 @@ async function generateRequisitionNo() {
       }
     }
   }
-  return `PR-${currentYear}-${String(nextSeq).padStart(4, '0')}`;
+  return `PB-${yearMonth}-${String(nextSeq).padStart(4, '0')}`;
 }
 
 // 1. Get list of payables
@@ -42,7 +43,7 @@ exports.getPayables = async (req, res) => {
         'coo.full_name as coo_name'
       );
 
-    // Apply role scoping: Staff can only see their department's payables if not Super Admin/COO/Accounting
+    // Apply role scoping
     if (req.user && ['Staff', 'Manager'].includes(req.user.role) && req.user.department_id) {
       query = query.where('payables.department_id', req.user.department_id);
     }
@@ -68,15 +69,17 @@ exports.getPayables = async (req, res) => {
       query = query.where(function () {
         this.whereRaw('LOWER(payables.requisition_no) LIKE ?', [term])
           .orWhereRaw('LOWER(payables.supplier_name) LIKE ?', [term])
-          .orWhereRaw('LOWER(payables.invoice_no) LIKE ?', [term])
-          .orWhereRaw('LOWER(payables.remarks) LIKE ?', [term]);
+          .orWhereRaw('LOWER(COALESCE(payables.invoice_no, "")) LIKE ?', [term])
+          .orWhereRaw('LOWER(COALESCE(payables.company, "")) LIKE ?', [term])
+          .orWhereRaw('LOWER(COALESCE(payables.control_number, "")) LIKE ?', [term])
+          .orWhereRaw('LOWER(COALESCE(payables.description, "")) LIKE ?', [term])
+          .orWhereRaw('LOWER(COALESCE(payables.remarks, "")) LIKE ?', [term]);
       });
     }
 
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const payables = await query.orderBy('payables.id', 'desc').limit(parseInt(limit, 10)).offset(offset);
 
-    // Attach attachments and cheque issuances count/summary
     const payableIds = payables.map(p => p.id);
     const attachments = payableIds.length > 0 
       ? await db('payable_attachments').whereIn('payable_id', payableIds)
@@ -84,11 +87,15 @@ exports.getPayables = async (req, res) => {
     const cheques = payableIds.length > 0
       ? await db('cheque_issuances').whereIn('payable_id', payableIds)
       : [];
+    const items = payableIds.length > 0 && await db.schema.hasTable('payable_items')
+      ? await db('payable_items').whereIn('payable_id', payableIds)
+      : [];
 
     const enriched = payables.map(p => ({
       ...p,
       attachments: attachments.filter(a => a.payable_id === p.id),
-      cheques: cheques.filter(c => c.payable_id === p.id)
+      cheques: cheques.filter(c => c.payable_id === p.id),
+      items: items.filter(i => i.payable_id === p.id)
     }));
 
     res.json({ success: true, data: enriched });
@@ -126,13 +133,17 @@ exports.getPayableById = async (req, res) => {
       .leftJoin('users as issuer', 'cheque_issuances.issued_by', 'issuer.id')
       .select('cheque_issuances.*', 'issuer.full_name as issuer_name')
       .where({ payable_id: id });
+    const items = await db.schema.hasTable('payable_items')
+      ? await db('payable_items').where({ payable_id: id })
+      : [];
 
     res.json({
       success: true,
       data: {
         ...payable,
         attachments,
-        cheques
+        cheques,
+        items
       }
     });
   } catch (err) {
@@ -145,20 +156,65 @@ exports.getPayableById = async (req, res) => {
 exports.createPayable = async (req, res) => {
   try {
     const {
+      company = 'NKB Manufacturing Corporation',
       supplier_name,
+      vendor,
       invoice_no,
+      invoice_number,
+      invoice_date,
+      payable_category = 'Trade payable',
+      control_number,
+      term = 'Net 30',
+      description,
+      bank_account,
+      bank_to_use,
       department_id,
       gross_amount,
       ewt_rate = 0,
       due_date,
-      remarks
+      remarks,
+      comments,
+      items
     } = req.body;
 
-    if (!supplier_name || !gross_amount) {
-      return res.status(400).json({ success: false, message: 'Supplier name and Gross amount are required' });
+    const finalSupplier = (vendor || supplier_name || '').trim();
+    const finalInvoiceNo = (invoice_number || invoice_no || '').trim();
+    const finalBankAccount = (bank_to_use || bank_account || '').trim();
+    const finalComments = (comments || remarks || '').trim();
+
+    // Parse items if supplied
+    let parsedItems = [];
+    if (typeof items === 'string') {
+      try {
+        parsedItems = JSON.parse(items);
+      } catch (e) {
+        parsedItems = [];
+      }
+    } else if (Array.isArray(items)) {
+      parsedItems = items;
     }
 
-    const gross = parseFloat(gross_amount);
+    let calculatedGross = 0;
+    if (parsedItems.length > 0) {
+      calculatedGross = parsedItems.reduce((sum, item) => {
+        const qty = parseFloat(item.quantity) || 1;
+        const cost = parseFloat(item.cost) || 0;
+        const sub = parseFloat(item.subtotal) || (qty * cost);
+        return sum + sub;
+      }, 0);
+    } else {
+      calculatedGross = parseFloat(gross_amount) || 0;
+    }
+
+    if (!finalSupplier) {
+      return res.status(400).json({ success: false, message: 'Vendor / Supplier name is required' });
+    }
+
+    if (calculatedGross <= 0 && (!gross_amount || parseFloat(gross_amount) <= 0)) {
+      return res.status(400).json({ success: false, message: 'Total amount due must be greater than 0' });
+    }
+
+    const gross = calculatedGross;
     const rate = parseFloat(ewt_rate) || 0;
     const ewt = parseFloat(((gross * rate) / 100).toFixed(2));
     const net = parseFloat((gross - ewt).toFixed(2));
@@ -167,8 +223,15 @@ exports.createPayable = async (req, res) => {
 
     const [id] = await db('payables').insert({
       requisition_no,
-      supplier_name: supplier_name.trim(),
-      invoice_no: invoice_no ? invoice_no.trim() : null,
+      company: company ? company.trim() : 'NKB Manufacturing Corporation',
+      payable_category: payable_category ? payable_category.trim() : 'Trade payable',
+      invoice_date: invoice_date || null,
+      control_number: control_number ? control_number.trim() : null,
+      supplier_name: finalSupplier,
+      invoice_no: finalInvoiceNo || null,
+      term: term ? term.trim() : 'Net 30',
+      description: description ? description.trim() : null,
+      bank_account: finalBankAccount || null,
       department_id: department_id ? parseInt(department_id, 10) : (req.user?.department_id || null),
       user_id: req.user?.id || null,
       gross_amount: gross,
@@ -176,9 +239,27 @@ exports.createPayable = async (req, res) => {
       ewt_amount: ewt,
       net_amount: net,
       due_date: due_date || null,
-      status: 'Pending Approval',
-      remarks: remarks ? remarks.trim() : null
+      status: 'Submitted For Approval',
+      remarks: finalComments || null,
+      comments: finalComments || null
     });
+
+    // Save line items
+    if (parsedItems.length > 0 && await db.schema.hasTable('payable_items')) {
+      const itemRows = parsedItems.map(item => {
+        const q = parseFloat(item.quantity) || 1;
+        const c = parseFloat(item.cost) || 0;
+        return {
+          payable_id: id,
+          description: (item.description || '').trim() || 'Item',
+          expense_category: item.expense_category || 'Raw Materials',
+          quantity: q,
+          cost: c,
+          subtotal: parseFloat((q * c).toFixed(2))
+        };
+      });
+      await db('payable_items').insert(itemRows);
+    }
 
     // Process file attachments
     if (req.files && req.files.length > 0) {
@@ -192,25 +273,25 @@ exports.createPayable = async (req, res) => {
       await db('payable_attachments').insert(attachmentRows);
     }
 
-    await logActivity(req.user?.id, 'CREATE_PAYABLE', `Created Payable Requisition ${requisition_no} for ${supplier_name} - Amount: PHP ${gross}`);
+    await logActivity(req.user?.id, 'CREATE_PAYABLE', `Created Payable Requisition ${requisition_no} for ${finalSupplier} - Amount: PHP ${gross}`);
 
     // Create a notification for COO & Accounting
     const cooUsers = await db('users').whereIn('role', ['Super Admin', 'COO', 'Accounting']);
     for (const u of cooUsers) {
       await db('notifications').insert({
         user_id: u.id,
-        title: 'New Cheque Payable Requisition',
-        message: `${requisition_no} submitted for ${supplier_name} (PHP ${gross.toLocaleString()})`,
+        title: 'New Payable Request',
+        message: `${requisition_no} submitted for ${finalSupplier} (₱${gross.toLocaleString(undefined, { minimumFractionDigits: 2 })})`,
         type: 'payable',
         priority: 'important'
       });
     }
 
     const created = await db('payables').where({ id }).first();
-    res.status(201).json({ success: true, message: 'Payable requisition created successfully', data: created });
+    res.status(201).json({ success: true, message: 'Payable request created successfully', data: created });
   } catch (err) {
     console.error('createPayable error:', err);
-    res.status(500).json({ success: false, message: err.message || 'Failed to create payable requisition' });
+    res.status(500).json({ success: false, message: err.message || 'Failed to create payable request' });
   }
 };
 
