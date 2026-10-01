@@ -174,18 +174,40 @@ graph TD
   - `Test Recipient Email`: Action input to trigger live test dispatch.
 
 ### 5. Cheque Payable Requisition & Clearing Form
-- **Fields**:
-  - `Supplier / Payee Entity`: Text (Required).
-  - `Billing / Sales Invoice No`: Text (Required for matching).
-  - `Payable Category / Cost Center`: Select Dropdown (Required).
-  - `Gross Amount`: Decimal Currency (Required, min: `0.01`).
-  - `Withholding Tax (EWT / BIR 2307)`: Percent / Decimal (0%, 1%, 2%, 5%).
-  - `Net Payable Amount`: Decimal Currency (Auto-computed: $\text{Gross} - \text{EWT}$).
-  - `Due Date`: Date Picker (Required).
-  - `Supporting Invoice / Quotation / PO`: Multi-file Upload (`.pdf`, `.png`, `.jpg`).
-  - `Bank Account`: Select Dropdown (e.g. BDO, BPI, Metrobank).
-  - `Cheque Number`: Text (Assigned on issuance).
-  - `COO Confirmation Status`: State (`Pending`, `Confirmed`, `Cleared`, `Cancelled`).
+- **Form Layout**:
+  - **Company**: Select Dropdown (*NKB Manufacturing Corporation, Norvin Bella (COOP), NKB Cosmetics Manufacturing, NKB Cosmetic Products Trading, New Yra Enterprises, Vyuceutical*) with `+ Add` custom company action.
+  - **Invoice Number**: Text (e.g. `239683`).
+  - **Date Created**: Read-only current date (`MM/DD/YYYY`).
+  - **Payable Number**: Sequential code (`PB-Auto` / `PB-YYYYMM-XXXX`).
+  - **Payable Category**: Text/Select (Default: `Trade payable`).
+  - **Invoice Date**: Date Picker (Default: Current date).
+  - **Created By**: Read-only user name / role (`Accountant`).
+  - **Control Number**: Text (e.g. `1993`).
+  - **Vendor \***: Payee text (Required, e.g. `MARK JOSEPH Q. REALUYO`).
+  - **Term**: Select Dropdown (`Net 30`, `Net 15`, `Net 45`, `Net 60`, `COD`, `Immediate`).
+  - **Due Date**: Date Picker (Auto-computed from `Invoice Date + Term`).
+  - **Status**: Read-only state (`Submitted For Approval`).
+  - **Description**: Summary text (e.g. `RAW MATERIALS`).
+  - **Bank to use for check \***: Target disbursement account with live available balances:
+    - *BDO: Norvin Bella (COOP) - 0080-5801-0563 (Avail: ₱650,000.00)*
+    - *BDO: NKB Manufacturing Corporation - 0080-5801-0547 (Avail: ₱950,000.00)*
+    - *BDO: NKB Cosmetics Manufacturing - 0105-4800-4829 (Avail: ₱800,000.00)*
+    - *BDO: NKB Cosmetic Products Trading - 0105-4800-3245 (Avail: ₱700,000.00)*
+    - *BDO: New Yra Enterprises - 0036-8801-3196 (Avail: ₱600,000.00)*
+    - *BDO: Vyuceutical - 0080-5801-0717 (Avail: ₱550,000.00)*
+    - *Security Bank: NKB Manufacturing Corporation - 0000079720871 (Avail: ₱500,000.00)*
+    - *Metrobank: NKB Manufacturing Corporation - 788-7-78803245-1 (Avail: ₱750,000.00)*
+  - **Itemized Items Table (Repeater)**:
+    - `Description`: Item description text.
+    - `Expense Category`: Dropdown (`Raw Materials`, `Packaging Materials`, `Office Supplies`, `Utilities`, `Maintenance`, `Logistics`, `Marketing`, `Professional Fees`, `Taxes & Licenses`).
+    - `Quantity`: Number (min: 1).
+    - `Cost`: Decimal (PHP).
+    - `Subtotal`: Read-only computed $\text{Quantity} \times \text{Cost}$.
+    - `+ Add` / `Delete` controls per line item.
+  - **Comments**: Upper-case formatted check instructions / details.
+  - **Files**: Supporting Invoices, Quotations, and Delivery Receipts upload.
+  - **Calculation Summary**: Real-time compute for `Subtotal`, `Total`, and `Amount Due`.
+  - **COO Confirmation & Clearing**: Stamp authorization for cheque preparation.
 
 ---
 
