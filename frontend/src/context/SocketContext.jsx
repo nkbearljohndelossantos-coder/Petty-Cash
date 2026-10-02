@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import api from '../services/api';
 
 const SocketContext = createContext();
 
@@ -162,12 +163,7 @@ export const SocketProvider = ({ children }) => {
   const fetchUnreadNotifications = async ({ playSounds = false } = {}) => {
     if (!token) return;
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-      const res = await fetch(`${apiUrl}/api/notifications`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        cache: 'no-store'
-      });
-      const data = await res.json();
+      const data = await api.get('/notifications');
       if (data && data.notifications) {
         const newNotifications = data.notifications.filter(
           n => !seenNotificationIdsRef.current.has(String(n.id))
@@ -188,7 +184,8 @@ export const SocketProvider = ({ children }) => {
         setActiveCritical(criticalNotif || null);
       }
     } catch (err) {
-      console.error('[SocketProvider] Failed fetching notifications:', err);
+      // Graceful warning without breaking UI
+      console.warn('[SocketProvider] Notification sync skipped:', err.message || err);
     }
   };
 
@@ -338,11 +335,7 @@ export const SocketProvider = ({ children }) => {
       // Write to localStorage for instant cross-tab mute
       localStorage.setItem('nkb_mute_alarm', id.toString() + '_' + Date.now());
       
-      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-      await fetch(`${apiUrl}/api/notifications/${id}/acknowledge`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      await api.put(`/notifications/${id}/acknowledge`);
       
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, acknowledged: true, is_read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -351,7 +344,7 @@ export const SocketProvider = ({ children }) => {
         setActiveCritical(null);
       }
     } catch (err) {
-      console.error('[SocketProvider] Acknowledge failed:', err);
+      console.warn('[SocketProvider] Acknowledge skipped:', err.message || err);
     }
   };
 
