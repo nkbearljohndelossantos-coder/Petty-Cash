@@ -35,17 +35,29 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const method = (error.config?.method || 'get').toLowerCase();
     const isLoginRequest = error.config?.url?.includes('/auth/login');
-    const canRetry = (transientStatuses.includes(status) || error.code === 'ERR_NETWORK')
-      && !error.config?._retryAfterTransient
-      && (method === 'get' || isLoginRequest);
+    const isGet = method === 'get';
 
-    if (canRetry) {
-      error.config._retryAfterTransient = true;
-      await delay(isLoginRequest ? 2000 : 1200);
+    // Network error detection (including ERR_NETWORK_CHANGED, offline, timeouts)
+    const isNetworkError = !error.response || 
+      error.code === 'ERR_NETWORK' || 
+      error.code === 'ECONNABORTED' ||
+      error.message?.includes('Network') ||
+      error.message?.includes('timeout');
+
+    const isTransient = transientStatuses.includes(status) || isNetworkError;
+
+    // Retry count tracking
+    const retryCount = error.config?._retryCount || 0;
+    const maxRetries = isGet ? 3 : (isLoginRequest ? 2 : 0);
+
+    if (isTransient && retryCount < maxRetries) {
+      error.config._retryCount = retryCount + 1;
+      const backoffMs = Math.min(1000 * Math.pow(1.5, retryCount), 4000);
+      await delay(backoffMs);
       return api(error.config);
     }
 
-    if (transientStatuses.includes(status) || error.code === 'ERR_NETWORK') {
+    if (isTransient) {
       notifyServerIssue(error);
     }
 
