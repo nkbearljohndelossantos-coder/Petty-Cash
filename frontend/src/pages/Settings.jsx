@@ -35,6 +35,7 @@ const Settings = () => {
   });
 
   // API Key & Webhooks State
+  // API Key & Webhooks State
   const [apiKey, setApiKey] = useState('NkbPayablesApiKey2026');
   const [showKey, setShowKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -42,11 +43,21 @@ const Settings = () => {
   const [customKeyInput, setCustomKeyInput] = useState('');
   const [activeDocTab, setActiveDocTab] = useState('curl');
 
+  // FMS Outbound Integration State
+  const [fmsUrl, setFmsUrl] = useState('https://fms.nkbmanufacturing.com/api/payables');
+  const [fmsApiKey, setFmsApiKey] = useState('nkb_inv_live_6ae6965c1ca61aef54939d6b1ecfac1b');
+  const [showFmsKey, setShowFmsKey] = useState(false);
+  const [fmsAutoSync, setFmsAutoSync] = useState(true);
+  const [fmsTesting, setFmsTesting] = useState(false);
+  const [fmsTestStatus, setFmsTestStatus] = useState(null);
+  const [fmsSaving, setFmsSaving] = useState(false);
+
   useEffect(() => {
     fetchSettings();
     fetchNotificationPrefs();
     if (isSuperAdmin) {
       fetchApiKey();
+      fetchFmsConfig();
     }
   }, [isSuperAdmin]);
 
@@ -58,6 +69,59 @@ const Settings = () => {
       }
     } catch (err) {
       console.error('Failed to fetch API key:', err);
+    }
+  };
+
+  const fetchFmsConfig = async () => {
+    try {
+      const res = await api.get('/settings/fms-config');
+      if (res?.data) {
+        if (res.data.fms_api_url) setFmsUrl(res.data.fms_api_url);
+        if (res.data.fms_api_key) setFmsApiKey(res.data.fms_api_key);
+        if (res.data.fms_auto_sync !== undefined) setFmsAutoSync(res.data.fms_auto_sync);
+      }
+    } catch (err) {
+      console.error('Failed to fetch FMS config:', err);
+    }
+  };
+
+  const handleSaveFmsConfig = async (e) => {
+    if (e) e.preventDefault();
+    setFmsSaving(true);
+    try {
+      await api.put('/settings/fms-config', {
+        fms_api_url: fmsUrl,
+        fms_api_key: fmsApiKey,
+        fms_auto_sync: fmsAutoSync
+      });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      alert('Failed to save FMS config: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setFmsSaving(false);
+    }
+  };
+
+  const handleTestFmsConnection = async () => {
+    setFmsTesting(true);
+    setFmsTestStatus(null);
+    try {
+      const res = await api.post('/settings/test-fms-sync', {
+        fms_api_url: fmsUrl,
+        fms_api_key: fmsApiKey
+      });
+      setFmsTestStatus({
+        success: Boolean(res?.success),
+        message: res?.message || (res?.success ? 'Connected successfully!' : 'Connection failed')
+      });
+    } catch (err) {
+      setFmsTestStatus({
+        success: false,
+        message: err.response?.data?.message || err.message || 'Connection test failed'
+      });
+    } finally {
+      setFmsTesting(false);
     }
   };
 
@@ -458,6 +522,115 @@ const Settings = () => {
                            >
                               Save Custom Key
                            </button>
+                        </form>
+                     </div>
+
+                     {/* FMS Outbound Approval Sync Section */}
+                     <div className="p-6 bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl border border-indigo-500/30 text-white shadow-xl space-y-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-indigo-500/20">
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+                                 <Globe size={20} />
+                              </div>
+                              <div>
+                                 <h4 className="text-base font-black tracking-tight flex items-center gap-2">
+                                    FMS Approval Integration
+                                    <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 text-[10px] font-bold">
+                                       fms.nkbmanufacturing.com
+                                    </span>
+                                 </h4>
+                                 <p className="text-xs text-indigo-200/70 font-medium">Awtomatikong ipapasa ang mga bagong Payable Request sa FMS para sa COO Approval.</p>
+                              </div>
+                           </div>
+
+                           <div className="flex items-center gap-2">
+                              <button
+                                 type="button"
+                                 onClick={handleTestFmsConnection}
+                                 disabled={fmsTesting}
+                                 className="px-4 py-2 bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-400/30 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                              >
+                                 <RefreshCcw size={14} className={fmsTesting ? 'animate-spin' : ''} />
+                                 <span>{fmsTesting ? 'Testing...' : 'Test Connection'}</span>
+                              </button>
+                           </div>
+                        </div>
+
+                        {/* Test Status Banner */}
+                        {fmsTestStatus && (
+                           <div className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-3 border ${
+                              fmsTestStatus.success 
+                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
+                                 : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                           }`}>
+                              {fmsTestStatus.success ? <CheckCircle2 size={18} className="shrink-0" /> : <AlertCircle size={18} className="shrink-0" />}
+                              <div className="flex-1">
+                                 <p className="font-bold">{fmsTestStatus.success ? 'FMS Connection Verified!' : 'FMS Connection Failed'}</p>
+                                 <p className="text-[11px] opacity-80 mt-0.5">{fmsTestStatus.message}</p>
+                              </div>
+                           </div>
+                        )}
+
+                        <form onSubmit={handleSaveFmsConfig} className="space-y-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                 <label className="text-[11px] font-bold uppercase tracking-wider text-indigo-200/80 mb-1.5 block">
+                                    FMS Endpoint URL
+                                 </label>
+                                 <input
+                                    type="text"
+                                    value={fmsUrl}
+                                    onChange={(e) => setFmsUrl(e.target.value)}
+                                    placeholder="https://fms.nkbmanufacturing.com/api/payables"
+                                    className="w-full px-4 py-2.5 bg-indigo-950/60 border border-indigo-400/20 rounded-xl text-xs font-mono font-medium text-indigo-100 placeholder-indigo-300/40 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                                 />
+                              </div>
+
+                              <div>
+                                 <label className="text-[11px] font-bold uppercase tracking-wider text-indigo-200/80 mb-1.5 block">
+                                    FMS Live API Key (x-api-key)
+                                 </label>
+                                 <div className="relative">
+                                    <input
+                                       type={showFmsKey ? 'text' : 'password'}
+                                       value={fmsApiKey}
+                                       onChange={(e) => setFmsApiKey(e.target.value)}
+                                       placeholder="nkb_inv_live_..."
+                                       className="w-full px-4 py-2.5 pr-10 bg-indigo-950/60 border border-indigo-400/20 rounded-xl text-xs font-mono font-medium text-emerald-400 placeholder-indigo-300/40 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
+                                    />
+                                    <button
+                                       type="button"
+                                       onClick={() => setShowFmsKey(!showFmsKey)}
+                                       className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-300 hover:text-white"
+                                    >
+                                       {showFmsKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                 </div>
+                              </div>
+                           </div>
+
+                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-indigo-500/20">
+                              <label className="flex items-center gap-3 cursor-pointer">
+                                 <input
+                                    type="checkbox"
+                                    checked={fmsAutoSync}
+                                    onChange={(e) => setFmsAutoSync(e.target.checked)}
+                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-indigo-400/40 bg-indigo-950"
+                                 />
+                                 <span className="text-xs text-indigo-100 font-medium">
+                                    Awtomatikong ipadala sa FMS kapag gumawa ng bagong Payable Request
+                                 </span>
+                              </label>
+
+                              <button
+                                 type="submit"
+                                 disabled={fmsSaving}
+                                 className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                              >
+                                 <Save size={15} />
+                                 <span>{fmsSaving ? 'Saving...' : 'Save FMS Config'}</span>
+                              </button>
+                           </div>
                         </form>
                      </div>
 

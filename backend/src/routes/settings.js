@@ -91,6 +91,64 @@ router.put('/api-key', protect, authorize('Super Admin'), async (req, res) => {
   }
 });
 
+// Get FMS Integration Configuration
+router.get('/fms-config', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    const { getFmsConfig, DEFAULT_FMS_URL, DEFAULT_FMS_API_KEY } = require('../services/fmsService');
+    const config = await getFmsConfig();
+    res.json({
+      success: true,
+      data: {
+        fms_api_url: config.fmsUrl,
+        fms_api_key: config.fmsApiKey,
+        fms_auto_sync: config.isAutoSync,
+        default_url: DEFAULT_FMS_URL,
+        default_key: DEFAULT_FMS_API_KEY
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Update FMS Integration Configuration
+router.put('/fms-config', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    const { fms_api_url, fms_api_key, fms_auto_sync } = req.body;
+
+    const settingsToUpdate = [
+      { key: 'fms_api_url', value: (fms_api_url || '').trim() },
+      { key: 'fms_api_key', value: (fms_api_key || '').trim() },
+      { key: 'fms_auto_sync', value: fms_auto_sync === true || fms_auto_sync === 'true' || fms_auto_sync === '1' ? 'true' : 'false' }
+    ];
+
+    for (const item of settingsToUpdate) {
+      const existing = await db('settings').where({ key: item.key }).first();
+      if (existing) {
+        await db('settings').where({ key: item.key }).update({ value: item.value, updated_at: db.fn.now() });
+      } else {
+        await db('settings').insert({ key: item.key, value: item.value });
+      }
+    }
+
+    res.json({ success: true, message: 'FMS Integration settings saved successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Test Connection to FMS
+router.post('/test-fms-sync', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    const { testFmsConnection } = require('../services/fmsService');
+    const { fms_api_url, fms_api_key } = req.body;
+    const result = await testFmsConnection(fms_api_url, fms_api_key);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.post('/expense-units', protect, async (req, res) => {
   try {
     const { unit } = req.body;

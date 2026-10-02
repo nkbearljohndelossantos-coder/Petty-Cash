@@ -6,7 +6,7 @@ import {
   FileText, Check, AlertCircle, Clock, DollarSign, 
   Building2, Calendar, Paperclip, Download, Printer, 
   Share2, ShieldCheck, CreditCard, ArrowRight, ArrowLeft, RefreshCw,
-  ExternalLink, Copy, CheckCheck, Trash2, X
+  ExternalLink, Copy, CheckCheck, Trash2, X, Globe, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -372,6 +372,20 @@ const Payables = () => {
     navigator.clipboard.writeText(text);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 3000);
+  };
+
+  const [syncingFmsId, setSyncingFmsId] = useState(null);
+
+  const handleSyncToFms = async (payable) => {
+    setSyncingFmsId(payable.id);
+    try {
+      const res = await api.post(`/payables/${payable.id}/sync-fms`);
+      alert(`✅ ${res?.data?.message || res?.message || 'Successfully transmitted to FMS (fms.nkbmanufacturing.com) for COO Approval!'}`);
+    } catch (err) {
+      alert('❌ Failed to transmit to FMS: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSyncingFmsId(null);
+    }
   };
 
   // KPI Calculations
@@ -1037,6 +1051,16 @@ const Payables = () => {
                             <Share2 size={16} />
                           </button>
                         )}
+
+                        {/* Sync to FMS (fms.nkbmanufacturing.com) */}
+                        <button
+                          onClick={() => handleSyncToFms(p)}
+                          disabled={syncingFmsId === p.id}
+                          title="Forward / Sync to FMS (fms.nkbmanufacturing.com) for COO Approval"
+                          className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors disabled:opacity-50"
+                        >
+                          <Globe size={16} className={syncingFmsId === p.id ? 'animate-spin' : ''} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1211,6 +1235,16 @@ const Payables = () => {
                     Mark Bank Cleared
                   </button>
                 )}
+
+                {/* Sync to FMS Button */}
+                <button
+                  onClick={() => handleSyncToFms(selectedPayable)}
+                  disabled={syncingFmsId === selectedPayable.id}
+                  className="px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Globe size={15} className={syncingFmsId === selectedPayable.id ? 'animate-spin' : ''} />
+                  <span>{syncingFmsId === selectedPayable.id ? 'Syncing...' : 'Sync to FMS'}</span>
+                </button>
               </div>
             </motion.div>
           </div>

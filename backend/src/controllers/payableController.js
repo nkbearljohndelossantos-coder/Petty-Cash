@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const crypto = require('crypto');
 const { logActivity } = require('../utils/logService');
+const { sendPayableToFms, getFmsConfig } = require('../services/fmsService');
 
 // Helper to generate sequential requisition number PB-YYYYMM-XXXX
 async function generateRequisitionNo() {
@@ -288,6 +289,24 @@ exports.createPayable = async (req, res) => {
     }
 
     const created = await db('payables').where({ id }).first();
+
+    // Outbound synchronization to FMS (fms.nkbmanufacturing.com) for COO Approval
+    (async () => {
+      try {
+        const config = await getFmsConfig();
+        if (config.isAutoSync) {
+          const syncItems = parsedItems.length > 0 ? parsedItems : [];
+          await sendPayableToFms({
+            ...created,
+            requestor_name: req.user?.full_name || req.user?.username || 'Petty Cash User',
+            items: syncItems
+          }, config);
+        }
+      } catch (fmsErr) {
+        console.error('Async FMS auto-sync error:', fmsErr.message);
+      }
+    })();
+
     res.status(201).json({ success: true, message: 'Payable request created successfully', data: created });
   } catch (err) {
     console.error('createPayable error:', err);
@@ -656,5 +675,47 @@ exports.processApprovalAction = async (req, res) => {
   } catch (err) {
     console.error('processApprovalAction error:', err);
     res.status(500).send('<h3>Internal Server Error while processing approval action.</h3>');
+  }
+};
+
+// 12. Manual / On-Demand Sync to FMS (fms.nkbmanufacturing.com)
+exports.syncPayableToFms = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const payable = await db('payables')
+      .leftJoin('users as requestor', 'payables.user_id', 'requestor.id')
+      .select('payables.*', 'requestor.full_name as requestor_name', 'requestor.username as requestor_username')
+      .where('payables.id', id)
+      .first();
+
+    if (!payable) {
+      return res.status(404).json({ success: false, message: 'Payable not found' });
+    }
+
+    const items = await db.schema.hasTable('payable_items')
+      ? await db('payable_items').where({ payable_id: id })
+      : [];
+
+    const syncResult = await sendPayableToFms({
+      ...payable,
+      items
+    });
+
+    if (syncResult.success) {
+      await logActivity(req.user?.id, 'SYNC_FMS', `Synced Payable ${payable.requisition_no} to FMS for COO Approval`);
+      return res.json({
+        success: true,
+        message: `Payable ${payable.requisition_no} successfully transmitted to FMS (fms.nkbmanufacturing.com)!`,
+        data: syncResult.data
+      });
+    } else {
+      return res.status(502).json({
+        success: false,
+        message: `FMS Sync Error: ${syncResult.message || 'Failed to transmit to FMS'}`
+      });
+    }
+  } catch (err) {
+    console.error('syncPayableToFms error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

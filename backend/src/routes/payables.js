@@ -63,4 +63,8 @@ router.post('/:id/clear-cheque', authorize('Super Admin', 'COO', 'Accounting'), 
 // 5. Approval Relay (Generates tokenized webhook/email approval link)
 router.post('/:id/relay-approval', authorize('Super Admin', 'COO', 'Manager', 'Accounting'), payableController.relayApproval);
 
+// 6. Outbound FMS Synchronization
+router.post('/:id/sync-fms', authorize('Super Admin', 'COO', 'Manager', 'Accounting', 'Staff'), payableController.syncPayableToFms);
+router.put('/:id/sync-fms', authorize('Super Admin', 'COO', 'Manager', 'Accounting', 'Staff'), payableController.syncPayableToFms);
+
 module.exports = router;
