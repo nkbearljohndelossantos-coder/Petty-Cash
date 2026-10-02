@@ -130,9 +130,8 @@ const Payables = () => {
       if (search) params.search = search;
 
       const res = await api.get('/payables', { params });
-      if (res.data?.success) {
-        setPayables(res.data.data);
-      }
+      const items = res?.data || (Array.isArray(res) ? res : []);
+      setPayables(items);
     } catch (err) {
       console.error('Failed to load payables:', err);
     } finally {
@@ -143,7 +142,7 @@ const Payables = () => {
   const fetchDepartments = async () => {
     try {
       const res = await api.get('/departments');
-      setDepartments(res.data || []);
+      setDepartments(res?.data || (Array.isArray(res) ? res : []));
     } catch (err) {
       console.error(err);
     }
@@ -245,7 +244,7 @@ const Payables = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      if (res.data?.success) {
+      if (res?.success || res?.data) {
         setViewMode('list');
         // Reset form
         setFormState({
@@ -269,7 +268,7 @@ const Payables = () => {
           ],
           attachments: []
         });
-        fetchPayables();
+        await fetchPayables();
       }
     } catch (err) {
       alert(err.response?.data?.message || err.message || 'Failed to submit payable request');
@@ -359,12 +358,13 @@ const Payables = () => {
   const handleGenerateRelay = async (payable, action = 'APPROVE') => {
     try {
       const res = await api.post(`/payables/${payable.id}/relay-approval`, { action });
-      if (res.data?.success) {
-        setRelayData(res.data.data);
+      const rData = res?.data || res;
+      if (rData && (rData.approval_url || rData.relay_url || res?.success)) {
+        setRelayData(rData);
         setShowRelayModal(true);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to generate relay link');
+      alert(err.response?.data?.message || err.message || 'Failed to generate relay link');
     }
   };
 
