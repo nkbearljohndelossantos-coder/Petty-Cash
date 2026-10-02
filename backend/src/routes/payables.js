@@ -40,16 +40,25 @@ router.get('/:id', payableController.getPayableById);
 router.post('/', upload.array('attachments', 10), payableController.createPayable);
 router.put('/:id', upload.array('attachments', 10), payableController.updatePayable);
 
-// 2. Approvals & Rejections
+// 2. Approvals & Rejections (Supports both PUT and POST for webhooks & external API)
 router.put('/:id/approve', authorize('Super Admin', 'COO', 'Manager', 'Accounting'), payableController.approvePayable);
+router.post('/:id/approve', authorize('Super Admin', 'COO', 'Manager', 'Accounting'), payableController.approvePayable);
 router.put('/:id/reject', authorize('Super Admin', 'COO', 'Manager', 'Accounting'), payableController.rejectPayable);
+router.post('/:id/reject', authorize('Super Admin', 'COO', 'Manager', 'Accounting'), payableController.rejectPayable);
 
 // 3. COO Confirmation & Clearing
 router.put('/:id/confirm', authorize('Super Admin', 'COO'), payableController.cooConfirmPayable);
+router.post('/:id/confirm', authorize('Super Admin', 'COO'), payableController.cooConfirmPayable);
+router.put('/:id/coo-confirm', authorize('Super Admin', 'COO'), payableController.cooConfirmPayable);
+router.post('/:id/coo-confirm', authorize('Super Admin', 'COO'), payableController.cooConfirmPayable);
 
 // 4. Cheque Issuance & Bank Clearing (Accounting / Treasury)
 router.post('/:id/cheque', authorize('Super Admin', 'COO', 'Accounting'), payableController.issueCheque);
+router.post('/:id/issue-cheque', authorize('Super Admin', 'COO', 'Accounting'), payableController.issueCheque);
 router.put('/:id/clear', authorize('Super Admin', 'COO', 'Accounting'), payableController.markCleared);
+router.post('/:id/clear', authorize('Super Admin', 'COO', 'Accounting'), payableController.markCleared);
+router.put('/:id/clear-cheque', authorize('Super Admin', 'COO', 'Accounting'), payableController.markCleared);
+router.post('/:id/clear-cheque', authorize('Super Admin', 'COO', 'Accounting'), payableController.markCleared);
 
 // 5. Approval Relay (Generates tokenized webhook/email approval link)
 router.post('/:id/relay-approval', authorize('Super Admin', 'COO', 'Manager', 'Accounting'), payableController.relayApproval);
