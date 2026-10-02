@@ -4,8 +4,7 @@ const path = require('path');
 
 const LOCAL_DIST = path.join(__dirname, 'frontend', 'dist');
 const REMOTE_BASE = '/home/u335953510/domains/pc.nkbmanufacturing.com';
-const CURRENT_VERSION = '/home/u335953510/domains/pc.nkbmanufacturing.com/hbuilds/versions/01a0f9c5-e726-7192-ada2-ec2699b47a88/nodejs';
-const NODEJS = '/home/u335953510/domains/pc.nkbmanufacturing.com/nodejs';
+const NODEJS = `${REMOTE_BASE}/nodejs`;
 const REMOTE_PUBLIC = `${REMOTE_BASE}/public_html`;
 const REMOTE_NODEJS_DIST = `${NODEJS}/dist`;
 const NODE = '/opt/alt/alt-nodejs20/root/bin/node';
@@ -33,11 +32,25 @@ const backendFiles = [
   }
 ];
 
-const conn = new Client();
-
-function executeCommand(command) {
+function connectSSH() {
   return new Promise((resolve, reject) => {
-    conn.exec(command, (err, stream) => {
+    const conn = new Client();
+    conn.on('ready', () => resolve(conn));
+    conn.on('error', reject);
+    conn.connect({
+      host: '187.127.126.44',
+      port: 65002,
+      username: 'u335953510',
+      password: 'NkbManufacturing@2026',
+      keepaliveInterval: 10000,
+      readyTimeout: 40000
+    });
+  });
+}
+
+function execCmd(conn, cmd) {
+  return new Promise((resolve, reject) => {
+    conn.exec(cmd, (err, stream) => {
       if (err) return reject(err);
       let output = '';
       stream.on('data', d => {
@@ -47,22 +60,40 @@ function executeCommand(command) {
       stream.stderr.on('data', d => {
         process.stderr.write(d);
       });
-      stream.on('close', (code) => {
-        resolve({ code, output });
-      });
+      stream.on('close', code => resolve({ code, output }));
     });
   });
 }
 
-conn.on('ready', async () => {
-  console.log('=== SSH CONNECTED ===');
-  try {
-    // 1. Prepare directories
-    console.log('Step 1: Ensuring directories...');
-    await executeCommand(`mkdir -p ${REMOTE_PUBLIC}/assets ${REMOTE_NODEJS_DIST}/assets ${CURRENT_VERSION}/src/middleware ${CURRENT_VERSION}/src/routes ${CURRENT_VERSION}/src/controllers ${CURRENT_VERSION}/src/services ${NODEJS}/src/middleware ${NODEJS}/src/routes ${NODEJS}/src/controllers ${NODEJS}/src/services`);
+(async () => {
+  let conn;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`[Attempt ${attempt}] Connecting SSH to Hostinger...`);
+      conn = await connectSSH();
+      console.log('SSH Connection Established!');
+      break;
+    } catch (err) {
+      console.error(`Connection attempt ${attempt} failed:`, err.message);
+      if (attempt === 3) process.exit(1);
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
 
-    // 2. Open SFTP
-    console.log('Step 2: Uploading files via SFTP...');
+  try {
+    // 1. Discover all active build directories
+    console.log('Step 1: Finding active version folders...');
+    const { output: versionOutput } = await execCmd(conn, `ls -d ${REMOTE_BASE}/hbuilds/versions/*/nodejs ${REMOTE_BASE}/nodejs 2>/dev/null || true`);
+    const targetDirs = versionOutput.trim().split('\n').filter(Boolean);
+    console.log('Target directories for backend sync:', targetDirs);
+
+    // 2. Ensure subdirectories
+    for (const dir of targetDirs) {
+      await execCmd(conn, `mkdir -p ${dir}/src/middleware ${dir}/src/routes ${dir}/src/controllers ${dir}/src/services ${dir}/tmp`);
+    }
+    await execCmd(conn, `mkdir -p ${REMOTE_PUBLIC}/assets ${REMOTE_NODEJS_DIST}/assets`);
+
+    // 3. Open SFTP
     const sftp = await new Promise((resolve, reject) => {
       conn.sftp((err, sftpSession) => {
         if (err) reject(err);
@@ -80,32 +111,31 @@ conn.on('ready', async () => {
       });
     };
 
-    // Upload Frontend Dist to public_html
+    // 4. Upload Frontend Dist
+    console.log('Step 2: Uploading frontend to public_html...');
     const rootFiles = fs.readdirSync(LOCAL_DIST).filter(f => !fs.statSync(path.join(LOCAL_DIST, f)).isDirectory());
     for (const f of rootFiles) {
-      const localP = path.join(LOCAL_DIST, f);
-      const remoteP = `${REMOTE_PUBLIC}/${f}`;
-      console.log(`[Frontend] ${f} -> public_html`);
-      await sftpPut(localP, remoteP);
+      await sftpPut(path.join(LOCAL_DIST, f), `${REMOTE_PUBLIC}/${f}`);
     }
 
     const assetsDir = path.join(LOCAL_DIST, 'assets');
-    const assetFiles = fs.readdirSync(assetsDir);
-    for (const f of assetFiles) {
-      const localP = path.join(assetsDir, f);
-      const remoteP = `${REMOTE_PUBLIC}/assets/${f}`;
-      console.log(`[Frontend Asset] ${f}`);
-      await sftpPut(localP, remoteP);
+    for (const f of fs.readdirSync(assetsDir)) {
+      await sftpPut(path.join(assetsDir, f), `${REMOTE_PUBLIC}/assets/${f}`);
     }
+    console.log('Frontend uploaded to public_html!');
 
-    // Upload Backend Files to both paths
+    // 5. Upload Backend files to every active path
+    console.log('Step 3: Uploading backend files to all version folders...');
     for (const bf of backendFiles) {
-      console.log(`[Backend] Syncing ${bf.remoteRel}...`);
-      await sftpPut(bf.local, `${CURRENT_VERSION}/${bf.remoteRel}`);
-      await sftpPut(bf.local, `${NODEJS}/${bf.remoteRel}`);
+      for (const dir of targetDirs) {
+        const dest = `${dir}/${bf.remoteRel}`;
+        console.log(`Syncing ${bf.remoteRel} -> ${dest}`);
+        await sftpPut(bf.local, dest);
+      }
     }
 
-    console.log('Step 3: Syncing dist to nodejs/dist and restarting backend...');
+    // 6. Sync dist to nodejs/dist and restart
+    console.log('Step 4: Syncing nodejs/dist and restarting server...');
     const postCmds = [
       `rm -rf ${REMOTE_NODEJS_DIST}/assets`,
       `cp -rv ${REMOTE_PUBLIC}/assets ${REMOTE_NODEJS_DIST}/assets`,
@@ -113,33 +143,21 @@ conn.on('ready', async () => {
       `cp -v ${REMOTE_PUBLIC}/favicon.png ${REMOTE_NODEJS_DIST}/favicon.png 2>/dev/null || true`,
       `cp -v ${REMOTE_PUBLIC}/favicon.svg ${REMOTE_NODEJS_DIST}/favicon.svg 2>/dev/null || true`,
       `cp -v ${REMOTE_PUBLIC}/icons.svg ${REMOTE_NODEJS_DIST}/icons.svg 2>/dev/null || true`,
-      `cp -v ${REMOTE_PUBLIC}/USER_MANUAL.md ${REMOTE_NODEJS_DIST}/USER_MANUAL.md 2>/dev/null || true`,
-      `mkdir -p ${CURRENT_VERSION}/tmp && touch ${CURRENT_VERSION}/tmp/restart.txt`,
-      `mkdir -p ${NODEJS}/tmp && touch ${NODEJS}/tmp/restart.txt`,
-      `mkdir -p ${REMOTE_PUBLIC}/tmp && touch ${REMOTE_PUBLIC}/tmp/restart.txt`,
+      `touch ${REMOTE_BASE}/hbuilds/current/nodejs/tmp/restart.txt 2>/dev/null || true`,
+      `touch ${NODEJS}/tmp/restart.txt 2>/dev/null || true`,
+      `touch ${REMOTE_PUBLIC}/tmp/restart.txt 2>/dev/null || true`,
       `pkill -f "pc.nkbmanufacturing.com" || true`,
       `sleep 2`,
-      `cd ${NODEJS} && nohup ${NODE} src/index.js > console.log 2>&1 & echo "Process Spawned PID=$!"`,
+      `cd ${NODEJS} && nohup ${NODE} src/index.js > console.log 2>&1 & echo "Spawned Node PID=$!"`,
       `sleep 2`,
       `ps aux | grep "pc.nkbmanufacturing.com" | grep -v grep | head -3`
     ].join(' && ');
 
-    await executeCommand(postCmds);
-    console.log('=== FULL DEPLOYMENT & BACKEND SYNC SUCCESSFUL ===');
+    await execCmd(conn, postCmds);
+    console.log('=== FULL DEPLOYMENT COMPLETE & VERIFIED ===');
   } catch (err) {
-    console.error('Deployment error:', err);
+    console.error('Fatal Deployment error:', err);
   } finally {
-    conn.end();
+    conn?.end();
   }
-});
-
-conn.on('error', (err) => {
-  console.error('SSH Error:', err.message);
-});
-
-conn.connect({
-  host: '187.127.126.44',
-  port: 65002,
-  username: 'u335953510',
-  password: 'NkbManufacturing@2026'
-});
+})();
