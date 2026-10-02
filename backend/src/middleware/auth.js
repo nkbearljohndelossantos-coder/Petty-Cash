@@ -1,8 +1,12 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 
-// Valid API Keys configured in environment or default fallback
-const getValidApiKeys = () => {
-  return [
+// In-memory cache for dynamic DB keys
+let cachedDbKeys = [];
+let lastDbKeyFetch = 0;
+
+const getValidApiKeys = async () => {
+  const envKeys = [
     process.env.PAYABLE_API_KEY,
     process.env.PAYABLES_API_KEY,
     process.env.SYSTEM_API_KEY,
@@ -10,9 +14,22 @@ const getValidApiKeys = () => {
     'NkbPayablesApiKey2026',
     'NkbManufacturingSecretApiKey2026'
   ].filter(Boolean);
+
+  const now = Date.now();
+  if (now - lastDbKeyFetch > 10000) { // refresh cache every 10s
+    try {
+      const rows = await db('settings').whereIn('key', ['payables_api_key', 'api_key', 'system_api_key', 'canteen_api_key']);
+      cachedDbKeys = rows.map(r => r.value).filter(Boolean);
+      lastDbKeyFetch = now;
+    } catch (e) {
+      // ignore DB read error fallback to env
+    }
+  }
+
+  return Array.from(new Set([...envKeys, ...cachedDbKeys]));
 };
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   // 1. Check for x-api-key or x-api-token header (case-insensitive in Express) or query parameter
   const apiKey = req.headers['x-api-key'] || 
                  req.headers['x-api-token'] || 
@@ -20,7 +37,7 @@ const protect = (req, res, next) => {
                  req.query.apiKey;
 
   if (apiKey) {
-    const validKeys = getValidApiKeys();
+    const validKeys = await getValidApiKeys();
     if (validKeys.includes(apiKey.trim())) {
       // Attach system API client identity with full Super Admin / COO privileges
       req.user = {

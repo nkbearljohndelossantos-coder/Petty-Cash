@@ -34,6 +34,63 @@ router.put('/', protect, authorize('Super Admin'), async (req, res) => {
   }
 });
 
+// Get active API Key
+router.get('/api-key', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    const row = await db('settings').where({ key: 'payables_api_key' }).first();
+    const apiKey = row?.value || process.env.PAYABLES_API_KEY || 'NkbPayablesApiKey2026';
+    res.json({ success: true, data: { api_key: apiKey } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Generate / Regenerate New API Key
+router.post('/generate-api-key', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const randomHex = crypto.randomBytes(24).toString('hex');
+    const newApiKey = `nkb_live_${randomHex}`;
+    
+    const existing = await db('settings').where({ key: 'payables_api_key' }).first();
+    if (existing) {
+      await db('settings').where({ key: 'payables_api_key' }).update({ value: newApiKey, updated_at: db.fn.now() });
+    } else {
+      await db('settings').insert({ key: 'payables_api_key', value: newApiKey });
+    }
+
+    res.json({ 
+      success: true, 
+      data: { api_key: newApiKey }, 
+      message: 'New API Key generated and activated successfully!' 
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Update / Set Custom API Key
+router.put('/api-key', protect, authorize('Super Admin'), async (req, res) => {
+  try {
+    const { api_key } = req.body;
+    const trimmed = (api_key || '').trim();
+    if (!trimmed || trimmed.length < 8) {
+      return res.status(400).json({ success: false, message: 'API key must be at least 8 characters' });
+    }
+
+    const existing = await db('settings').where({ key: 'payables_api_key' }).first();
+    if (existing) {
+      await db('settings').where({ key: 'payables_api_key' }).update({ value: trimmed, updated_at: db.fn.now() });
+    } else {
+      await db('settings').insert({ key: 'payables_api_key', value: trimmed });
+    }
+
+    res.json({ success: true, data: { api_key: trimmed }, message: 'API key updated successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.post('/expense-units', protect, async (req, res) => {
   try {
     const { unit } = req.body;

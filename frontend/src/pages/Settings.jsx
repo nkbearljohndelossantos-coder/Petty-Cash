@@ -5,7 +5,8 @@ import {
   Palette, Globe, Database, HelpCircle,
   Sun, Save, RefreshCcw,
   Building, Wallet, Coins, Lock, Mail,
-  CheckCircle2, AlertCircle, ShieldCheck
+  CheckCircle2, AlertCircle, ShieldCheck,
+  Key, Copy, Check, Eye, EyeOff, Code, Terminal, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -33,10 +34,79 @@ const Settings = () => {
     in_app_enabled: true
   });
 
+  // API Key & Webhooks State
+  const [apiKey, setApiKey] = useState('NkbPayablesApiKey2026');
+  const [showKey, setShowKey] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [generatingKey, setGeneratingKey] = useState(false);
+  const [customKeyInput, setCustomKeyInput] = useState('');
+  const [activeDocTab, setActiveDocTab] = useState('curl');
+
   useEffect(() => {
     fetchSettings();
     fetchNotificationPrefs();
-  }, []);
+    if (isSuperAdmin) {
+      fetchApiKey();
+    }
+  }, [isSuperAdmin]);
+
+  const fetchApiKey = async () => {
+    try {
+      const res = await api.get('/settings/api-key');
+      if (res?.data?.api_key) {
+        setApiKey(res.data.api_key);
+      }
+    } catch (err) {
+      console.error('Failed to fetch API key:', err);
+    }
+  };
+
+  const handleGenerateApiKey = async () => {
+    if (!window.confirm('Are you sure you want to generate a new API Key? External systems using the old key will need to be updated.')) {
+      return;
+    }
+    setGeneratingKey(true);
+    try {
+      const res = await api.post('/settings/generate-api-key');
+      if (res?.data?.api_key) {
+        setApiKey(res.data.api_key);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
+    } catch (err) {
+      alert('Failed to generate API Key: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setGeneratingKey(false);
+    }
+  };
+
+  const handleSaveCustomKey = async (e) => {
+    e.preventDefault();
+    if (!customKeyInput.trim() || customKeyInput.trim().length < 8) {
+      alert('Custom API Key must be at least 8 characters');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.put('/settings/api-key', { api_key: customKeyInput.trim() });
+      if (res?.data?.api_key) {
+        setApiKey(res.data.api_key);
+        setCustomKeyInput('');
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
+    } catch (err) {
+      alert('Failed to save API key: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyApiKey = (keyToCopy = apiKey) => {
+    navigator.clipboard.writeText(keyToCopy);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 3000);
+  };
 
   const fetchSettings = async () => {
     try {
@@ -118,6 +188,7 @@ const Settings = () => {
     { name: 'Users', icon: Shield },
     { name: 'Master Data', icon: Globe },
     { name: 'Approval', icon: ShieldCheck },
+    ...(isSuperAdmin ? [{ name: 'API & Webhooks', icon: Key }] : []),
     { name: 'Notifications', icon: Bell },
     { name: 'Appearance', icon: Palette },
     { name: 'Security', icon: Lock },
@@ -129,12 +200,18 @@ const Settings = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            {activeTab === 'Users' ? 'Access Governance' : 'System Configuration'}
+            {activeTab === 'Users' 
+              ? 'Access Governance' 
+              : activeTab === 'API & Webhooks'
+                ? 'API Keys & Webhooks'
+                : 'System Configuration'}
           </h1>
           <p className="text-slate-500 font-medium mt-1">
             {activeTab === 'Users' 
               ? 'Manage personnel roles, credentials, and system permissions.' 
-              : 'Global preferences and administrative settings.'}
+              : activeTab === 'API & Webhooks'
+                ? 'Generate API keys, manage webhook tokens, and integrate external approval systems.'
+                : 'Global preferences and administrative settings.'}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -299,6 +376,204 @@ const Settings = () => {
                )}
 
                {activeTab === 'Approval' && <ApprovalSettingsPanel />}
+
+               {activeTab === 'API & Webhooks' && isSuperAdmin && (
+                  <div className="space-y-8">
+                     <div className="pb-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                           <h3 className="text-xl font-black text-slate-900 tracking-tight">API Keys & External Integrations</h3>
+                           <p className="text-sm text-slate-500 font-medium">Manage master API keys, webhooks, and third-party payable approval relays.</p>
+                        </div>
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold w-fit">
+                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                           API Gateway Active
+                        </span>
+                     </div>
+
+                     {/* Primary API Key Card */}
+                     <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                           <div>
+                              <label className="text-xs font-black text-slate-700 uppercase tracking-wider block">Master Integration Key (`x-api-key`)</label>
+                              <p className="text-xs text-slate-500 mt-0.5">Use this secret key to authenticate all external API requests and webhooks.</p>
+                           </div>
+                           <div className="flex items-center gap-2">
+                              <button
+                                 type="button"
+                                 onClick={handleGenerateApiKey}
+                                 disabled={generatingKey}
+                                 className="px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+                              >
+                                 <Sparkles size={14} className={generatingKey ? 'animate-spin' : 'text-amber-400'} />
+                                 <span>{generatingKey ? 'Generating...' : 'Generate New Key'}</span>
+                              </button>
+                           </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                           <div className="relative flex-1">
+                              <input
+                                 type={showKey ? 'text' : 'password'}
+                                 readOnly
+                                 className="w-full pl-4 pr-12 py-3 bg-white border border-slate-300 rounded-xl font-mono text-sm font-black text-slate-900 outline-none select-all"
+                                 value={apiKey}
+                              />
+                              <button
+                                 type="button"
+                                 onClick={() => setShowKey(!showKey)}
+                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                                 title={showKey ? 'Hide API Key' : 'Show API Key'}
+                              >
+                                 {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                           </div>
+
+                           <button
+                              type="button"
+                              onClick={() => handleCopyApiKey(apiKey)}
+                              className={`px-5 py-3 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm ${
+                                 copiedKey 
+                                    ? 'bg-emerald-600 text-white' 
+                                    : 'bg-erp-blue hover:bg-blue-700 text-white'
+                              }`}
+                           >
+                              {copiedKey ? <Check size={16} /> : <Copy size={16} />}
+                              <span>{copiedKey ? 'Copied!' : 'Copy Key'}</span>
+                           </button>
+                        </div>
+
+                        {/* Custom Key Form */}
+                        <form onSubmit={handleSaveCustomKey} className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center gap-3">
+                           <input
+                              type="text"
+                              placeholder="Set custom API key (min. 8 characters)..."
+                              className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20"
+                              value={customKeyInput}
+                              onChange={(e) => setCustomKeyInput(e.target.value)}
+                           />
+                           <button
+                              type="submit"
+                              disabled={loading || !customKeyInput.trim()}
+                              className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                           >
+                              Save Custom Key
+                           </button>
+                        </form>
+                     </div>
+
+                     {/* Header Format Box */}
+                     <div className="p-5 bg-blue-50/70 rounded-2xl border border-blue-200">
+                        <div className="flex items-start gap-3">
+                           <Key className="text-blue-600 shrink-0 mt-0.5" size={20} />
+                           <div className="flex-1">
+                              <h4 className="text-xs font-black uppercase tracking-wider text-blue-900">HTTP Header Specification</h4>
+                              <p className="text-xs text-blue-700 mt-1">Include this header with every request to the Petty Cash & Payables API:</p>
+                              <div className="mt-2 p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl flex items-center justify-between">
+                                 <code>x-api-key: {apiKey}</code>
+                                 <button 
+                                    type="button" 
+                                    onClick={() => handleCopyApiKey(`x-api-key: ${apiKey}`)} 
+                                    className="text-slate-400 hover:text-white text-[11px] font-bold underline"
+                                 >
+                                    Copy Header
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Developer Quickstart & Code Examples */}
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <h4 className="text-base font-black text-slate-900">Integration Examples</h4>
+                           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                              {['curl', 'javascript', 'python'].map(lang => (
+                                 <button
+                                    key={lang}
+                                    type="button"
+                                    onClick={() => setActiveDocTab(lang)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                       activeDocTab === lang 
+                                          ? 'bg-white text-slate-900 shadow-sm' 
+                                          : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                 >
+                                    {lang === 'curl' ? 'cURL' : lang === 'javascript' ? 'Node.js / JS' : 'Python'}
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+
+                        <div className="bg-slate-900 text-slate-100 p-5 rounded-2xl font-mono text-xs overflow-x-auto border border-slate-800 shadow-inner">
+                           {activeDocTab === 'curl' && (
+                              <pre className="leading-relaxed whitespace-pre-wrap">
+{`# 1. Fetch All Payables
+curl -X GET "https://pc.nkbmanufacturing.com/api/payables" \\
+  -H "x-api-key: ${apiKey}"
+
+# 2. Submit Payable Request
+curl -X POST "https://pc.nkbmanufacturing.com/api/payables" \\
+  -H "x-api-key: ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "company": "NKB Manufacturing Corporation",
+    "vendor": "Supplier Name",
+    "gross_amount": 15000,
+    "term": "Net 30",
+    "description": "Raw Materials Batch"
+  }'
+
+# 3. Approve / Confirm Payable (by ID)
+curl -X POST "https://pc.nkbmanufacturing.com/api/payables/1/approve" \\
+  -H "x-api-key: ${apiKey}"`}
+                              </pre>
+                           )}
+
+                           {activeDocTab === 'javascript' && (
+                              <pre className="leading-relaxed whitespace-pre-wrap">
+{`// Node.js (Axios)
+const axios = require('axios');
+
+const API = axios.create({
+  baseURL: 'https://pc.nkbmanufacturing.com/api',
+  headers: {
+    'x-api-key': '${apiKey}',
+    'Content-Type': 'application/json'
+  }
+});
+
+// 1. Get All Payables
+const { data } = await API.get('/payables');
+
+// 2. Approve Payable
+await API.post('/payables/1/approve');
+
+// 3. COO Confirmation
+await API.post('/payables/1/confirm');`}
+                              </pre>
+                           )}
+
+                           {activeDocTab === 'python' && (
+                              <pre className="leading-relaxed whitespace-pre-wrap">
+{`import requests
+
+headers = {
+    "x-api-key": "${apiKey}",
+    "Content-Type": "application/json"
+}
+
+# 1. Fetch Payables
+res = requests.get("https://pc.nkbmanufacturing.com/api/payables", headers=headers)
+print(res.json())
+
+# 2. Approve Payable
+requests.post("https://pc.nkbmanufacturing.com/api/payables/1/approve", headers=headers)`}
+                              </pre>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+               )}
 
                {activeTab === 'Notifications' && (
                   <div className="space-y-8">
